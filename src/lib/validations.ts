@@ -9,6 +9,7 @@ export type ClientInput = {
   name: string;
   slug: string;
   logo_url: string | null;
+  hero_banner_image_url: string | null;
   address: string | null;
   whatsapp_number: string;
   notification_whatsapp_number: string | null;
@@ -19,6 +20,7 @@ export type ClientInput = {
   promo_banner_title: string | null;
   promo_banner_description: string | null;
   promo_banner_image_url: string | null;
+  promo_banner_item_id: string | null;
   promo_banner_is_active: boolean;
   is_active: boolean;
 };
@@ -45,6 +47,7 @@ export function validateClientInput(formData: FormData): ValidationResult<Client
       name,
       slug,
       logo_url: String(formData.get("logo_url") || "").trim() || null,
+      hero_banner_image_url: String(formData.get("hero_banner_image_url") || "").trim() || null,
       address: String(formData.get("address") || "").trim() || null,
       whatsapp_number: whatsappNumber,
       notification_whatsapp_number: notificationWhatsappNumber || null,
@@ -55,6 +58,7 @@ export function validateClientInput(formData: FormData): ValidationResult<Client
       promo_banner_title: String(formData.get("promo_banner_title") || "").trim() || null,
       promo_banner_description: String(formData.get("promo_banner_description") || "").trim() || null,
       promo_banner_image_url: String(formData.get("promo_banner_image_url") || "").trim() || null,
+      promo_banner_item_id: String(formData.get("promo_banner_item_id") || "").trim() || null,
       promo_banner_is_active: formData.get("promo_banner_is_active") === "on",
       is_active: formData.get("is_active") === "on"
     }

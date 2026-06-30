@@ -10,8 +10,8 @@ type MenuItemCardProps = {
 
 export function MenuItemCard({ item, accentColor, onAdd }: MenuItemCardProps) {
   return (
-    <article className={`grid grid-cols-[96px_1fr] gap-3 rounded-[20px] border border-[var(--line)] bg-[var(--surface)] p-3 shadow-panel transition ${item.is_available ? "hover:-translate-y-0.5" : "opacity-60 grayscale"}`}>
-      <div className="relative h-24 w-24 overflow-hidden rounded-[16px] bg-[var(--surface-muted)]">
+    <article className={`grid grid-cols-[96px_1fr] gap-3 rounded-[20px] border border-[var(--line)] bg-[var(--surface)] p-3 shadow-panel transition md:grid-cols-1 md:gap-0 md:overflow-hidden md:p-0 ${item.is_available ? "hover:-translate-y-0.5" : "opacity-60 grayscale"}`}>
+      <div className="relative h-24 w-24 overflow-hidden rounded-[16px] bg-[var(--surface-muted)] md:h-44 md:w-full md:rounded-none">
         {item.image_url ? (
           <img alt={item.name} src={item.image_url} className="h-full w-full object-cover" />
         ) : (
@@ -20,7 +20,7 @@ export function MenuItemCard({ item, accentColor, onAdd }: MenuItemCardProps) {
         {!item.is_available ? <div className="absolute inset-0 bg-white/45 dark:bg-black/35" /> : null}
       </div>
 
-      <div className="min-w-0">
+      <div className="min-w-0 md:grid md:min-h-[170px] md:content-between md:p-4">
         <div className="flex items-start justify-between gap-2">
           <h3 className="text-base font-medium leading-snug">{item.name}</h3>
           {!item.is_available ? <Badge tone="red">Agotado</Badge> : null}

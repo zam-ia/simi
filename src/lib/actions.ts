@@ -17,11 +17,11 @@ function isMissingVisualSettingsError(error: unknown) {
   if (!error || typeof error !== "object") return false;
   const code = "code" in error ? String(error.code) : "";
   const message = "message" in error ? String(error.message) : "";
-  return code === "PGRST204" || message.includes("secondary_color") || message.includes("promo_banner") || message.includes("notification_whatsapp_number");
+  return code === "PGRST204" || message.includes("secondary_color") || message.includes("promo_banner") || message.includes("hero_banner_image_url") || message.includes("notification_whatsapp_number");
 }
 
 function missingVisualSettingsMessage() {
-  return "Supabase todavia no reconoce los campos visuales del cliente. Aplica la migracion 010 y vuelve a guardar.";
+  return "Supabase todavia no reconoce los campos visuales del cliente. Aplica las migraciones 010 y 011, luego vuelve a guardar.";
 }
 
 async function revalidateClientSurfaces(supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"], clientId: string, knownSlug?: string | null) {

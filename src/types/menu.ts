@@ -3,6 +3,7 @@ export type Client = {
   name: string;
   slug: string;
   logo_url: string | null;
+  hero_banner_image_url?: string | null;
   address: string | null;
   whatsapp_number: string;
   notification_whatsapp_number?: string | null;
@@ -14,6 +15,7 @@ export type Client = {
   promo_banner_title?: string | null;
   promo_banner_description?: string | null;
   promo_banner_image_url?: string | null;
+  promo_banner_item_id?: string | null;
   promo_banner_is_active?: boolean | null;
   is_active: boolean;
   created_at: string;
@@ -248,6 +250,7 @@ export type ClientFormValues = {
   name: string;
   slug: string;
   logo_url: string;
+  hero_banner_image_url: string;
   address: string;
   whatsapp_number: string;
   notification_whatsapp_number: string;
@@ -258,6 +261,7 @@ export type ClientFormValues = {
   promo_banner_title: string;
   promo_banner_description: string;
   promo_banner_image_url: string;
+  promo_banner_item_id: string;
   promo_banner_is_active: boolean;
   is_active: boolean;
 };

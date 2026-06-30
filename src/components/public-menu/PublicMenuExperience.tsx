@@ -60,8 +60,21 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const hasProducts = categories.some((category) => category.items.length > 0);
+  const flatItems = useMemo(() => categories.flatMap((category) => category.items), [categories]);
+  const promoItem = useMemo(() => flatItems.find((item) => item.id === client.promo_banner_item_id) || null, [client.promo_banner_item_id, flatItems]);
+  const visibleCategories = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return categories;
+    return categories
+      .map((category) => ({
+        ...category,
+        items: category.items.filter((item) => `${item.name} ${item.description || ""}`.toLowerCase().includes(query))
+      }))
+      .filter((category) => category.items.length > 0);
+  }, [categories, searchQuery]);
+  const hasProducts = visibleCategories.some((category) => category.items.length > 0);
   const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
   const selectedDeliveryZone = deliveryZones.find((zone) => zone.id === deliveryZoneId);
   const deliveryFee = orderType === "delivery" ? Number(selectedDeliveryZone?.delivery_fee || 0) : 0;
@@ -86,6 +99,10 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
 
   function removeItem(menuItemId: string) {
     setCart((current) => current.filter((item) => item.menuItemId !== menuItemId));
+  }
+
+  function browseMenu() {
+    document.getElementById("menu-content")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function createOrder() {
@@ -154,16 +171,34 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
   return (
     <main className="min-h-screen bg-[var(--background)] pb-32">
       <MenuHeader client={client} />
-      <div className="mx-auto grid max-w-[480px] gap-6 px-4 py-5 sm:px-5">
-        <a href={`/reservar/${client.slug}`} className="inline-flex min-h-11 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 text-sm font-medium text-[var(--text)] shadow-panel">
-          Reservar mesa
-        </a>
-        <PromoBanner client={client} />
+      <div id="menu-content" className="mx-auto grid max-w-[1320px] gap-6 px-4 py-5 sm:px-5 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:px-8">
+        <div className="grid min-w-0 gap-6">
+        <div className="grid gap-3">
+          <div className="flex gap-2">
+            <input
+              className="focus-ring min-h-12 flex-1 rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 text-sm shadow-panel"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Buscar locales y platos"
+            />
+            <a href={`/reservar/${client.slug}`} className="inline-flex min-h-12 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 text-sm font-medium text-[var(--text)] shadow-panel">
+              Reservar
+            </a>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <button type="button" onClick={browseMenu} className="shrink-0 rounded-full bg-[var(--surface-muted)] px-4 py-2 text-sm font-medium">Menu</button>
+            <button type="button" onClick={() => setSearchQuery("pollo")} className="shrink-0 rounded-full bg-[var(--surface-muted)] px-4 py-2 text-sm font-medium">Pollos</button>
+            <button type="button" onClick={() => setSearchQuery("combo")} className="shrink-0 rounded-full bg-[var(--surface-muted)] px-4 py-2 text-sm font-medium">Combos</button>
+            <button type="button" onClick={() => setSearchQuery("")} className="shrink-0 rounded-full bg-[var(--surface-muted)] px-4 py-2 text-sm font-medium">Todos</button>
+          </div>
+        </div>
+
+        <PromoBanner client={client} promoItem={promoItem} onAddPromo={addItem} onBrowseMenu={browseMenu} />
 
         {step === "menu" && promotions.length > 0 ? (
           <section className="grid gap-3">
             <h2 className="px-1 text-sm font-medium text-[var(--text-muted)]">Promociones</h2>
-            <div className="grid gap-3">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {promotions.slice(0, 3).map((promotion) => (
                 <article key={promotion.id} className="rounded-[20px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
                   <div className="flex items-start justify-between gap-3">
@@ -181,8 +216,8 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
 
         {step === "menu" ? (
           <>
-            <CategoryTabs categories={categories} accentColor={client.primary_color} />
-            {hasProducts ? categories.map((category) => <CategorySection key={category.id} category={category} accentColor={client.primary_color} onAdd={addItem} />) : <EmptyMenuState client={client} />}
+            <CategoryTabs categories={visibleCategories} accentColor={client.primary_color} />
+            {hasProducts ? visibleCategories.map((category) => <CategorySection key={category.id} category={category} accentColor={client.primary_color} onAdd={addItem} />) : <EmptyMenuState client={client} />}
           </>
         ) : null}
 
@@ -364,10 +399,51 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
             ) : null}
           </section>
         ) : null}
+        </div>
+
+        <aside className="sticky top-6 hidden rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-soft lg:grid lg:gap-4">
+          <div>
+            <p className="text-sm text-[var(--text-muted)]">Tu pedido</p>
+            <h2 className="mt-1 text-xl font-medium">{itemCount ? `${itemCount} producto${itemCount === 1 ? "" : "s"}` : "Listo para ordenar"}</h2>
+          </div>
+
+          {cart.length > 0 ? (
+            <div className="grid gap-2 rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-3">
+              {cart.slice(0, 4).map((item) => (
+                <div key={item.menuItemId} className="flex items-start justify-between gap-3 text-sm">
+                  <span className="min-w-0">
+                    <span className="font-medium">{item.quantity} x </span>
+                    <span>{item.name}</span>
+                  </span>
+                  <span className="shrink-0 font-medium">{formatPrice(item.price * item.quantity)}</span>
+                </div>
+              ))}
+              {cart.length > 4 ? <p className="text-xs text-[var(--text-muted)]">+ {cart.length - 4} productos mas</p> : null}
+              <div className="mt-2 flex items-center justify-between border-t border-[var(--line)] pt-3">
+                <span className="text-sm text-[var(--text-muted)]">Total</span>
+                <span className="text-lg font-medium">{formatPrice(total)}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-4 text-sm leading-5 text-[var(--text-muted)]">Agrega platos desde la carta o consulta directamente por WhatsApp.</div>
+          )}
+
+          {cart.length > 0 ? (
+            <Button type="button" onClick={() => setStep("checkout")} className="w-full">
+              Ver pedido
+            </Button>
+          ) : null}
+          <a className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#25D366] px-4 text-sm font-medium text-white" href={buildWhatsappUrl(client.whatsapp_number, "Hola, quiero hacer un pedido")} target="_blank" rel="noreferrer">
+            Consultar por WhatsApp
+          </a>
+          <a href={`/reservar/${client.slug}`} className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--surface-muted)] px-4 text-sm font-medium text-[var(--text)]">
+            Reservar mesa
+          </a>
+        </aside>
       </div>
 
       {step === "menu" && cart.length > 0 ? (
-        <div className="fixed inset-x-0 bottom-0 z-40 flex justify-center border-t border-[var(--line)] bg-[var(--surface)]/94 px-3 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl">
+        <div className="fixed inset-x-0 bottom-0 z-40 flex justify-center border-t border-[var(--line)] bg-[var(--surface)]/94 px-3 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl lg:hidden">
           <div className="flex w-full max-w-[480px] items-center gap-3">
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{itemCount} producto{itemCount === 1 ? "" : "s"} en tu pedido</p>
@@ -379,7 +455,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
           </div>
         </div>
       ) : step === "menu" ? (
-        <div className="fixed inset-x-0 bottom-0 z-40 flex justify-center border-t border-[var(--line)] bg-[var(--surface)]/94 px-3 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl">
+        <div className="fixed inset-x-0 bottom-0 z-40 flex justify-center border-t border-[var(--line)] bg-[var(--surface)]/94 px-3 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl lg:hidden">
           <a className="flex min-h-12 w-full max-w-[480px] items-center justify-center rounded-full bg-[#25D366] px-4 text-sm font-medium text-white" href={buildWhatsappUrl(client.whatsapp_number, "Hola, quiero hacer un pedido")} target="_blank" rel="noreferrer">
             Consultar por WhatsApp
           </a>

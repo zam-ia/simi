@@ -20,6 +20,7 @@ export default async function EditClientPage({ params, searchParams }: { params:
   const [{ client, categories, categoriesWithItems }, tables] = await Promise.all([getAdminClientMenu(params.id), getAdminClientTables(params.id)]);
   const action = updateClientAction.bind(null, client.id);
   const publicUrl = getPublicMenuUrl(client.slug);
+  const promoItems = categoriesWithItems.flatMap((category) => category.items).map((item) => ({ id: item.id, name: item.name, price: item.price }));
 
   return (
     <div className="grid gap-6">
@@ -37,7 +38,7 @@ export default async function EditClientPage({ params, searchParams }: { params:
         </div>
       </div>
 
-      <ClientForm client={client} action={action} error={searchParams.error} />
+      <ClientForm client={client} action={action} error={searchParams.error} promoItems={promoItems} />
       <MenuPreview url={publicUrl} />
       <CategoryManager clientId={client.id} categories={categories} />
       <TableManager client={client} tables={tables} />

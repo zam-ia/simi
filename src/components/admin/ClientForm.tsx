@@ -2,15 +2,17 @@ import { BrandColorPicker } from "@/components/admin/BrandColorPicker";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { Button, LinkButton } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
-import type { Client } from "@/types/menu";
+import { formatPrice } from "@/lib/utils";
+import type { Client, MenuItem } from "@/types/menu";
 
 type ClientFormProps = {
   client?: Client;
   action: (formData: FormData) => void;
   error?: string;
+  promoItems?: Pick<MenuItem, "id" | "name" | "price">[];
 };
 
-export function ClientForm({ client, action, error }: ClientFormProps) {
+export function ClientForm({ client, action, error, promoItems = [] }: ClientFormProps) {
   const storageBase = client ? `clients/${client.id}` : "clients/pending";
   const hasSecondaryColor = Boolean(client?.secondary_color);
 
@@ -59,6 +61,14 @@ export function ClientForm({ client, action, error }: ClientFormProps) {
             hint="Ideal: PNG nítido y cuadrado. Tamaño recomendado: 800 x 800 px para que se escanee bien. Máximo 2 MB."
           />
         </div>
+        <ImageUploader
+          name="hero_banner_image_url"
+          label="Portada del negocio"
+          defaultValue={client?.hero_banner_image_url}
+          storagePath={`${storageBase}/hero`}
+          preview="wide"
+          hint="Imagen para la parte superior del menu, estilo portada de app. Ideal: comida o ambiente del negocio, horizontal 1400 x 700 px. Maximo 2 MB."
+        />
       </section>
 
       <section className="grid gap-4 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
@@ -74,6 +84,18 @@ export function ClientForm({ client, action, error }: ClientFormProps) {
           <Input label="Título del banner" name="promo_banner_title" defaultValue={client?.promo_banner_title || ""} placeholder="Combo familiar de la semana" />
           <Input label="Texto corto" name="promo_banner_description" defaultValue={client?.promo_banner_description || ""} placeholder="Pollo entero + papas + gaseosa" />
         </div>
+        <label className="grid gap-2 text-sm">
+          <span className="font-medium text-[var(--text)]">Producto para el boton "Lo quiero"</span>
+          <select className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" name="promo_banner_item_id" defaultValue={client?.promo_banner_item_id || ""}>
+            <option value="">Solo llevar a la carta</option>
+            {promoItems.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name} - {formatPrice(item.price)}
+              </option>
+            ))}
+          </select>
+          <span className="text-xs leading-5 text-[var(--text-muted)]">Si eliges un producto, el boton del banner lo agrega directo al pedido.</span>
+        </label>
         <ImageUploader
           name="promo_banner_image_url"
           label="Imagen del banner"

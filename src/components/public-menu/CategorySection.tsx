@@ -18,7 +18,7 @@ export function CategorySection({ category, accentColor, onAdd }: CategorySectio
       {category.items.length === 0 ? (
         <div className="rounded-[20px] border border-dashed border-[var(--line)] bg-[var(--surface)] p-5 text-sm text-[var(--text-muted)]">Esta categoría aún no tiene productos disponibles.</div>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
           {category.items.map((item) => (
             <MenuItemCard key={item.id} item={item} accentColor={accentColor} onAdd={onAdd} />
           ))}
