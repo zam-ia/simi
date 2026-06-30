@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
-import { signOutAction } from "@/lib/actions";
 import { AdminRealtimeAlerts } from "@/components/admin/AdminRealtimeAlerts";
 import { Button, LinkButton } from "@/components/shared/Button";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
+import { signOutAction } from "@/lib/actions";
 import { cn } from "@/lib/utils";
 
 export type AdminShellItem = {
@@ -60,11 +60,11 @@ export function AdminShell({ children, title, subtitle, userEmail, items, primar
           <button
             type="button"
             onClick={() => setIsCollapsed((current) => !current)}
-            className="focus-ring hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface-muted)] text-[var(--text)] transition-transform duration-200 ease-out lg:inline-flex"
+            className="focus-ring hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface-muted)] text-[var(--text)] transition-all duration-200 ease-out hover:bg-[var(--surface)] hover:shadow-panel lg:inline-flex"
             aria-label={isCollapsed ? "Desplegar menu" : "Contraer menu"}
             title={isCollapsed ? "Desplegar menu" : "Contraer menu"}
           >
-            <ChevronIcon className={cn("h-4 w-4 transition-transform duration-300 ease-out", isCollapsed ? "rotate-180" : "")} />
+            <SidebarToggleIcon collapsed={isCollapsed} className="h-5 w-5" />
           </button>
         </div>
 
@@ -93,21 +93,27 @@ export function AdminShell({ children, title, subtitle, userEmail, items, primar
         </nav>
 
         <div className="mt-auto grid gap-3 border-t border-[var(--line)] px-2 pt-4">
-          <div className={cn("grid gap-1", isCollapsed ? "lg:hidden" : "")}>
-            <span className="truncate text-xs text-[var(--text-muted)]">{userEmail}</span>
-            {subtitle ? <span className="truncate text-xs font-medium text-[var(--text)]">{subtitle}</span> : null}
+          <div className={cn("flex items-center gap-3 rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-2", isCollapsed ? "lg:justify-center" : "")}>
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--surface)] text-sm font-medium text-[var(--text)] shadow-panel">{userEmail.slice(0, 1).toUpperCase()}</span>
+            <div className={cn("min-w-0 flex-1", isCollapsed ? "lg:hidden" : "")}>
+              <span className="block truncate text-xs text-[var(--text-muted)]">{userEmail}</span>
+              {subtitle ? <span className="block truncate text-xs font-medium text-[var(--text)]">{subtitle}</span> : null}
+            </div>
+            <form action={signOutAction} className={cn(isCollapsed ? "lg:hidden" : "")}>
+              <button type="submit" className="focus-ring grid h-9 w-9 place-items-center rounded-full text-[var(--text-muted)] transition-colors duration-200 ease-out hover:bg-[var(--surface)] hover:text-[var(--text)]" title="Cerrar sesion" aria-label="Cerrar sesion">
+                <LogoutIcon className="h-[18px] w-[18px]" />
+              </button>
+            </form>
           </div>
           <div className={cn("grid gap-2", isCollapsed ? "lg:place-items-center" : "")}>
-            <ThemeToggle compact={isCollapsed} />
             {primaryAction ? (
               <LinkButton href={primaryAction.href} className={cn("w-full", isCollapsed ? "lg:hidden" : "")}>
                 {primaryAction.label}
               </LinkButton>
             ) : null}
-            <form action={signOutAction} className="w-full">
-              <Button type="submit" variant="secondary" className={cn("w-full", isCollapsed ? "lg:h-10 lg:w-10 lg:px-0" : "")} title="Salir">
-                <span className={cn(isCollapsed ? "lg:hidden" : "")}>Salir</span>
-                <span className={cn("hidden text-base", isCollapsed ? "lg:inline" : "")}>↗</span>
+            <form action={signOutAction} className={cn("w-full", isCollapsed ? "hidden lg:block" : "hidden")}>
+              <Button type="submit" variant="secondary" className="lg:h-10 lg:w-10 lg:px-0" title="Cerrar sesion" aria-label="Cerrar sesion">
+                <LogoutIcon className="h-[18px] w-[18px]" />
               </Button>
             </form>
           </div>
@@ -230,10 +236,21 @@ function AdminShellIcon({ name, className }: { name: AdminShellIconName; classNa
   );
 }
 
-function ChevronIcon({ className }: { className?: string }) {
+function SidebarToggleIcon({ collapsed, className }: { collapsed: boolean; className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-      <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+      <path className="transition-transform duration-200 ease-out" style={{ transform: collapsed ? "translateX(3px)" : "translateX(-3px)", transformOrigin: "center" }} d={collapsed ? "M15 9l3 3-3 3" : "M9 9l-3 3 3 3"} stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function LogoutIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M10 6H6.5A2.5 2.5 0 0 0 4 8.5v7A2.5 2.5 0 0 0 6.5 18H10" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M14 8l4 4-4 4" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M18 12H9" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
     </svg>
   );
 }

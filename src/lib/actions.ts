@@ -8,24 +8,9 @@ import { businessRoles, configurableModules, normalizeBusinessRole, resolveModul
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { normalizeWhatsapp } from "@/lib/utils";
 import { validateCategoryInput, validateClientInput, validateMenuItemInput } from "@/lib/validations";
-import type { ClientInput } from "@/lib/validations";
 
 function encodedError(message: string) {
   return `?error=${encodeURIComponent(message)}`;
-}
-
-function withoutVisualSettings(data: ClientInput) {
-  const {
-    notification_whatsapp_number: _notificationWhatsapp,
-    secondary_color: _secondaryColor,
-    promo_banner_title: _promoTitle,
-    promo_banner_description: _promoDescription,
-    promo_banner_image_url: _promoImage,
-    promo_banner_is_active: _promoActive,
-    ...baseData
-  } = data;
-
-  return baseData;
 }
 
 function isMissingVisualSettingsError(error: unknown) {
@@ -33,6 +18,10 @@ function isMissingVisualSettingsError(error: unknown) {
   const code = "code" in error ? String(error.code) : "";
   const message = "message" in error ? String(error.message) : "";
   return code === "PGRST204" || message.includes("secondary_color") || message.includes("promo_banner") || message.includes("notification_whatsapp_number");
+}
+
+function missingVisualSettingsMessage() {
+  return "Supabase todavia no reconoce los campos visuales del cliente. Aplica la migracion 010 y vuelve a guardar.";
 }
 
 async function revalidateClientSurfaces(supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"], clientId: string, knownSlug?: string | null) {
@@ -61,12 +50,8 @@ export async function createClientAction(formData: FormData) {
   const { data: existing } = await supabase.from("clients").select("id").eq("slug", validation.data.slug).maybeSingle();
   if (existing) redirect(`/admin/clients/new${encodedError("Este slug ya está en uso.")}`);
 
-  let { data, error } = await supabase.from("clients").insert(validation.data).select("id").single();
-  if (error && isMissingVisualSettingsError(error)) {
-    const fallback = await supabase.from("clients").insert(withoutVisualSettings(validation.data)).select("id").single();
-    data = fallback.data;
-    error = fallback.error;
-  }
+  const { data, error } = await supabase.from("clients").insert(validation.data).select("id").single();
+  if (error && isMissingVisualSettingsError(error)) redirect(`/admin/clients/new${encodedError(missingVisualSettingsMessage())}`);
 
   if (error || !data) redirect(`/admin/clients/new${encodedError("No se pudo crear el cliente.")}`);
 
@@ -86,11 +71,8 @@ export async function updateClientAction(clientId: string, formData: FormData) {
   if (existing) redirect(`/admin/clients/${clientId}${encodedError("Este slug ya está en uso.")}`);
 
   const { data: currentClient } = await supabase.from("clients").select("slug").eq("id", clientId).maybeSingle();
-  let { error } = await supabase.from("clients").update(validation.data).eq("id", clientId);
-  if (error && isMissingVisualSettingsError(error)) {
-    const fallback = await supabase.from("clients").update(withoutVisualSettings(validation.data)).eq("id", clientId);
-    error = fallback.error;
-  }
+  const { error } = await supabase.from("clients").update(validation.data).eq("id", clientId);
+  if (error && isMissingVisualSettingsError(error)) redirect(`/admin/clients/${clientId}${encodedError(missingVisualSettingsMessage())}`);
 
   if (error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo guardar la información.")}`);
 
