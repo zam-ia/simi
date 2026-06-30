@@ -1,3 +1,4 @@
+import { BrandColorPicker } from "@/components/admin/BrandColorPicker";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { Button, LinkButton } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
@@ -8,12 +9,6 @@ type ClientFormProps = {
   action: (formData: FormData) => void;
   error?: string;
 };
-
-const suggestedColors = [
-  { name: "Rojo pollería", value: "#D71920" },
-  { name: "Amarillo promo", value: "#F4C430" },
-  { name: "Negro premium", value: "#111111" }
-];
 
 export function ClientForm({ client, action, error }: ClientFormProps) {
   const storageBase = client ? `clients/${client.id}` : "clients/pending";
@@ -47,25 +42,8 @@ export function ClientForm({ client, action, error }: ClientFormProps) {
           <h2 className="text-lg font-medium">Identidad visual</h2>
           <p className="mt-1 text-sm text-[var(--text-muted)]">Puedes usar uno o dos colores del negocio. En pollerías suele funcionar rojo, amarillo y negro.</p>
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Input label="Color principal" name="primary_color" type="color" defaultValue={client?.primary_color || "#D71920"} />
-          <label className="grid gap-2 text-sm">
-            <span className="font-medium text-[var(--text)]">Segundo color opcional</span>
-            <div className="flex items-center gap-3">
-              <input type="checkbox" name="use_secondary_color" defaultChecked={hasSecondaryColor} />
-              <input className="focus-ring h-11 flex-1 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-2" name="secondary_color" type="color" defaultValue={client?.secondary_color || "#F4C430"} />
-            </div>
-          </label>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {suggestedColors.map((color) => (
-            <span key={color.value} className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface-muted)] px-3 py-2 text-xs text-[var(--text-muted)]">
-              <span className="h-4 w-4 rounded-full border border-black/10" style={{ backgroundColor: color.value }} />
-              {color.name}
-            </span>
-          ))}
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
+        <BrandColorPicker initialPrimary={client?.primary_color || "#C62828"} initialSecondary={client?.secondary_color || "#FFC107"} initialUseSecondary={hasSecondaryColor} />
+        <div className="grid min-w-0 gap-4 xl:grid-cols-2">
           <ImageUploader
             name="logo_url"
             label="Logo del negocio"
@@ -89,7 +67,7 @@ export function ClientForm({ client, action, error }: ClientFormProps) {
           <p className="mt-1 text-sm text-[var(--text-muted)]">Opcional. Aparece arriba de las categorías en la carta pública.</p>
         </div>
         <label className="flex items-center gap-3 rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--surface-muted)] p-3 text-sm">
-          <input type="checkbox" name="promo_banner_is_active" defaultChecked={Boolean(client?.promo_banner_is_active)} />
+          <input type="checkbox" name="promo_banner_is_active" defaultChecked={Boolean(client?.promo_banner_is_active || client?.promo_banner_image_url || client?.promo_banner_title || client?.promo_banner_description)} />
           <span>Mostrar banner promocional</span>
         </label>
         <div className="grid gap-4 md:grid-cols-2">
@@ -102,6 +80,7 @@ export function ClientForm({ client, action, error }: ClientFormProps) {
           defaultValue={client?.promo_banner_image_url}
           storagePath={`${storageBase}/promo`}
           preview="wide"
+          activateCheckboxName="promo_banner_is_active"
           hint="Ideal para banner superior del menú: JPG o WebP horizontal. Tamaño recomendado: 1200 x 480 px. En móvil se recorta al centro. Máximo 2 MB."
         />
       </section>

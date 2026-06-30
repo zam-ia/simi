@@ -35,6 +35,22 @@ function isMissingVisualSettingsError(error: unknown) {
   return code === "PGRST204" || message.includes("secondary_color") || message.includes("promo_banner") || message.includes("notification_whatsapp_number");
 }
 
+async function revalidateClientSurfaces(supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"], clientId: string, knownSlug?: string | null) {
+  let slug = knownSlug || null;
+
+  if (!slug) {
+    const { data } = await supabase.from("clients").select("slug").eq("id", clientId).maybeSingle();
+    slug = data?.slug || null;
+  }
+
+  revalidatePath("/admin");
+  revalidatePath(`/admin/clients/${clientId}`);
+  if (slug) {
+    revalidatePath(`/menu/${slug}`);
+    revalidatePath(`/reservar/${slug}`);
+  }
+}
+
 export async function createClientAction(formData: FormData) {
   const context = await requireAdmin();
   requireSuperAdmin(context);
@@ -69,6 +85,7 @@ export async function updateClientAction(clientId: string, formData: FormData) {
   const { data: existing } = await supabase.from("clients").select("id").eq("slug", validation.data.slug).neq("id", clientId).maybeSingle();
   if (existing) redirect(`/admin/clients/${clientId}${encodedError("Este slug ya está en uso.")}`);
 
+  const { data: currentClient } = await supabase.from("clients").select("slug").eq("id", clientId).maybeSingle();
   let { error } = await supabase.from("clients").update(validation.data).eq("id", clientId);
   if (error && isMissingVisualSettingsError(error)) {
     const fallback = await supabase.from("clients").update(withoutVisualSettings(validation.data)).eq("id", clientId);
@@ -77,9 +94,11 @@ export async function updateClientAction(clientId: string, formData: FormData) {
 
   if (error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo guardar la información.")}`);
 
-  revalidatePath("/admin");
-  revalidatePath(`/admin/clients/${clientId}`);
-  revalidatePath(`/menu/${validation.data.slug}`);
+  await revalidateClientSurfaces(supabase, clientId, validation.data.slug);
+  if (currentClient?.slug && currentClient.slug !== validation.data.slug) {
+    revalidatePath(`/menu/${currentClient.slug}`);
+    revalidatePath(`/reservar/${currentClient.slug}`);
+  }
   redirect(`/admin/clients/${clientId}?saved=client`);
 }
 
@@ -105,7 +124,7 @@ export async function createCategoryAction(clientId: string, formData: FormData)
   const { error } = await supabase.from("menu_categories").insert(validation.data);
   if (error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo guardar la categoría.")}`);
 
-  revalidatePath(`/admin/clients/${clientId}`);
+  await revalidateClientSurfaces(supabase, clientId);
   redirect(`/admin/clients/${clientId}?saved=category`);
 }
 
@@ -121,7 +140,7 @@ export async function updateCategoryAction(clientId: string, categoryId: string,
   const { error } = await supabase.from("menu_categories").update(validation.data).eq("id", categoryId).eq("client_id", clientId);
   if (error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo actualizar la categoría.")}`);
 
-  revalidatePath(`/admin/clients/${clientId}`);
+  await revalidateClientSurfaces(supabase, clientId);
   redirect(`/admin/clients/${clientId}?saved=category`);
 }
 
@@ -132,7 +151,7 @@ export async function deleteCategoryAction(clientId: string, categoryId: string)
   const { supabase } = context;
   const { error } = await supabase.from("menu_categories").delete().eq("id", categoryId).eq("client_id", clientId);
   if (error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo eliminar la categoría.")}`);
-  revalidatePath(`/admin/clients/${clientId}`);
+  await revalidateClientSurfaces(supabase, clientId);
   redirect(`/admin/clients/${clientId}?saved=category`);
 }
 
@@ -148,7 +167,7 @@ export async function createMenuItemAction(clientId: string, formData: FormData)
   const { error } = await supabase.from("menu_items").insert(validation.data);
   if (error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo guardar el producto.")}`);
 
-  revalidatePath(`/admin/clients/${clientId}`);
+  await revalidateClientSurfaces(supabase, clientId);
   redirect(`/admin/clients/${clientId}?saved=item`);
 }
 
@@ -164,7 +183,7 @@ export async function updateMenuItemAction(clientId: string, itemId: string, for
   const { error } = await supabase.from("menu_items").update(validation.data).eq("id", itemId).eq("client_id", clientId);
   if (error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo actualizar el producto.")}`);
 
-  revalidatePath(`/admin/clients/${clientId}`);
+  await revalidateClientSurfaces(supabase, clientId);
   redirect(`/admin/clients/${clientId}?saved=item`);
 }
 
@@ -175,7 +194,7 @@ export async function deleteMenuItemAction(clientId: string, itemId: string) {
   const { supabase } = context;
   const { error } = await supabase.from("menu_items").delete().eq("id", itemId).eq("client_id", clientId);
   if (error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo eliminar el producto.")}`);
-  revalidatePath(`/admin/clients/${clientId}`);
+  await revalidateClientSurfaces(supabase, clientId);
   redirect(`/admin/clients/${clientId}?saved=item`);
 }
 
@@ -201,7 +220,7 @@ export async function createTableAction(clientId: string, formData: FormData) {
   });
 
   if (error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo crear la mesa. Revisa si ya existe.")}`);
-  revalidatePath(`/admin/clients/${clientId}`);
+  await revalidateClientSurfaces(supabase, clientId);
   redirect(`/admin/clients/${clientId}?saved=table`);
 }
 
@@ -230,7 +249,7 @@ export async function updateTableAction(clientId: string, tableId: string, formD
     .eq("client_id", clientId);
 
   if (error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo actualizar la mesa.")}`);
-  revalidatePath(`/admin/clients/${clientId}`);
+  await revalidateClientSurfaces(supabase, clientId);
   redirect(`/admin/clients/${clientId}?saved=table`);
 }
 
@@ -241,7 +260,7 @@ export async function deleteTableAction(clientId: string, tableId: string) {
   const { supabase } = context;
   const { error } = await supabase.from("client_tables").delete().eq("id", tableId).eq("client_id", clientId);
   if (error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo eliminar la mesa.")}`);
-  revalidatePath(`/admin/clients/${clientId}`);
+  await revalidateClientSurfaces(supabase, clientId);
   redirect(`/admin/clients/${clientId}?saved=table`);
 }
 
@@ -470,6 +489,7 @@ export async function createDeliveryZoneAction(formData: FormData) {
 
   if (error) redirect(`/admin/delivery${encodedError("No se pudo crear la zona. Revisa que la migracion 009 este aplicada.")}`);
   revalidatePath("/admin/delivery");
+  await revalidateClientSurfaces(context.supabase, clientId);
   redirect("/admin/delivery?saved=zone");
 }
 
@@ -498,6 +518,7 @@ export async function updateDeliveryZoneAction(zoneId: string, formData: FormDat
 
   if (error) redirect(`/admin/delivery${encodedError("No se pudo actualizar la zona.")}`);
   revalidatePath("/admin/delivery");
+  await revalidateClientSurfaces(context.supabase, clientId);
   redirect("/admin/delivery?saved=zone");
 }
 
@@ -510,6 +531,7 @@ export async function deleteDeliveryZoneAction(zoneId: string, formData: FormDat
   const { error } = await context.supabase.from("client_delivery_zones").delete().eq("id", zoneId).eq("client_id", clientId);
   if (error) redirect(`/admin/delivery${encodedError("No se pudo eliminar la zona.")}`);
   revalidatePath("/admin/delivery");
+  await revalidateClientSurfaces(context.supabase, clientId);
   redirect("/admin/delivery?saved=zone");
 }
 
@@ -536,6 +558,7 @@ export async function createPromotionAction(formData: FormData) {
 
   if (error) redirect(`/admin/promotions${encodedError("No se pudo crear la promocion. Revisa que la migracion 009 este aplicada.")}`);
   revalidatePath("/admin/promotions");
+  await revalidateClientSurfaces(context.supabase, clientId);
   redirect("/admin/promotions?saved=promotion");
 }
 
@@ -562,6 +585,7 @@ export async function updatePromotionAction(promotionId: string, formData: FormD
 
   if (error) redirect(`/admin/promotions${encodedError("No se pudo actualizar la promocion.")}`);
   revalidatePath("/admin/promotions");
+  await revalidateClientSurfaces(context.supabase, clientId);
   redirect("/admin/promotions?saved=promotion");
 }
 
@@ -574,6 +598,7 @@ export async function deletePromotionAction(promotionId: string, formData: FormD
   const { error } = await context.supabase.from("promotions").delete().eq("id", promotionId).eq("client_id", clientId);
   if (error) redirect(`/admin/promotions${encodedError("No se pudo eliminar la promocion.")}`);
   revalidatePath("/admin/promotions");
+  await revalidateClientSurfaces(context.supabase, clientId);
   redirect("/admin/promotions?saved=promotion");
 }
 
@@ -599,6 +624,7 @@ export async function createPaymentMethodAction(formData: FormData) {
 
   if (error) redirect(`/admin/payments${encodedError("No se pudo crear el metodo de pago. Revisa que la migracion 009 este aplicada.")}`);
   revalidatePath("/admin/payments");
+  await revalidateClientSurfaces(context.supabase, clientId);
   redirect("/admin/payments?saved=payment");
 }
 
@@ -624,6 +650,7 @@ export async function updatePaymentMethodAction(methodId: string, formData: Form
 
   if (error) redirect(`/admin/payments${encodedError("No se pudo actualizar el metodo de pago.")}`);
   revalidatePath("/admin/payments");
+  await revalidateClientSurfaces(context.supabase, clientId);
   redirect("/admin/payments?saved=payment");
 }
 
@@ -636,6 +663,7 @@ export async function deletePaymentMethodAction(methodId: string, formData: Form
   const { error } = await context.supabase.from("client_payment_methods").delete().eq("id", methodId).eq("client_id", clientId);
   if (error) redirect(`/admin/payments${encodedError("No se pudo eliminar el metodo de pago.")}`);
   revalidatePath("/admin/payments");
+  await revalidateClientSurfaces(context.supabase, clientId);
   redirect("/admin/payments?saved=payment");
 }
 

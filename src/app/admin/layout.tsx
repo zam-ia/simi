@@ -9,16 +9,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const { user, role, businessRole, client } = context;
   const isSuperAdmin = role === "super_admin";
   const items: AdminShellItem[] = [
-    { label: isSuperAdmin ? "Clientes" : "Inicio", href: "/admin", icon: "⌂", isExact: true },
-    ...(hasModuleAccess(context, "menu") && client ? [{ label: "Carta", href: `/admin/clients/${client.id}`, icon: "□" }] : []),
-    ...(hasModuleAccess(context, "kitchen") ? [{ label: "Cocina", href: "/admin/kitchen", icon: "◌" }] : []),
-    ...(hasModuleAccess(context, "orders") ? [{ label: "Pedidos", href: "/admin/orders", icon: "◍" }] : []),
-    ...(hasModuleAccess(context, "delivery") ? [{ label: "Delivery", href: "/admin/delivery", icon: "⌁" }] : []),
-    ...(hasModuleAccess(context, "promotions") ? [{ label: "Promos", href: "/admin/promotions", icon: "%" }] : []),
-    ...(hasModuleAccess(context, "reservations") ? [{ label: "Reservas", href: "/admin/reservations", icon: "◇" }] : []),
-    ...(hasModuleAccess(context, "payments") ? [{ label: "Pagos", href: "/admin/payments", icon: "S/" }] : []),
-    ...(hasModuleAccess(context, "settings") ? [{ label: "Configuracion", href: "/admin/settings", icon: "⚙" }] : []),
-    ...(hasModuleAccess(context, "users") ? [{ label: "Usuarios", href: "/admin/users", icon: "◎" }] : [])
+    { label: isSuperAdmin ? "Clientes" : "Inicio", href: "/admin", icon: "home", isExact: true },
+    ...(hasModuleAccess(context, "menu") && client ? [{ label: "Carta", href: `/admin/clients/${client.id}`, icon: "menu" as const }] : []),
+    ...(hasModuleAccess(context, "kitchen") ? [{ label: "Cocina", href: "/admin/kitchen", icon: "kitchen" as const }] : []),
+    ...(hasModuleAccess(context, "orders") ? [{ label: "Pedidos", href: "/admin/orders", icon: "orders" as const }] : []),
+    ...(hasModuleAccess(context, "delivery") ? [{ label: "Delivery", href: "/admin/delivery", icon: "delivery" as const }] : []),
+    ...(hasModuleAccess(context, "promotions") ? [{ label: "Promos", href: "/admin/promotions", icon: "promotions" as const }] : []),
+    ...(hasModuleAccess(context, "reservations") ? [{ label: "Reservas", href: "/admin/reservations", icon: "reservations" as const }] : []),
+    ...(hasModuleAccess(context, "payments") ? [{ label: "Pagos", href: "/admin/payments", icon: "payments" as const }] : []),
+    ...(hasModuleAccess(context, "settings") ? [{ label: "Configuracion", href: "/admin/settings", icon: "settings" as const }] : []),
+    ...(hasModuleAccess(context, "users") ? [{ label: "Usuarios", href: "/admin/users", icon: "users" as const }] : [])
   ];
 
   return (
@@ -27,6 +27,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       subtitle={!isSuperAdmin && businessRole ? businessRoleLabels[businessRole] : "SIMI"}
       userEmail={user.email || ""}
       items={items}
+      alertClientId={isSuperAdmin ? undefined : client?.id}
       primaryAction={isSuperAdmin ? { label: "Nuevo cliente", href: "/admin/clients/new" } : undefined}
     >
       {children}

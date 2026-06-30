@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
 import { signOutAction } from "@/lib/actions";
+import { AdminRealtimeAlerts } from "@/components/admin/AdminRealtimeAlerts";
 import { Button, LinkButton } from "@/components/shared/Button";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { cn } from "@/lib/utils";
@@ -11,9 +12,11 @@ import { cn } from "@/lib/utils";
 export type AdminShellItem = {
   label: string;
   href: string;
-  icon: string;
+  icon: AdminShellIconName;
   isExact?: boolean;
 };
+
+export type AdminShellIconName = "home" | "menu" | "kitchen" | "orders" | "delivery" | "promotions" | "reservations" | "payments" | "settings" | "users";
 
 type AdminShellProps = {
   children: ReactNode;
@@ -25,9 +28,10 @@ type AdminShellProps = {
     label: string;
     href: string;
   };
+  alertClientId?: string;
 };
 
-export function AdminShell({ children, title, subtitle, userEmail, items, primaryAction }: AdminShellProps) {
+export function AdminShell({ children, title, subtitle, userEmail, items, primaryAction, alertClientId }: AdminShellProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -35,6 +39,7 @@ export function AdminShell({ children, title, subtitle, userEmail, items, primar
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
+      <AdminRealtimeAlerts clientId={alertClientId} />
       {isMobileOpen ? <button type="button" aria-label="Cerrar menu" className="fixed inset-0 z-40 bg-black/28 backdrop-blur-sm lg:hidden" onClick={() => setIsMobileOpen(false)} /> : null}
 
       <aside
@@ -78,7 +83,9 @@ export function AdminShell({ children, title, subtitle, userEmail, items, primar
                 )}
                 title={item.label}
               >
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[12px] bg-black/[0.05] text-base dark:bg-white/[0.08]">{item.icon}</span>
+                <span className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-[12px] transition-colors duration-200 ease-out", active ? "bg-white/18 text-white" : "bg-black/[0.06] text-[var(--text)] dark:bg-white/[0.1]")}>
+                  <AdminShellIcon name={item.icon} className="h-[18px] w-[18px]" />
+                </span>
                 <span className={cn("truncate", isCollapsed ? "lg:hidden" : "")}>{item.label}</span>
               </Link>
             );
@@ -131,6 +138,96 @@ export function AdminShell({ children, title, subtitle, userEmail, items, primar
 function isActive(pathname: string, item: AdminShellItem) {
   if (item.isExact) return pathname === item.href;
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
+}
+
+function AdminShellIcon({ name, className }: { name: AdminShellIconName; className?: string }) {
+  const paths: Record<AdminShellIconName, ReactNode> = {
+    home: (
+      <>
+        <path d="M3 10.5 12 3l9 7.5" />
+        <path d="M5 9.5V21h14V9.5" />
+        <path d="M9.5 21v-6h5v6" />
+      </>
+    ),
+    menu: (
+      <>
+        <path d="M5 4.5h10.5A3.5 3.5 0 0 1 19 8v12.5H8.5A3.5 3.5 0 0 1 5 17V4.5Z" />
+        <path d="M8.5 8H15" />
+        <path d="M8.5 12H15" />
+        <path d="M8.5 16H13" />
+      </>
+    ),
+    kitchen: (
+      <>
+        <path d="M6 12h12v8H6z" />
+        <path d="M8 12V9a4 4 0 0 1 8 0v3" />
+        <path d="M9 16h6" />
+      </>
+    ),
+    orders: (
+      <>
+        <path d="M7 3.5h10v17l-2-1.2-2 1.2-2-1.2-2 1.2-2-1.2v-17Z" />
+        <path d="M10 8h5" />
+        <path d="M10 12h5" />
+        <path d="M10 16h3" />
+      </>
+    ),
+    delivery: (
+      <>
+        <path d="M4 7h10v9H4z" />
+        <path d="M14 10h3l3 3v3h-6" />
+        <path d="M7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+        <path d="M17 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+      </>
+    ),
+    promotions: (
+      <>
+        <path d="M20 12V7.5A3.5 3.5 0 0 0 16.5 4H12" />
+        <path d="M4 12v4.5A3.5 3.5 0 0 0 7.5 20H12" />
+        <path d="m8 8 8 8" />
+        <path d="M8.5 9.5h.01" />
+        <path d="M15.5 14.5h.01" />
+      </>
+    ),
+    reservations: (
+      <>
+        <path d="M7 4v3" />
+        <path d="M17 4v3" />
+        <path d="M5 6h14v14H5z" />
+        <path d="M5 10h14" />
+        <path d="m9 15 2 2 4-4" />
+      </>
+    ),
+    payments: (
+      <>
+        <path d="M4 7h16v10H4z" />
+        <path d="M4 10h16" />
+        <path d="M8 14h3" />
+      </>
+    ),
+    settings: (
+      <>
+        <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+        <path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.4 1a7.5 7.5 0 0 0-2-1.2L14 3h-4l-.5 2.7a7.5 7.5 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.4-1a7.5 7.5 0 0 0 2 1.2L10 21h4l.5-2.7a7.5 7.5 0 0 0 2-1.2l2.4 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2Z" />
+      </>
+    ),
+    users: (
+      <>
+        <path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+        <path d="M3.5 20a5.5 5.5 0 0 1 11 0" />
+        <path d="M17 10.5a2.7 2.7 0 1 0 0-5.4" />
+        <path d="M18 20a4.6 4.6 0 0 0-3-4.3" />
+      </>
+    )
+  };
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <g stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        {paths[name]}
+      </g>
+    </svg>
+  );
 }
 
 function ChevronIcon({ className }: { className?: string }) {

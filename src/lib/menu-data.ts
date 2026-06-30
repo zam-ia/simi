@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { unstable_noStore as noStore } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type {
   CategoryWithItems,
@@ -38,6 +39,7 @@ export async function getClientById(id: string) {
 }
 
 export async function getAdminClientMenu(clientId: string) {
+  noStore();
   const supabase = createSupabaseServerClient();
 
   const [{ data: client }, { data: categories }, { data: items }] = await Promise.all([
@@ -63,6 +65,7 @@ export async function getAdminClientMenu(clientId: string) {
 }
 
 export async function getPublicMenuBySlug(slug: string) {
+  noStore();
   const supabase = createSupabaseServerClient();
 
   const { data: client } = await supabase.from("clients").select("*").eq("slug", slug).eq("is_active", true).single();
@@ -95,12 +98,14 @@ export async function getPublicMenuBySlug(slug: string) {
 }
 
 export async function getAdminClientTables(clientId: string) {
+  noStore();
   const supabase = createSupabaseServerClient();
   const { data } = await supabase.from("client_tables").select("*").eq("client_id", clientId).order("table_number", { ascending: true });
   return (data || []) as ClientTable[];
 }
 
 export async function getAdminClientOrders(clientId?: string) {
+  noStore();
   const supabase = createSupabaseServerClient();
   let query = supabase.from("orders").select("*").order("created_at", { ascending: false });
 
@@ -136,6 +141,7 @@ export async function getAdminClientOrders(clientId?: string) {
 }
 
 export async function getAdminGrowthModules(clientId?: string) {
+  noStore();
   const supabase = createSupabaseServerClient();
   const zoneQuery = clientId ? supabase.from("client_delivery_zones").select("*").eq("client_id", clientId).order("display_order", { ascending: true }) : supabase.from("client_delivery_zones").select("*").order("created_at", { ascending: false });
   const promotionQuery = clientId ? supabase.from("promotions").select("*").eq("client_id", clientId).order("display_order", { ascending: true }) : supabase.from("promotions").select("*").order("created_at", { ascending: false });
