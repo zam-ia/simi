@@ -41,7 +41,10 @@ supabase/migrations/005_orders_tables_payment_proofs.sql
 supabase/migrations/006_business_admin_access.sql
 supabase/migrations/007_realtime_kitchen_delivery.sql
 supabase/migrations/008_client_users_roles_permissions.sql
+supabase/migrations/009_growth_modules.sql
 ```
+
+La migracion `009` activa los modulos de crecimiento: zonas de delivery, promociones, reservas, metodos de pago y estructura inicial para combos/modificadores.
 
 ## Usuarios de prueba
 

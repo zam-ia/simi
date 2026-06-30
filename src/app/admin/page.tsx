@@ -32,6 +32,7 @@ export default async function AdminPage() {
             <div className="flex flex-wrap gap-3">
               {hasModuleAccess(context, "menu") ? <LinkButton href={`/admin/clients/${client.id}`} variant="secondary">Editar carta</LinkButton> : null}
               {hasModuleAccess(context, "kitchen") ? <LinkButton href="/admin/kitchen" variant="secondary">Cocina</LinkButton> : null}
+              {hasModuleAccess(context, "reservations") ? <LinkButton href="/admin/reservations" variant="secondary">Reservas</LinkButton> : null}
               {hasModuleAccess(context, "orders") ? <LinkButton href="/admin/orders">Pedidos</LinkButton> : null}
             </div>
           </div>
@@ -62,6 +63,10 @@ export default async function AdminPage() {
             {hasModuleAccess(context, "menu") ? <LinkButton href={`/admin/clients/${client.id}`} variant="secondary" className="justify-start rounded-[var(--radius-card)] px-4 py-4">Carta y productos</LinkButton> : null}
             {hasModuleAccess(context, "kitchen") ? <LinkButton href="/admin/kitchen" variant="secondary" className="justify-start rounded-[var(--radius-card)] px-4 py-4">Cocina y reparto</LinkButton> : null}
             {hasModuleAccess(context, "orders") ? <LinkButton href="/admin/orders" variant="secondary" className="justify-start rounded-[var(--radius-card)] px-4 py-4">Pedidos y pagos</LinkButton> : null}
+            {hasModuleAccess(context, "delivery") ? <LinkButton href="/admin/delivery" variant="secondary" className="justify-start rounded-[var(--radius-card)] px-4 py-4">Zonas de delivery</LinkButton> : null}
+            {hasModuleAccess(context, "promotions") ? <LinkButton href="/admin/promotions" variant="secondary" className="justify-start rounded-[var(--radius-card)] px-4 py-4">Promociones</LinkButton> : null}
+            {hasModuleAccess(context, "reservations") ? <LinkButton href="/admin/reservations" variant="secondary" className="justify-start rounded-[var(--radius-card)] px-4 py-4">Reservas</LinkButton> : null}
+            {hasModuleAccess(context, "payments") ? <LinkButton href="/admin/payments" variant="secondary" className="justify-start rounded-[var(--radius-card)] px-4 py-4">Metodos de pago</LinkButton> : null}
             {hasModuleAccess(context, "settings") ? <LinkButton href="/admin/settings" variant="secondary" className="justify-start rounded-[var(--radius-card)] px-4 py-4">Configuracion</LinkButton> : null}
             {hasModuleAccess(context, "users") ? <LinkButton href="/admin/users" variant="secondary" className="justify-start rounded-[var(--radius-card)] px-4 py-4">Usuarios y roles</LinkButton> : null}
           </div>

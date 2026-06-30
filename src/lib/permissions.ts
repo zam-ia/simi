@@ -1,6 +1,6 @@
 import type { AdminContext } from "@/lib/auth";
 
-export type AdminModule = "dashboard" | "clients" | "menu" | "orders" | "kitchen" | "settings" | "users";
+export type AdminModule = "dashboard" | "clients" | "menu" | "orders" | "kitchen" | "delivery" | "promotions" | "reservations" | "payments" | "settings" | "users";
 
 export type BusinessRole = "business_owner" | "business_admin" | "cashier" | "kitchen" | "delivery" | "viewer";
 
@@ -31,6 +31,26 @@ export const adminModules: Record<AdminModule, { label: string; description: str
     label: "Cocina",
     description: "Preparacion, reparto y estados en vivo.",
     href: "/admin/kitchen"
+  },
+  delivery: {
+    label: "Delivery",
+    description: "Zonas, costos y tiempos de reparto.",
+    href: "/admin/delivery"
+  },
+  promotions: {
+    label: "Promociones",
+    description: "Ofertas, cupones y reglas comerciales.",
+    href: "/admin/promotions"
+  },
+  reservations: {
+    label: "Reservas",
+    description: "Solicitudes de reserva y estado de mesas.",
+    href: "/admin/reservations"
+  },
+  payments: {
+    label: "Pagos",
+    description: "Yape, Plin, efectivo y otros metodos manuales.",
+    href: "/admin/payments"
   },
   settings: {
     label: "Configuracion",
@@ -68,6 +88,10 @@ export const defaultRolePermissions: Record<BusinessRole, ModulePermissions> = {
     menu: true,
     orders: true,
     kitchen: true,
+    delivery: true,
+    promotions: true,
+    reservations: true,
+    payments: true,
     settings: true,
     users: true
   },
@@ -76,12 +100,18 @@ export const defaultRolePermissions: Record<BusinessRole, ModulePermissions> = {
     menu: true,
     orders: true,
     kitchen: true,
+    delivery: true,
+    promotions: true,
+    reservations: true,
+    payments: true,
     settings: true,
     users: true
   },
   cashier: {
     dashboard: true,
-    orders: true
+    orders: true,
+    payments: true,
+    reservations: true
   },
   kitchen: {
     dashboard: true,
@@ -89,17 +119,19 @@ export const defaultRolePermissions: Record<BusinessRole, ModulePermissions> = {
   },
   delivery: {
     dashboard: true,
-    kitchen: true
+    kitchen: true,
+    delivery: true
   },
   viewer: {
     dashboard: true,
-    orders: true
+    orders: true,
+    reservations: true
   }
 };
 
 export const businessRoles = Object.keys(businessRoleLabels) as BusinessRole[];
 
-export const configurableModules: AdminModule[] = ["dashboard", "menu", "orders", "kitchen", "settings", "users"];
+export const configurableModules: AdminModule[] = ["dashboard", "menu", "orders", "kitchen", "delivery", "promotions", "reservations", "payments", "settings", "users"];
 
 export function normalizeBusinessRole(value?: string | null): BusinessRole {
   return businessRoles.includes(value as BusinessRole) ? (value as BusinessRole) : "business_admin";
@@ -124,6 +156,10 @@ export function moduleFromPath(pathname: string): AdminModule {
   if (pathname.startsWith("/admin/clients")) return "menu";
   if (pathname.startsWith("/admin/orders")) return "orders";
   if (pathname.startsWith("/admin/kitchen")) return "kitchen";
+  if (pathname.startsWith("/admin/delivery")) return "delivery";
+  if (pathname.startsWith("/admin/promotions")) return "promotions";
+  if (pathname.startsWith("/admin/reservations")) return "reservations";
+  if (pathname.startsWith("/admin/payments")) return "payments";
   if (pathname.startsWith("/admin/settings")) return "settings";
   if (pathname.startsWith("/admin/users")) return "users";
   return "dashboard";

@@ -26,6 +26,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <LinkButton href="/admin" variant="secondary">Inicio</LinkButton>
             {hasModuleAccess(context, "kitchen") ? <LinkButton href="/admin/kitchen" variant="secondary">Cocina</LinkButton> : null}
             {hasModuleAccess(context, "orders") ? <LinkButton href="/admin/orders" variant="secondary">Pedidos</LinkButton> : null}
+            {hasModuleAccess(context, "delivery") ? <LinkButton href="/admin/delivery" variant="secondary">Delivery</LinkButton> : null}
+            {hasModuleAccess(context, "promotions") ? <LinkButton href="/admin/promotions" variant="secondary">Promos</LinkButton> : null}
+            {hasModuleAccess(context, "reservations") ? <LinkButton href="/admin/reservations" variant="secondary">Reservas</LinkButton> : null}
+            {hasModuleAccess(context, "payments") ? <LinkButton href="/admin/payments" variant="secondary">Pagos</LinkButton> : null}
             {hasModuleAccess(context, "users") ? <LinkButton href="/admin/users" variant="secondary">Usuarios</LinkButton> : null}
             {isSuperAdmin ? <LinkButton href="/admin/clients/new">Nuevo cliente</LinkButton> : hasModuleAccess(context, "settings") ? <LinkButton href="/admin/settings">Configuracion</LinkButton> : null}
             <form action={signOutAction}>

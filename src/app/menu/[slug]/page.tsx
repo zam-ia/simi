@@ -39,5 +39,15 @@ export default async function PublicMenuPage({ params, searchParams }: MenuPageP
   const menu = await getPublicMenuBySlug(params.slug);
   if (!menu) notFound();
 
-  return <PublicMenuExperience client={menu.client} categories={menu.categories} tables={menu.tables || []} initialTableNumber={searchParams?.mesa} />;
+  return (
+    <PublicMenuExperience
+      client={menu.client}
+      categories={menu.categories}
+      tables={menu.tables || []}
+      deliveryZones={menu.deliveryZones || []}
+      promotions={menu.promotions || []}
+      paymentMethods={menu.paymentMethods || []}
+      initialTableNumber={searchParams?.mesa}
+    />
+  );
 }

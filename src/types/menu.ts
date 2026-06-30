@@ -73,6 +73,81 @@ export type ClientTable = {
   updated_at: string;
 };
 
+export type ClientBusinessHour = {
+  id: string;
+  client_id: string;
+  day_of_week: number;
+  opens_at: string | null;
+  closes_at: string | null;
+  is_closed: boolean;
+  service_modes: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ClientDeliveryZone = {
+  id: string;
+  client_id: string;
+  name: string;
+  description: string | null;
+  delivery_fee: number;
+  minimum_order: number;
+  estimated_time: string | null;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Promotion = {
+  id: string;
+  client_id: string;
+  title: string;
+  description: string | null;
+  promo_type: "general" | "product" | "category" | "coupon" | "delivery" | "combo";
+  discount_type: "none" | "amount" | "percent" | "free_delivery";
+  discount_value: number;
+  coupon_code: string | null;
+  starts_at: string | null;
+  ends_at: string | null;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ReservationStatus = "pending" | "confirmed" | "cancelled" | "seated" | "completed";
+
+export type Reservation = {
+  id: string;
+  client_id: string;
+  table_id: string | null;
+  reservation_code: string;
+  customer_name: string;
+  customer_phone: string;
+  party_size: number;
+  reservation_date: string;
+  reservation_time: string;
+  notes: string | null;
+  status: ReservationStatus;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PaymentMethod = {
+  id: string;
+  client_id: string;
+  method_type: "yape" | "plin" | "cash" | "card_on_delivery" | "manual_transfer" | "gateway";
+  label: string;
+  phone_number: string | null;
+  qr_url: string | null;
+  instructions: string | null;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export type OrderType = "dine_in" | "pickup" | "delivery";
 export type OrderStatus =
   | "new"
@@ -100,8 +175,13 @@ export type CustomerOrder = {
   customer_phone: string | null;
   delivery_address: string | null;
   delivery_reference: string | null;
+  delivery_zone_id?: string | null;
+  delivery_zone_name?: string | null;
   pickup_time: string | null;
   notes: string | null;
+  cancellation_reason?: string | null;
+  promised_time?: string | null;
+  assigned_to?: string | null;
   courier_name?: string | null;
   courier_phone?: string | null;
   courier_latitude?: number | null;
@@ -153,6 +233,15 @@ export type OrderWithDetails = CustomerOrder & {
   items: CustomerOrderItem[];
   payment_proofs: PaymentProof[];
   status_events?: OrderStatusEvent[];
+};
+
+export type PublicMenuData = {
+  client: Client;
+  categories: CategoryWithItems[];
+  tables: ClientTable[];
+  deliveryZones: ClientDeliveryZone[];
+  promotions: Promotion[];
+  paymentMethods: PaymentMethod[];
 };
 
 export type ClientFormValues = {

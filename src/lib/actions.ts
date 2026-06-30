@@ -445,6 +445,213 @@ export async function deleteClientUserAction(userId: string, formData: FormData)
   redirect("/admin/users?saved=user");
 }
 
+export async function createDeliveryZoneAction(formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "delivery");
+  const clientId = getClientIdForUserAction(context, formData);
+  requireClientAccess(context, clientId);
+
+  const name = String(formData.get("name") || "").trim();
+  const deliveryFee = Number(formData.get("delivery_fee") || 0);
+  const minimumOrder = Number(formData.get("minimum_order") || 0);
+
+  if (!name) redirect(`/admin/delivery${encodedError("Ingresa el nombre de la zona.")}`);
+
+  const { error } = await context.supabase.from("client_delivery_zones").insert({
+    client_id: clientId,
+    name,
+    description: String(formData.get("description") || "").trim() || null,
+    delivery_fee: Number.isFinite(deliveryFee) ? Math.max(0, deliveryFee) : 0,
+    minimum_order: Number.isFinite(minimumOrder) ? Math.max(0, minimumOrder) : 0,
+    estimated_time: String(formData.get("estimated_time") || "").trim() || null,
+    display_order: Number(formData.get("display_order") || 0),
+    is_active: formData.get("is_active") === "on"
+  });
+
+  if (error) redirect(`/admin/delivery${encodedError("No se pudo crear la zona. Revisa que la migracion 009 este aplicada.")}`);
+  revalidatePath("/admin/delivery");
+  redirect("/admin/delivery?saved=zone");
+}
+
+export async function updateDeliveryZoneAction(zoneId: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "delivery");
+  const clientId = getClientIdForUserAction(context, formData);
+  requireClientAccess(context, clientId);
+
+  const deliveryFee = Number(formData.get("delivery_fee") || 0);
+  const minimumOrder = Number(formData.get("minimum_order") || 0);
+
+  const { error } = await context.supabase
+    .from("client_delivery_zones")
+    .update({
+      name: String(formData.get("name") || "").trim(),
+      description: String(formData.get("description") || "").trim() || null,
+      delivery_fee: Number.isFinite(deliveryFee) ? Math.max(0, deliveryFee) : 0,
+      minimum_order: Number.isFinite(minimumOrder) ? Math.max(0, minimumOrder) : 0,
+      estimated_time: String(formData.get("estimated_time") || "").trim() || null,
+      display_order: Number(formData.get("display_order") || 0),
+      is_active: formData.get("is_active") === "on"
+    })
+    .eq("id", zoneId)
+    .eq("client_id", clientId);
+
+  if (error) redirect(`/admin/delivery${encodedError("No se pudo actualizar la zona.")}`);
+  revalidatePath("/admin/delivery");
+  redirect("/admin/delivery?saved=zone");
+}
+
+export async function deleteDeliveryZoneAction(zoneId: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "delivery");
+  const clientId = getClientIdForUserAction(context, formData);
+  requireClientAccess(context, clientId);
+
+  const { error } = await context.supabase.from("client_delivery_zones").delete().eq("id", zoneId).eq("client_id", clientId);
+  if (error) redirect(`/admin/delivery${encodedError("No se pudo eliminar la zona.")}`);
+  revalidatePath("/admin/delivery");
+  redirect("/admin/delivery?saved=zone");
+}
+
+export async function createPromotionAction(formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "promotions");
+  const clientId = getClientIdForUserAction(context, formData);
+  requireClientAccess(context, clientId);
+
+  const title = String(formData.get("title") || "").trim();
+  if (!title) redirect(`/admin/promotions${encodedError("Ingresa el titulo de la promocion.")}`);
+
+  const { error } = await context.supabase.from("promotions").insert({
+    client_id: clientId,
+    title,
+    description: String(formData.get("description") || "").trim() || null,
+    promo_type: String(formData.get("promo_type") || "general"),
+    discount_type: String(formData.get("discount_type") || "none"),
+    discount_value: Number(formData.get("discount_value") || 0),
+    coupon_code: String(formData.get("coupon_code") || "").trim() || null,
+    display_order: Number(formData.get("display_order") || 0),
+    is_active: formData.get("is_active") === "on"
+  });
+
+  if (error) redirect(`/admin/promotions${encodedError("No se pudo crear la promocion. Revisa que la migracion 009 este aplicada.")}`);
+  revalidatePath("/admin/promotions");
+  redirect("/admin/promotions?saved=promotion");
+}
+
+export async function updatePromotionAction(promotionId: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "promotions");
+  const clientId = getClientIdForUserAction(context, formData);
+  requireClientAccess(context, clientId);
+
+  const { error } = await context.supabase
+    .from("promotions")
+    .update({
+      title: String(formData.get("title") || "").trim(),
+      description: String(formData.get("description") || "").trim() || null,
+      promo_type: String(formData.get("promo_type") || "general"),
+      discount_type: String(formData.get("discount_type") || "none"),
+      discount_value: Number(formData.get("discount_value") || 0),
+      coupon_code: String(formData.get("coupon_code") || "").trim() || null,
+      display_order: Number(formData.get("display_order") || 0),
+      is_active: formData.get("is_active") === "on"
+    })
+    .eq("id", promotionId)
+    .eq("client_id", clientId);
+
+  if (error) redirect(`/admin/promotions${encodedError("No se pudo actualizar la promocion.")}`);
+  revalidatePath("/admin/promotions");
+  redirect("/admin/promotions?saved=promotion");
+}
+
+export async function deletePromotionAction(promotionId: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "promotions");
+  const clientId = getClientIdForUserAction(context, formData);
+  requireClientAccess(context, clientId);
+
+  const { error } = await context.supabase.from("promotions").delete().eq("id", promotionId).eq("client_id", clientId);
+  if (error) redirect(`/admin/promotions${encodedError("No se pudo eliminar la promocion.")}`);
+  revalidatePath("/admin/promotions");
+  redirect("/admin/promotions?saved=promotion");
+}
+
+export async function createPaymentMethodAction(formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "payments");
+  const clientId = getClientIdForUserAction(context, formData);
+  requireClientAccess(context, clientId);
+
+  const label = String(formData.get("label") || "").trim();
+  if (!label) redirect(`/admin/payments${encodedError("Ingresa el nombre del metodo de pago.")}`);
+
+  const { error } = await context.supabase.from("client_payment_methods").insert({
+    client_id: clientId,
+    method_type: String(formData.get("method_type") || "yape"),
+    label,
+    phone_number: String(formData.get("phone_number") || "").trim() || null,
+    qr_url: String(formData.get("qr_url") || "").trim() || null,
+    instructions: String(formData.get("instructions") || "").trim() || null,
+    display_order: Number(formData.get("display_order") || 0),
+    is_active: formData.get("is_active") === "on"
+  });
+
+  if (error) redirect(`/admin/payments${encodedError("No se pudo crear el metodo de pago. Revisa que la migracion 009 este aplicada.")}`);
+  revalidatePath("/admin/payments");
+  redirect("/admin/payments?saved=payment");
+}
+
+export async function updatePaymentMethodAction(methodId: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "payments");
+  const clientId = getClientIdForUserAction(context, formData);
+  requireClientAccess(context, clientId);
+
+  const { error } = await context.supabase
+    .from("client_payment_methods")
+    .update({
+      method_type: String(formData.get("method_type") || "yape"),
+      label: String(formData.get("label") || "").trim(),
+      phone_number: String(formData.get("phone_number") || "").trim() || null,
+      qr_url: String(formData.get("qr_url") || "").trim() || null,
+      instructions: String(formData.get("instructions") || "").trim() || null,
+      display_order: Number(formData.get("display_order") || 0),
+      is_active: formData.get("is_active") === "on"
+    })
+    .eq("id", methodId)
+    .eq("client_id", clientId);
+
+  if (error) redirect(`/admin/payments${encodedError("No se pudo actualizar el metodo de pago.")}`);
+  revalidatePath("/admin/payments");
+  redirect("/admin/payments?saved=payment");
+}
+
+export async function deletePaymentMethodAction(methodId: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "payments");
+  const clientId = getClientIdForUserAction(context, formData);
+  requireClientAccess(context, clientId);
+
+  const { error } = await context.supabase.from("client_payment_methods").delete().eq("id", methodId).eq("client_id", clientId);
+  if (error) redirect(`/admin/payments${encodedError("No se pudo eliminar el metodo de pago.")}`);
+  revalidatePath("/admin/payments");
+  redirect("/admin/payments?saved=payment");
+}
+
+export async function updateReservationStatusAction(reservationId: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "reservations");
+  const clientId = getClientIdForUserAction(context, formData);
+  requireClientAccess(context, clientId);
+
+  const status = String(formData.get("status") || "pending");
+  const { error } = await context.supabase.from("reservations").update({ status }).eq("id", reservationId).eq("client_id", clientId);
+  if (error) redirect(`/admin/reservations${encodedError("No se pudo actualizar la reserva.")}`);
+  revalidatePath("/admin/reservations");
+  redirect("/admin/reservations?saved=reservation");
+}
+
 export async function signOutAction() {
   const { supabase } = await requireAdmin();
   await supabase.auth.signOut();

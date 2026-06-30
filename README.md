@@ -43,6 +43,7 @@ supabase/migrations/005_orders_tables_payment_proofs.sql
 supabase/migrations/006_business_admin_access.sql
 supabase/migrations/007_realtime_kitchen_delivery.sql
 supabase/migrations/008_client_users_roles_permissions.sql
+supabase/migrations/009_growth_modules.sql
 ```
 
 4. Crea en Supabase Auth un usuario con el correo configurado en `ADMIN_EMAIL`.
@@ -68,9 +69,14 @@ http://localhost:3000/login
 /admin
 /admin/kitchen
 /admin/orders
+/admin/delivery
+/admin/promotions
+/admin/reservations
+/admin/payments
 /admin/settings
 /admin/users
 /menu/demo-pollo-loco
+/reservar/demo-pollo-loco
 /pedido/[orderId]
 ```
 
@@ -132,3 +138,4 @@ La gestion esta en:
 - El super admin se valida comparando el correo autenticado con `ADMIN_EMAIL`.
 - El admin del negocio se valida por `admin_email` en Supabase o por las variables de prueba `BUSINESS_ADMIN_EMAIL` y `BUSINESS_ADMIN_CLIENT_SLUG`.
 - La pagina publica `/menu/[slug]` no requiere login.
+- La pagina publica `/reservar/[slug]` no requiere login y crea reservas pendientes.

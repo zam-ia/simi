@@ -328,3 +328,15 @@ No clonar TastyIgniter. Usarlo como mapa de madurez.
 SIMI debe ser mas simple, mas mobile-first y mas enfocado en negocios pequenos de Peru. La ventaja no sera tener mas funciones desde el dia uno, sino que el flujo principal funcione muy bien:
 
 Cliente escanea QR -> arma pedido -> confirma -> paga por Yape -> sube comprobante -> negocio recibe -> cocina prepara -> delivery/recojo/local entrega -> cliente ve estado.
+
+## Implementado despues de esta referencia
+
+El roadmap ya paso de documento a producto en estos puntos:
+
+- Roles por modulo extendidos para delivery, promociones, reservas y pagos.
+- Zonas de delivery manuales con costo, minimo de pedido y tiempo estimado.
+- Promociones visibles en la carta publica.
+- Metodos de pago por negocio, incluyendo Yape/Plin/efectivo y estructura para pasarela futura.
+- Reservas publicas en `/reservar/[slug]` con gestion interna en `/admin/reservations`.
+- Bases de datos para opciones de producto y disponibilidad, listas para combos/modificadores.
+- Sin dependencia obligatoria de Google Maps ni pagos automaticos, para mantener el MVP vendible y barato.

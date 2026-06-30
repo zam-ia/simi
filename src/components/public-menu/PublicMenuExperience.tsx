@@ -8,7 +8,7 @@ import { MenuHeader } from "@/components/public-menu/MenuHeader";
 import { PromoBanner } from "@/components/public-menu/PromoBanner";
 import { Button } from "@/components/shared/Button";
 import { buildWhatsappUrl, formatPrice } from "@/lib/utils";
-import type { CategoryWithItems, Client, ClientTable, MenuItem, OrderType } from "@/types/menu";
+import type { CategoryWithItems, Client, ClientDeliveryZone, ClientTable, MenuItem, OrderType, PaymentMethod, Promotion } from "@/types/menu";
 
 type CartItem = {
   menuItemId: string;
@@ -28,6 +28,9 @@ type PublicMenuExperienceProps = {
   client: Client;
   categories: CategoryWithItems[];
   tables: ClientTable[];
+  deliveryZones: ClientDeliveryZone[];
+  promotions: Promotion[];
+  paymentMethods: PaymentMethod[];
   initialTableNumber?: string;
 };
 
@@ -37,7 +40,7 @@ const orderTypeLabels: Record<OrderType, string> = {
   delivery: "Delivery"
 };
 
-export function PublicMenuExperience({ client, categories, tables, initialTableNumber }: PublicMenuExperienceProps) {
+export function PublicMenuExperience({ client, categories, tables, deliveryZones, promotions, paymentMethods, initialTableNumber }: PublicMenuExperienceProps) {
   const initialTable = tables.find((table) => table.table_number === initialTableNumber || table.label.toLowerCase() === `mesa ${initialTableNumber}`.toLowerCase());
   const [cart, setCart] = useState<CartItem[]>([]);
   const [step, setStep] = useState<"menu" | "checkout" | "payment">("menu");
@@ -48,6 +51,7 @@ export function PublicMenuExperience({ client, categories, tables, initialTableN
   const [pickupTime, setPickupTime] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [deliveryReference, setDeliveryReference] = useState("");
+  const [deliveryZoneId, setDeliveryZoneId] = useState(deliveryZones[0]?.id || "");
   const [notes, setNotes] = useState("");
   const [createdOrder, setCreatedOrder] = useState<CreatedOrder | null>(null);
   const [whatsappUrl, setWhatsappUrl] = useState("");
@@ -59,10 +63,12 @@ export function PublicMenuExperience({ client, categories, tables, initialTableN
 
   const hasProducts = categories.some((category) => category.items.length > 0);
   const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
-  const deliveryFee = orderType === "delivery" ? 0 : 0;
+  const selectedDeliveryZone = deliveryZones.find((zone) => zone.id === deliveryZoneId);
+  const deliveryFee = orderType === "delivery" ? Number(selectedDeliveryZone?.delivery_fee || 0) : 0;
   const total = subtotal + deliveryFee;
   const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const selectedTable = tables.find((table) => table.id === selectedTableId);
+  const yapeMethod = paymentMethods.find((method) => method.method_type === "yape");
 
   function addItem(item: MenuItem) {
     setCart((current) => {
@@ -100,8 +106,8 @@ export function PublicMenuExperience({ client, categories, tables, initialTableN
           pickupTime,
           deliveryAddress,
           deliveryReference,
+          deliveryZoneId: orderType === "delivery" ? deliveryZoneId || null : null,
           notes,
-          deliveryFee,
           items: cart.map((item) => ({ menuItemId: item.menuItemId, quantity: item.quantity, note: item.note }))
         })
       });
@@ -149,7 +155,29 @@ export function PublicMenuExperience({ client, categories, tables, initialTableN
     <main className="min-h-screen bg-[var(--background)] pb-32">
       <MenuHeader client={client} />
       <div className="mx-auto grid max-w-[480px] gap-6 px-4 py-5 sm:px-5">
+        <a href={`/reservar/${client.slug}`} className="inline-flex min-h-11 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 text-sm font-medium text-[var(--text)] shadow-panel">
+          Reservar mesa
+        </a>
         <PromoBanner client={client} />
+
+        {step === "menu" && promotions.length > 0 ? (
+          <section className="grid gap-3">
+            <h2 className="px-1 text-sm font-medium text-[var(--text-muted)]">Promociones</h2>
+            <div className="grid gap-3">
+              {promotions.slice(0, 3).map((promotion) => (
+                <article key={promotion.id} className="rounded-[20px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-base font-medium">{promotion.title}</h3>
+                      {promotion.description ? <p className="mt-1 text-sm text-[var(--text-muted)]">{promotion.description}</p> : null}
+                    </div>
+                    {promotion.coupon_code ? <span className="rounded-full bg-[var(--surface-muted)] px-3 py-1 text-xs font-medium">{promotion.coupon_code}</span> : null}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         {step === "menu" ? (
           <>
@@ -206,6 +234,12 @@ export function PublicMenuExperience({ client, categories, tables, initialTableN
                 <span className="text-sm text-[var(--text-muted)]">Total</span>
                 <strong className="text-lg font-medium">{formatPrice(total)}</strong>
               </div>
+              {orderType === "delivery" && deliveryFee > 0 ? (
+                <div className="flex items-center justify-between text-sm text-[var(--text-muted)]">
+                  <span>Delivery</span>
+                  <span>{formatPrice(deliveryFee)}</span>
+                </div>
+              ) : null}
             </div>
 
             <div className="grid grid-cols-3 gap-2 rounded-full bg-[var(--surface-muted)] p-1">
@@ -251,6 +285,20 @@ export function PublicMenuExperience({ client, categories, tables, initialTableN
 
             {orderType === "delivery" ? (
               <>
+                {deliveryZones.length > 0 ? (
+                  <label className="grid gap-2 text-sm">
+                    <span className="font-medium">Zona de delivery</span>
+                    <select className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" value={deliveryZoneId} onChange={(event) => setDeliveryZoneId(event.target.value)}>
+                      <option value="">Selecciona tu zona</option>
+                      {deliveryZones.map((zone) => (
+                        <option key={zone.id} value={zone.id}>
+                          {zone.name} - {formatPrice(zone.delivery_fee)}{zone.estimated_time ? ` - ${zone.estimated_time}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                    {selectedDeliveryZone?.minimum_order ? <span className="text-xs text-[var(--text-muted)]">Pedido minimo para esta zona: {formatPrice(selectedDeliveryZone.minimum_order)}.</span> : null}
+                  </label>
+                ) : null}
                 <label className="grid gap-2 text-sm">
                   <span className="font-medium">Dirección</span>
                   <input className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Av. Principal 123" />
@@ -288,8 +336,8 @@ export function PublicMenuExperience({ client, categories, tables, initialTableN
             </div>
             <div className="rounded-[20px] bg-[var(--surface-muted)] p-4 text-center">
               <p className="text-sm text-[var(--text-muted)]">Paga al Yape del negocio</p>
-              {client.yape_number ? <p className="mt-1 text-xl font-medium">{client.yape_number}</p> : <p className="mt-1 text-sm text-[var(--text-muted)]">Este negocio aún no registró número Yape.</p>}
-              {client.yape_qr_url ? <img alt="QR Yape" src={client.yape_qr_url} className="mx-auto mt-4 max-h-64 rounded-[20px] bg-white p-2" /> : null}
+              {yapeMethod?.phone_number || client.yape_number ? <p className="mt-1 text-xl font-medium">{yapeMethod?.phone_number || client.yape_number}</p> : <p className="mt-1 text-sm text-[var(--text-muted)]">Este negocio aun no registro numero Yape.</p>}
+              {yapeMethod?.qr_url || client.yape_qr_url ? <img alt="QR Yape" src={yapeMethod?.qr_url || client.yape_qr_url || ""} className="mx-auto mt-4 max-h-64 rounded-[20px] bg-white p-2" /> : null}
             </div>
             <p className="text-sm text-[var(--text-muted)]">Después de pagar, sube tu captura o escribe el número de operación.</p>
             <label className="grid gap-2 text-sm">

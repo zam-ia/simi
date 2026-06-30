@@ -1,12 +1,33 @@
 import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { CategoryWithItems, Client, ClientTable, CustomerOrderItem, MenuCategory, MenuItem, OrderStatusEvent, OrderWithDetails, PaymentProof } from "@/types/menu";
+import type {
+  CategoryWithItems,
+  Client,
+  ClientDeliveryZone,
+  ClientTable,
+  CustomerOrderItem,
+  MenuCategory,
+  MenuItem,
+  OrderStatusEvent,
+  OrderWithDetails,
+  PaymentMethod,
+  PaymentProof,
+  Promotion,
+  Reservation
+} from "@/types/menu";
 
 function normalizeItem(item: MenuItem): MenuItem {
   return {
     ...item,
     price: Number(item.price)
   };
+}
+
+function isMissingTableError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const code = "code" in error ? String(error.code) : "";
+  const message = "message" in error ? String(error.message) : "";
+  return code === "42P01" || code === "42703" || code === "PGRST204" || message.includes("does not exist");
 }
 
 export async function getClientById(id: string) {
@@ -47,10 +68,13 @@ export async function getPublicMenuBySlug(slug: string) {
   const { data: client } = await supabase.from("clients").select("*").eq("slug", slug).eq("is_active", true).single();
   if (!client) return null;
 
-  const [{ data: categories }, { data: items }, { data: tables }] = await Promise.all([
+  const [{ data: categories }, { data: items }, { data: tables }, zonesResult, promotionsResult, paymentsResult] = await Promise.all([
     supabase.from("menu_categories").select("*").eq("client_id", client.id).eq("is_active", true).order("display_order", { ascending: true }),
     supabase.from("menu_items").select("*").eq("client_id", client.id).order("display_order", { ascending: true }),
-    supabase.from("client_tables").select("*").eq("client_id", client.id).eq("is_active", true).order("table_number", { ascending: true })
+    supabase.from("client_tables").select("*").eq("client_id", client.id).eq("is_active", true).order("table_number", { ascending: true }),
+    supabase.from("client_delivery_zones").select("*").eq("client_id", client.id).eq("is_active", true).order("display_order", { ascending: true }),
+    supabase.from("promotions").select("*").eq("client_id", client.id).eq("is_active", true).order("display_order", { ascending: true }),
+    supabase.from("client_payment_methods").select("*").eq("client_id", client.id).eq("is_active", true).order("display_order", { ascending: true })
   ]);
 
   const menuCategories = (categories || []) as MenuCategory[];
@@ -63,7 +87,10 @@ export async function getPublicMenuBySlug(slug: string) {
   return {
     client: client as Client,
     categories: categoriesWithItems,
-    tables: (tables || []) as ClientTable[]
+    tables: (tables || []) as ClientTable[],
+    deliveryZones: zonesResult.error && isMissingTableError(zonesResult.error) ? [] : ((zonesResult.data || []) as ClientDeliveryZone[]).map((zone) => ({ ...zone, delivery_fee: Number(zone.delivery_fee), minimum_order: Number(zone.minimum_order) })),
+    promotions: promotionsResult.error && isMissingTableError(promotionsResult.error) ? [] : ((promotionsResult.data || []) as Promotion[]).map((promotion) => ({ ...promotion, discount_value: Number(promotion.discount_value) })),
+    paymentMethods: paymentsResult.error && isMissingTableError(paymentsResult.error) ? [] : (paymentsResult.data || []) as PaymentMethod[]
   };
 }
 
@@ -106,4 +133,22 @@ export async function getAdminClientOrders(clientId?: string) {
     payment_proofs: paymentProofs.filter((proof) => proof.order_id === order.id),
     status_events: statusEvents.filter((event) => event.order_id === order.id)
   }));
+}
+
+export async function getAdminGrowthModules(clientId?: string) {
+  const supabase = createSupabaseServerClient();
+  const zoneQuery = clientId ? supabase.from("client_delivery_zones").select("*").eq("client_id", clientId).order("display_order", { ascending: true }) : supabase.from("client_delivery_zones").select("*").order("created_at", { ascending: false });
+  const promotionQuery = clientId ? supabase.from("promotions").select("*").eq("client_id", clientId).order("display_order", { ascending: true }) : supabase.from("promotions").select("*").order("created_at", { ascending: false });
+  const paymentQuery = clientId ? supabase.from("client_payment_methods").select("*").eq("client_id", clientId).order("display_order", { ascending: true }) : supabase.from("client_payment_methods").select("*").order("created_at", { ascending: false });
+  const reservationQuery = clientId ? supabase.from("reservations").select("*").eq("client_id", clientId).order("created_at", { ascending: false }) : supabase.from("reservations").select("*").order("created_at", { ascending: false });
+
+  const [zones, promotions, payments, reservations] = await Promise.all([zoneQuery, promotionQuery, paymentQuery, reservationQuery]);
+
+  return {
+    zones: zones.error && isMissingTableError(zones.error) ? [] : ((zones.data || []) as ClientDeliveryZone[]).map((zone) => ({ ...zone, delivery_fee: Number(zone.delivery_fee), minimum_order: Number(zone.minimum_order) })),
+    promotions: promotions.error && isMissingTableError(promotions.error) ? [] : ((promotions.data || []) as Promotion[]).map((promotion) => ({ ...promotion, discount_value: Number(promotion.discount_value) })),
+    paymentMethods: payments.error && isMissingTableError(payments.error) ? [] : (payments.data || []) as PaymentMethod[],
+    reservations: reservations.error && isMissingTableError(reservations.error) ? [] : (reservations.data || []) as Reservation[],
+    missingGrowthTables: Boolean(zones.error || promotions.error || payments.error || reservations.error)
+  };
 }

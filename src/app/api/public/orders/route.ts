@@ -11,9 +11,9 @@ type OrderPayload = {
   customerPhone?: string;
   deliveryAddress?: string;
   deliveryReference?: string;
+  deliveryZoneId?: string | null;
   pickupTime?: string;
   notes?: string;
-  deliveryFee?: number;
   items: Array<{ menuItemId: string; quantity: number; note?: string }>;
 };
 
@@ -62,7 +62,28 @@ export async function POST(request: Request) {
     });
 
     const subtotal = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
-    const deliveryFee = payload.orderType === "delivery" ? Math.max(0, Number(payload.deliveryFee || 0)) : 0;
+    let deliveryFee = 0;
+    let deliveryZoneName: string | null = null;
+
+    if (payload.orderType === "delivery" && payload.deliveryZoneId) {
+      const { data: zone } = await supabase
+        .from("client_delivery_zones")
+        .select("*")
+        .eq("id", payload.deliveryZoneId)
+        .eq("client_id", payload.clientId)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (zone) {
+        deliveryFee = Number(zone.delivery_fee || 0);
+        deliveryZoneName = zone.name;
+        const minimumOrder = Number(zone.minimum_order || 0);
+        if (minimumOrder > 0 && subtotal < minimumOrder) {
+          return NextResponse.json({ error: `El pedido minimo para ${zone.name} es ${new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(minimumOrder)}.` }, { status: 400 });
+        }
+      }
+    }
+
     const total = subtotal + deliveryFee;
 
     if (payload.orderType === "dine_in" && !payload.tableId && !payload.tableLabel) {
@@ -94,6 +115,8 @@ export async function POST(request: Request) {
           customer_phone: normalizeText(payload.customerPhone) || null,
           delivery_address: normalizeText(payload.deliveryAddress) || null,
           delivery_reference: normalizeText(payload.deliveryReference) || null,
+          delivery_zone_id: payload.orderType === "delivery" ? payload.deliveryZoneId || null : null,
+          delivery_zone_name: deliveryZoneName,
           pickup_time: normalizeText(payload.pickupTime) || null,
           notes: normalizeText(payload.notes) || null,
           subtotal,
