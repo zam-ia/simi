@@ -1,0 +1,342 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { CategoryTabs } from "@/components/public-menu/CategoryTabs";
+import { CategorySection } from "@/components/public-menu/CategorySection";
+import { EmptyMenuState } from "@/components/public-menu/EmptyMenuState";
+import { MenuHeader } from "@/components/public-menu/MenuHeader";
+import { PromoBanner } from "@/components/public-menu/PromoBanner";
+import { Button } from "@/components/shared/Button";
+import { buildWhatsappUrl, formatPrice } from "@/lib/utils";
+import type { CategoryWithItems, Client, ClientTable, MenuItem, OrderType } from "@/types/menu";
+
+type CartItem = {
+  menuItemId: string;
+  name: string;
+  price: number;
+  quantity: number;
+  note: string;
+};
+
+type CreatedOrder = {
+  id: string;
+  order_code: string;
+  total: number;
+};
+
+type PublicMenuExperienceProps = {
+  client: Client;
+  categories: CategoryWithItems[];
+  tables: ClientTable[];
+  initialTableNumber?: string;
+};
+
+const orderTypeLabels: Record<OrderType, string> = {
+  dine_in: "Mesa",
+  pickup: "Recojo",
+  delivery: "Delivery"
+};
+
+export function PublicMenuExperience({ client, categories, tables, initialTableNumber }: PublicMenuExperienceProps) {
+  const initialTable = tables.find((table) => table.table_number === initialTableNumber || table.label.toLowerCase() === `mesa ${initialTableNumber}`.toLowerCase());
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [step, setStep] = useState<"menu" | "checkout" | "payment">("menu");
+  const [orderType, setOrderType] = useState<OrderType>(initialTable ? "dine_in" : "pickup");
+  const [selectedTableId, setSelectedTableId] = useState(initialTable?.id || "");
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [pickupTime, setPickupTime] = useState("");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [deliveryReference, setDeliveryReference] = useState("");
+  const [notes, setNotes] = useState("");
+  const [createdOrder, setCreatedOrder] = useState<CreatedOrder | null>(null);
+  const [whatsappUrl, setWhatsappUrl] = useState("");
+  const [statusUrl, setStatusUrl] = useState("");
+  const [operationNumber, setOperationNumber] = useState("");
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const hasProducts = categories.some((category) => category.items.length > 0);
+  const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
+  const deliveryFee = orderType === "delivery" ? 0 : 0;
+  const total = subtotal + deliveryFee;
+  const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const selectedTable = tables.find((table) => table.id === selectedTableId);
+
+  function addItem(item: MenuItem) {
+    setCart((current) => {
+      const existing = current.find((cartItem) => cartItem.menuItemId === item.id);
+      if (existing) {
+        return current.map((cartItem) => (cartItem.menuItemId === item.id ? { ...cartItem, quantity: cartItem.quantity + 1 } : cartItem));
+      }
+      return [...current, { menuItemId: item.id, name: item.name, price: Number(item.price), quantity: 1, note: "" }];
+    });
+  }
+
+  function updateQuantity(menuItemId: string, quantity: number) {
+    setCart((current) => current.map((item) => (item.menuItemId === menuItemId ? { ...item, quantity: Math.max(1, quantity) } : item)));
+  }
+
+  function removeItem(menuItemId: string) {
+    setCart((current) => current.filter((item) => item.menuItemId !== menuItemId));
+  }
+
+  async function createOrder() {
+    setMessage("");
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/public/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientId: client.id,
+          orderType,
+          tableId: orderType === "dine_in" ? selectedTableId || null : null,
+          tableLabel: orderType === "dine_in" ? selectedTable?.label || initialTableNumber || "" : null,
+          customerName,
+          customerPhone,
+          pickupTime,
+          deliveryAddress,
+          deliveryReference,
+          notes,
+          deliveryFee,
+          items: cart.map((item) => ({ menuItemId: item.menuItemId, quantity: item.quantity, note: item.note }))
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "No se pudo crear el pedido.");
+
+      setCreatedOrder(data.order);
+      setWhatsappUrl(data.whatsappUrl);
+      setStatusUrl(data.statusUrl || `/pedido/${data.order.id}`);
+      setStep("payment");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No se pudo crear el pedido.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function submitProof() {
+    if (!createdOrder) return;
+    setMessage("");
+    setIsSubmitting(true);
+
+    try {
+      const formData = new FormData();
+      formData.set("operation_number", operationNumber);
+      if (proofFile) formData.set("proof_image", proofFile);
+
+      const response = await fetch(`/api/public/orders/${createdOrder.id}/proof`, {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "No se pudo registrar el comprobante.");
+      setMessage("Comprobante enviado. El negocio validará el pago en Yape.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No se pudo registrar el comprobante.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-[var(--background)] pb-32">
+      <MenuHeader client={client} />
+      <div className="mx-auto grid max-w-[480px] gap-6 px-4 py-5 sm:px-5">
+        <PromoBanner client={client} />
+
+        {step === "menu" ? (
+          <>
+            <CategoryTabs categories={categories} accentColor={client.primary_color} />
+            {hasProducts ? categories.map((category) => <CategorySection key={category.id} category={category} accentColor={client.primary_color} onAdd={addItem} />) : <EmptyMenuState client={client} />}
+          </>
+        ) : null}
+
+        {step === "checkout" ? (
+          <section className="grid gap-4 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+            <div>
+              <h2 className="text-xl font-medium">Confirma tu pedido</h2>
+              <p className="mt-1 text-sm text-[var(--text-muted)]">Primero creamos el pedido. Luego te mostramos Yape.</p>
+            </div>
+
+            <div className="grid gap-3 rounded-[20px] bg-[var(--surface-muted)] p-3">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-medium">Tu pedido</h3>
+                <span className="text-sm text-[var(--text-muted)]">{itemCount} productos</span>
+              </div>
+              {cart.map((item) => (
+                <div key={item.menuItemId} className="grid gap-2 rounded-[var(--radius-card)] bg-[var(--surface)] p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{item.name}</p>
+                      <p className="mt-1 text-sm text-[var(--text-muted)]">{formatPrice(item.price * item.quantity)}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button type="button" className="h-8 w-8 rounded-full bg-[var(--surface-muted)] text-base" onClick={() => updateQuantity(item.menuItemId, item.quantity - 1)}>
+                        -
+                      </button>
+                      <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
+                      <button type="button" className="h-8 w-8 rounded-full bg-[var(--surface-muted)] text-base" onClick={() => updateQuantity(item.menuItemId, item.quantity + 1)}>
+                        +
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      className="focus-ring min-h-10 flex-1 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3 text-sm"
+                      value={item.note}
+                      onChange={(event) =>
+                        setCart((current) => current.map((cartItem) => (cartItem.menuItemId === item.menuItemId ? { ...cartItem, note: event.target.value } : cartItem)))
+                      }
+                      placeholder="Nota para este producto"
+                    />
+                    <button type="button" className="text-xs font-medium text-red-600" onClick={() => removeItem(item.menuItemId)}>
+                      Quitar
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <div className="flex items-center justify-between border-t border-[var(--line)] pt-3">
+                <span className="text-sm text-[var(--text-muted)]">Total</span>
+                <strong className="text-lg font-medium">{formatPrice(total)}</strong>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 rounded-full bg-[var(--surface-muted)] p-1">
+              {(Object.keys(orderTypeLabels) as OrderType[]).map((type) => (
+                <button key={type} type="button" onClick={() => setOrderType(type)} className={`rounded-full px-3 py-2 text-sm font-medium ${orderType === type ? "bg-[var(--surface)] shadow-panel" : "text-[var(--text-muted)]"}`}>
+                  {orderTypeLabels[type]}
+                </button>
+              ))}
+            </div>
+
+            {orderType === "dine_in" ? (
+              <label className="grid gap-2 text-sm">
+                <span className="font-medium">Mesa</span>
+                <select className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" value={selectedTableId} onChange={(event) => setSelectedTableId(event.target.value)}>
+                  <option value="">Selecciona una mesa</option>
+                  {tables.map((table) => (
+                    <option key={table.id} value={table.id}>
+                      {table.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+
+            <label className="grid gap-2 text-sm">
+              <span className="font-medium">Nombre</span>
+              <input className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Carlos" />
+            </label>
+
+            {orderType !== "dine_in" ? (
+              <label className="grid gap-2 text-sm">
+                <span className="font-medium">Teléfono</span>
+                <input className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" value={customerPhone} onChange={(event) => setCustomerPhone(event.target.value)} placeholder="+51 999 999 999" />
+              </label>
+            ) : null}
+
+            {orderType === "pickup" ? (
+              <label className="grid gap-2 text-sm">
+                <span className="font-medium">Hora aproximada de recojo</span>
+                <input className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" value={pickupTime} onChange={(event) => setPickupTime(event.target.value)} placeholder="8:30 pm" />
+              </label>
+            ) : null}
+
+            {orderType === "delivery" ? (
+              <>
+                <label className="grid gap-2 text-sm">
+                  <span className="font-medium">Dirección</span>
+                  <input className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="Av. Principal 123" />
+                </label>
+                <label className="grid gap-2 text-sm">
+                  <span className="font-medium">Referencia</span>
+                  <input className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" value={deliveryReference} onChange={(event) => setDeliveryReference(event.target.value)} placeholder="Portón negro, piso 2" />
+                </label>
+              </>
+            ) : null}
+
+            <label className="grid gap-2 text-sm">
+              <span className="font-medium">Nota</span>
+              <textarea className="focus-ring min-h-20 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2" value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Sin ají, con cremas aparte..." />
+            </label>
+
+            {message ? <p className="rounded-[var(--radius-card)] bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/35 dark:text-red-200">{message}</p> : null}
+
+            <div className="grid grid-cols-2 gap-3">
+              <Button type="button" variant="secondary" onClick={() => setStep("menu")} className="w-full">
+                Volver
+              </Button>
+              <Button type="button" onClick={createOrder} disabled={isSubmitting || cart.length === 0} className="w-full">
+                {isSubmitting ? "Creando..." : "Confirmar pedido"}
+              </Button>
+            </div>
+          </section>
+        ) : null}
+
+        {step === "payment" && createdOrder ? (
+          <section className="grid gap-4 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+            <div>
+              <p className="text-sm text-[var(--text-muted)]">Pedido #{createdOrder.order_code}</p>
+              <h2 className="mt-1 text-2xl font-medium">Total a pagar: {formatPrice(createdOrder.total)}</h2>
+            </div>
+            <div className="rounded-[20px] bg-[var(--surface-muted)] p-4 text-center">
+              <p className="text-sm text-[var(--text-muted)]">Paga al Yape del negocio</p>
+              {client.yape_number ? <p className="mt-1 text-xl font-medium">{client.yape_number}</p> : <p className="mt-1 text-sm text-[var(--text-muted)]">Este negocio aún no registró número Yape.</p>}
+              {client.yape_qr_url ? <img alt="QR Yape" src={client.yape_qr_url} className="mx-auto mt-4 max-h-64 rounded-[20px] bg-white p-2" /> : null}
+            </div>
+            <p className="text-sm text-[var(--text-muted)]">Después de pagar, sube tu captura o escribe el número de operación.</p>
+            <label className="grid gap-2 text-sm">
+              <span className="font-medium">Número de operación</span>
+              <input className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" value={operationNumber} onChange={(event) => setOperationNumber(event.target.value)} placeholder="458921" />
+            </label>
+            <label className="grid gap-2 text-sm">
+              <span className="font-medium">Captura del comprobante</span>
+              <input type="file" accept="image/jpeg,image/png,image/webp" className="text-sm text-[var(--text-muted)]" onChange={(event) => setProofFile(event.target.files?.[0] || null)} />
+            </label>
+            {message ? <p className="rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-3 text-sm text-[var(--text-muted)]">{message}</p> : null}
+            <Button type="button" onClick={submitProof} disabled={isSubmitting}>
+              {isSubmitting ? "Enviando..." : "Enviar comprobante"}
+            </Button>
+            {statusUrl ? (
+              <a className="inline-flex min-h-12 items-center justify-center rounded-full bg-[var(--surface-muted)] px-4 text-sm font-medium text-[var(--text)]" href={statusUrl}>
+                Ver estado del pedido
+              </a>
+            ) : null}
+            {whatsappUrl ? (
+              <a className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#25D366] px-4 text-sm font-medium text-white" href={whatsappUrl} target="_blank" rel="noreferrer">
+                Enviar pedido por WhatsApp
+              </a>
+            ) : null}
+          </section>
+        ) : null}
+      </div>
+
+      {step === "menu" && cart.length > 0 ? (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--line)] bg-[var(--surface)]/94 px-3 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl">
+          <div className="mx-auto flex max-w-[480px] items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">{itemCount} producto{itemCount === 1 ? "" : "s"} en tu pedido</p>
+              <p className="text-sm text-[var(--text-muted)]">{formatPrice(total)}</p>
+            </div>
+            <button type="button" onClick={() => setStep("checkout")} className="min-h-12 rounded-full px-5 text-sm font-medium text-white" style={{ backgroundColor: client.primary_color }}>
+              Ver pedido
+            </button>
+          </div>
+        </div>
+      ) : step === "menu" ? (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--line)] bg-[var(--surface)]/94 px-3 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl">
+          <a className="mx-auto inline-flex min-h-12 w-full max-w-[480px] items-center justify-center rounded-full bg-[#25D366] px-4 text-sm font-medium text-white" href={buildWhatsappUrl(client.whatsapp_number, "Hola, quiero hacer un pedido")} target="_blank" rel="noreferrer">
+            Consultar por WhatsApp
+          </a>
+        </div>
+      ) : null}
+    </main>
+  );
+}
