@@ -121,7 +121,6 @@ export async function createCategoryAction(clientId: string, formData: FormData)
     const fallback = await supabase.from("menu_categories").insert(fallbackData);
     if (fallback.error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo guardar la categoria.")}`);
   } else if (error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo guardar la categoria.")}`);
-
   await revalidateClientSurfaces(supabase, clientId);
   redirect(`/admin/clients/${clientId}?saved=category`);
 }
@@ -152,7 +151,11 @@ export async function deleteCategoryAction(clientId: string, categoryId: string)
   requireModuleAccess(context, "menu");
   requireClientAccess(context, clientId);
   const { supabase } = context;
-  const { error } = await supabase.from("menu_categories").delete().eq("id", categoryId).eq("client_id", clientId);
+  const { error: itemsError } = await supabase.from("menu_items").delete().eq("client_id", clientId).eq("category_id", categoryId);
+  if (itemsError) redirect(`/admin/clients/${clientId}${encodedError("No se pudieron eliminar los productos de la categoria.")}`);
+
+  const { data: deletedCategory, error } = await supabase.from("menu_categories").delete().eq("id", categoryId).eq("client_id", clientId).select("id").maybeSingle();
+  if (!deletedCategory && !error) redirect(`/admin/clients/${clientId}${encodedError("No se encontro la categoria para eliminar.")}`);
   if (error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo eliminar la categoría.")}`);
   await revalidateClientSurfaces(supabase, clientId);
   redirect(`/admin/clients/${clientId}?saved=category`);
