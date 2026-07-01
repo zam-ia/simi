@@ -82,6 +82,10 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
   const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const selectedTable = tables.find((table) => table.id === selectedTableId);
   const yapeMethod = paymentMethods.find((method) => method.method_type === "yape");
+  const activePromotions = promotions.filter((promotion) => promotion.is_active);
+  const featuredCategories = categories.filter((category) => category.items.length > 0).slice(0, 8);
+  const fastestDelivery = deliveryZones.find((zone) => zone.estimated_time)?.estimated_time || "20-35 min";
+  const lowestDeliveryFee = deliveryZones.length ? Math.min(...deliveryZones.map((zone) => Number(zone.delivery_fee || 0))) : 0;
 
   function addItem(item: MenuItem) {
     setCart((current) => {
@@ -173,33 +177,60 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
       <MenuHeader client={client} />
       <div id="menu-content" className="mx-auto grid max-w-[1320px] gap-6 px-4 py-5 sm:px-5 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:px-8">
         <div className="grid min-w-0 gap-6">
-        <div className="grid gap-3">
-          <div className="flex gap-2">
-            <input
-              className="focus-ring min-h-12 flex-1 rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 text-sm shadow-panel"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Buscar locales y platos"
-            />
-            <a href={`/reservar/${client.slug}`} className="inline-flex min-h-12 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 text-sm font-medium text-[var(--text)] shadow-panel">
-              Reservar
-            </a>
-          </div>
-          <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <button type="button" onClick={browseMenu} className="shrink-0 rounded-full bg-[var(--surface-muted)] px-4 py-2 text-sm font-medium">Menu</button>
-            <button type="button" onClick={() => setSearchQuery("pollo")} className="shrink-0 rounded-full bg-[var(--surface-muted)] px-4 py-2 text-sm font-medium">Pollos</button>
-            <button type="button" onClick={() => setSearchQuery("combo")} className="shrink-0 rounded-full bg-[var(--surface-muted)] px-4 py-2 text-sm font-medium">Combos</button>
-            <button type="button" onClick={() => setSearchQuery("")} className="shrink-0 rounded-full bg-[var(--surface-muted)] px-4 py-2 text-sm font-medium">Todos</button>
-          </div>
-        </div>
+          <section className="grid gap-3 rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-3 shadow-soft">
+            <div className="grid grid-cols-3 gap-2">
+              <ServiceModeButton active={orderType === "delivery"} label="Delivery" detail={`${fastestDelivery} - desde ${formatPrice(lowestDeliveryFee)}`} onClick={() => setOrderType("delivery")} />
+              <ServiceModeButton active={orderType === "pickup"} label="Recojo" detail="Pide y pasa por tienda" onClick={() => setOrderType("pickup")} />
+              <ServiceModeButton active={orderType === "dine_in"} label="Mesa" detail="Escanea QR y ordena" onClick={() => setOrderType("dine_in")} />
+            </div>
+            <div className="flex gap-2">
+              <label className="focus-within:shadow-panel flex min-h-12 flex-1 items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface-muted)] px-4 text-sm transition">
+                <SearchIcon className="h-5 w-5 text-[var(--text-muted)]" />
+                <input
+                  className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-[var(--text-muted)]"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder={`Buscar en ${client.name}`}
+                />
+              </label>
+              <a href={`/reservar/${client.slug}`} className="inline-flex min-h-12 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 text-sm font-medium text-[var(--text)] shadow-panel">
+                Reservar
+              </a>
+            </div>
+          </section>
+
+          {featuredCategories.length > 0 ? (
+            <section className="grid gap-3">
+              <div className="flex items-center justify-between gap-3 px-1">
+                <h2 className="text-lg font-medium">Explora por antojo</h2>
+                {searchQuery ? <button type="button" className="text-sm font-medium text-[var(--accent)]" onClick={() => setSearchQuery("")}>Limpiar</button> : null}
+              </div>
+              <div className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {featuredCategories.map((category) => (
+                  <button
+                    key={category.id}
+                    type="button"
+                    onClick={() => setSearchQuery(category.name)}
+                    className="focus-ring grid min-h-24 min-w-[112px] shrink-0 content-center justify-items-center gap-2 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] px-3 text-center shadow-panel transition hover:-translate-y-0.5"
+                  >
+                    <span className="grid h-11 w-11 place-items-center rounded-[16px] text-lg" style={{ backgroundColor: `${client.primary_color}18`, color: client.primary_color }}>{getCategoryIcon(category.name)}</span>
+                    <span className="line-clamp-2 text-sm font-medium leading-tight">{category.name}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
         <PromoBanner client={client} promoItem={promoItem} onAddPromo={addItem} onBrowseMenu={browseMenu} />
 
-        {step === "menu" && promotions.length > 0 ? (
+        {step === "menu" && activePromotions.length > 0 ? (
           <section className="grid gap-3">
-            <h2 className="px-1 text-sm font-medium text-[var(--text-muted)]">Promociones</h2>
+            <div className="flex items-center justify-between gap-3 px-1">
+              <h2 className="text-lg font-medium">Promociones para hoy</h2>
+              <span className="text-sm text-[var(--text-muted)]">{activePromotions.length} activas</span>
+            </div>
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {promotions.slice(0, 3).map((promotion) => (
+              {activePromotions.slice(0, 3).map((promotion) => (
                 <article key={promotion.id} className="rounded-[20px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -406,6 +437,13 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
             <p className="text-sm text-[var(--text-muted)]">Tu pedido</p>
             <h2 className="mt-1 text-xl font-medium">{itemCount ? `${itemCount} producto${itemCount === 1 ? "" : "s"}` : "Listo para ordenar"}</h2>
           </div>
+          <div className="grid grid-cols-3 gap-2 rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-1">
+            {(Object.keys(orderTypeLabels) as OrderType[]).map((type) => (
+              <button key={type} type="button" onClick={() => setOrderType(type)} className={`rounded-full px-2 py-2 text-xs font-medium ${orderType === type ? "bg-[var(--surface)] shadow-panel" : "text-[var(--text-muted)]"}`}>
+                {orderTypeLabels[type]}
+              </button>
+            ))}
+          </div>
 
           {cart.length > 0 ? (
             <div className="grid gap-2 rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-3">
@@ -463,4 +501,37 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
       ) : null}
     </main>
   );
+}
+
+function ServiceModeButton({ active, label, detail, onClick }: { active: boolean; label: string; detail: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`focus-ring grid min-h-16 content-center rounded-[18px] border px-2 text-center transition ${active ? "border-[var(--accent)] bg-[var(--surface)] shadow-panel" : "border-transparent bg-[var(--surface-muted)]"}`}
+    >
+      <span className="text-sm font-medium text-[var(--text)]">{label}</span>
+      <span className="mt-1 line-clamp-2 text-[11px] leading-4 text-[var(--text-muted)]">{detail}</span>
+    </button>
+  );
+}
+
+function SearchIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="m21 21-4.3-4.3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  );
+}
+
+function getCategoryIcon(name: string) {
+  const value = name.toLowerCase();
+  if (value.includes("pollo") || value.includes("brasa")) return "PL";
+  if (value.includes("combo") || value.includes("promo")) return "%";
+  if (value.includes("bebida") || value.includes("gaseosa")) return "B";
+  if (value.includes("postre") || value.includes("dulce")) return "*";
+  if (value.includes("entrada") || value.includes("piqueo")) return "+";
+  if (value.includes("menu")) return "M";
+  return "D";
 }

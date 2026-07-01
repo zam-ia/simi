@@ -21,13 +21,17 @@ export function OrdersBoard({ clients, orders }: OrdersBoardProps) {
           const client = clientById.get(order.client_id);
           const statusOptions = getStatusOptions(order.order_type);
           const isDelivery = order.order_type === "delivery";
+          const alert = getOrderAlert(order);
 
           return (
             <article key={order.id} className="grid gap-4 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
-                  <p className="text-sm text-[var(--text-muted)]">{client?.name || "Negocio"} - {orderTypeLabels[order.order_type]}</p>
-                  <h2 className="mt-1 text-xl font-medium">Pedido #{order.order_code}</h2>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm text-[var(--text-muted)]">{client?.name || "Negocio"} - {orderTypeLabels[order.order_type]}</p>
+                    <span className={`rounded-full px-3 py-1 text-xs font-medium ${alert.tone}`}>{alert.label}</span>
+                  </div>
+                  <h2 className="mt-2 text-xl font-medium">Pedido #{order.order_code}</h2>
                   <p className="mt-1 text-sm text-[var(--text-muted)]">{order.table_label || order.customer_name || order.delivery_address || "Sin detalle"}</p>
                 </div>
                 <div className="text-left md:text-right">
@@ -36,11 +40,12 @@ export function OrdersBoard({ clients, orders }: OrdersBoardProps) {
                 </div>
               </div>
 
-              <div className="grid gap-2 rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-3">
+              <div className="grid gap-3 rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="rounded-full bg-[var(--surface)] px-3 py-1 text-xs font-medium">{orderStatusLabels[order.order_status]}</span>
                   {order.estimated_delivery_time ? <span className="text-xs text-[var(--text-muted)]">Estimado: {order.estimated_delivery_time}</span> : null}
                 </div>
+                {alert.description ? <p className="rounded-[var(--radius-card)] bg-[var(--surface)] p-3 text-sm text-[var(--text-muted)]">{alert.description}</p> : null}
                 {order.items.map((item) => (
                   <div key={item.id} className="flex justify-between gap-3 text-sm">
                     <span>{item.quantity} x {item.item_name}</span>
@@ -136,4 +141,54 @@ export function OrdersBoard({ clients, orders }: OrdersBoardProps) {
       )}
     </div>
   );
+}
+
+function getOrderAlert(order: OrderWithDetails) {
+  const ageMinutes = Math.round((Date.now() - new Date(order.created_at).getTime()) / 60000);
+
+  if (order.order_status === "cancelled") {
+    return {
+      label: "Cancelado",
+      description: "Pedido cerrado. Revisar solo si hubo reclamo o reembolso.",
+      tone: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-200"
+    };
+  }
+
+  if (order.payment_status === "proof_submitted") {
+    return {
+      label: "Pago por validar",
+      description: "El cliente ya envio comprobante. Validalo para que cocina avance sin demora.",
+      tone: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-100"
+    };
+  }
+
+  if (order.order_status === "new" && ageMinutes >= 10) {
+    return {
+      label: "Sin atender",
+      description: `Lleva ${ageMinutes} min sin avanzar. Conviene responder antes de que el cliente consulte por WhatsApp.`,
+      tone: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-200"
+    };
+  }
+
+  if (order.order_type === "delivery" && !order.courier_name && ["ready", "handed_to_courier", "on_the_way", "arriving"].includes(order.order_status)) {
+    return {
+      label: "Falta repartidor",
+      description: "Agrega repartidor o telefono para que el seguimiento sea claro para el cliente.",
+      tone: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-100"
+    };
+  }
+
+  if (order.order_status === "delivered") {
+    return {
+      label: "Entregado",
+      description: "",
+      tone: "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-200"
+    };
+  }
+
+  return {
+    label: "En curso",
+    description: "",
+    tone: "bg-[var(--surface-muted)] text-[var(--text-muted)]"
+  };
 }

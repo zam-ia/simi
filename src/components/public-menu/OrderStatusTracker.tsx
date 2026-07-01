@@ -84,19 +84,27 @@ export function OrderStatusTracker({ orderId }: OrderStatusTrackerProps) {
 
   return (
     <main className="min-h-screen bg-[var(--background)] px-4 py-6">
-      <div className="mx-auto grid max-w-[520px] gap-5">
-        <section className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
-          <p className="text-sm text-[var(--text-muted)]">{order.clients?.name || "SIMI"}</p>
-          <h1 className="mt-2 text-2xl font-medium">Pedido #{order.order_code}</h1>
-          <p className="mt-2 text-sm text-[var(--text-muted)]">Esta pantalla se actualiza automaticamente cuando el negocio cambia el estado.</p>
-        </section>
-
-        <section className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
-          <p className="text-sm text-[var(--text-muted)]">Estado actual</p>
-          <h2 className="mt-2 text-xl font-medium">{orderStatusLabels[order.order_status]}</h2>
-          <p className="mt-1 text-sm text-[var(--text-muted)]">Pago: {paymentStatusLabels[order.payment_status]}</p>
-          {order.estimated_delivery_time ? <p className="mt-2 text-sm">Tiempo estimado: {order.estimated_delivery_time}</p> : null}
-          {order.tracking_note ? <p className="mt-2 rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-3 text-sm text-[var(--text-muted)]">{order.tracking_note}</p> : null}
+      <div className="mx-auto grid max-w-[980px] gap-5 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+        <section className="overflow-hidden rounded-[28px] border border-[var(--line)] bg-[var(--surface)] shadow-soft lg:col-span-2">
+          <div className="p-5 text-white" style={{ background: `linear-gradient(135deg, ${accentColor}, color-mix(in srgb, ${accentColor} 72%, #111827))` }}>
+            <p className="text-sm text-white/78">{order.clients?.name || "SIMI"}</p>
+            <div className="mt-3 grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+              <div>
+                <h1 className="text-3xl font-medium">Pedido #{order.order_code}</h1>
+                <p className="mt-2 text-sm text-white/82">Se actualiza automaticamente cuando el negocio cambia el estado.</p>
+              </div>
+              <div className="rounded-[20px] bg-white/16 px-4 py-3 text-left backdrop-blur md:text-right">
+                <p className="text-xs text-white/78">Total</p>
+                <p className="mt-1 text-2xl font-medium">{formatPrice(order.total)}</p>
+              </div>
+            </div>
+          </div>
+          <div className="grid gap-3 p-5 md:grid-cols-3">
+            <StatusInfo label="Estado" value={orderStatusLabels[order.order_status]} />
+            <StatusInfo label="Pago" value={paymentStatusLabels[order.payment_status]} />
+            <StatusInfo label="Tiempo estimado" value={order.estimated_delivery_time || "Por confirmar"} />
+          </div>
+          {order.tracking_note ? <p className="mx-5 mb-5 rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-3 text-sm text-[var(--text-muted)]">{order.tracking_note}</p> : null}
         </section>
 
         <section className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
@@ -122,15 +130,16 @@ export function OrderStatusTracker({ orderId }: OrderStatusTrackerProps) {
           </div>
         </section>
 
-        {order.order_type === "delivery" && (order.courier_name || order.courier_phone) ? (
-          <section className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
-            <h2 className="text-lg font-medium">Repartidor</h2>
-            {order.courier_name ? <p className="mt-2 text-sm">{order.courier_name}</p> : null}
-            {order.courier_phone ? <p className="mt-1 text-sm text-[var(--text-muted)]">{order.courier_phone}</p> : null}
-          </section>
-        ) : null}
+        <div className="grid gap-5">
+          {order.order_type === "delivery" && (order.courier_name || order.courier_phone) ? (
+            <section className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+              <h2 className="text-lg font-medium">Repartidor</h2>
+              {order.courier_name ? <p className="mt-2 text-sm">{order.courier_name}</p> : null}
+              {order.courier_phone ? <p className="mt-1 text-sm text-[var(--text-muted)]">{order.courier_phone}</p> : null}
+            </section>
+          ) : null}
 
-        <section className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+          <section className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
           <h2 className="text-lg font-medium">Resumen</h2>
           <div className="mt-3 grid gap-2">
             {items.map((item) => (
@@ -144,10 +153,11 @@ export function OrderStatusTracker({ orderId }: OrderStatusTrackerProps) {
               <span>{formatPrice(order.total)}</span>
             </div>
           </div>
-        </section>
+          </section>
+        </div>
 
         {events.length ? (
-          <section className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+          <section className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel lg:col-span-2">
             <h2 className="text-lg font-medium">Historial</h2>
             <div className="mt-3 grid gap-2">
               {events.map((event) => (
@@ -162,5 +172,14 @@ export function OrderStatusTracker({ orderId }: OrderStatusTrackerProps) {
         ) : null}
       </div>
     </main>
+  );
+}
+
+function StatusInfo({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-3">
+      <p className="text-xs text-[var(--text-muted)]">{label}</p>
+      <p className="mt-1 text-sm font-medium">{value}</p>
+    </div>
   );
 }

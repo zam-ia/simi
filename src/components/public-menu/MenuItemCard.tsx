@@ -10,13 +10,24 @@ type MenuItemCardProps = {
 
 export function MenuItemCard({ item, accentColor, onAdd }: MenuItemCardProps) {
   return (
-    <article className={`grid grid-cols-[96px_1fr] gap-3 rounded-[20px] border border-[var(--line)] bg-[var(--surface)] p-3 shadow-panel transition md:grid-cols-1 md:gap-0 md:overflow-hidden md:p-0 ${item.is_available ? "hover:-translate-y-0.5" : "opacity-60 grayscale"}`}>
+    <article className={`grid grid-cols-[104px_1fr] gap-3 rounded-[20px] border border-[var(--line)] bg-[var(--surface)] p-3 shadow-panel transition md:grid-cols-1 md:gap-0 md:overflow-hidden md:p-0 ${item.is_available ? "hover:-translate-y-0.5" : "opacity-60 grayscale"}`}>
       <div className="relative h-24 w-24 overflow-hidden rounded-[16px] bg-[var(--surface-muted)] md:h-44 md:w-full md:rounded-none">
         {item.image_url ? (
           <img alt={item.name} src={item.image_url} className="h-full w-full object-cover" />
         ) : (
           <div className="grid h-full w-full place-items-center px-3 text-center text-xs text-[var(--text-muted)]">Sin imagen</div>
         )}
+        {item.is_available && onAdd ? (
+          <button
+            type="button"
+            className="focus-ring absolute bottom-2 right-2 grid h-9 w-9 place-items-center rounded-full border border-white/70 text-lg font-medium text-white shadow-panel backdrop-blur transition-transform duration-200 ease-out active:scale-[0.97]"
+            style={{ backgroundColor: accentColor }}
+            onClick={() => onAdd(item)}
+            aria-label={`Agregar ${item.name}`}
+          >
+            +
+          </button>
+        ) : null}
         {!item.is_available ? <div className="absolute inset-0 bg-white/45 dark:bg-black/35" /> : null}
       </div>
 
@@ -31,7 +42,7 @@ export function MenuItemCard({ item, accentColor, onAdd }: MenuItemCardProps) {
             {formatPrice(item.price)}
           </p>
           {item.is_available && onAdd ? (
-            <button type="button" className="rounded-full px-3 py-1.5 text-xs font-medium text-white" style={{ backgroundColor: accentColor }} onClick={() => onAdd(item)}>
+            <button type="button" className="hidden rounded-full px-3 py-1.5 text-xs font-medium text-white md:inline-flex" style={{ backgroundColor: accentColor }} onClick={() => onAdd(item)}>
               Agregar
             </button>
           ) : item.is_available ? (
