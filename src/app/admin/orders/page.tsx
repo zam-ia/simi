@@ -21,8 +21,8 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
       <OrdersAutoRefresh clientId={clientId} />
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-2xl font-medium">Pedidos</h2>
-          <p className="mt-1 text-sm text-[var(--text-muted)]">Revisa comprobantes, valida pagos y cambia el estado manualmente.</p>
+          <h2 className="text-2xl font-medium">Centro de pedidos</h2>
+          <p className="mt-1 text-sm text-[var(--text-muted)]">Opera pedidos por estado, valida pagos, revisa cocina y atiende alertas sin salir del tablero.</p>
           {searchParams.saved ? <p className="mt-2 text-sm text-green-700 dark:text-green-300">Pedido actualizado correctamente.</p> : null}
           {searchParams.error ? <p className="mt-2 text-sm text-red-700 dark:text-red-300">{searchParams.error}</p> : null}
         </div>

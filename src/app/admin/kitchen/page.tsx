@@ -30,7 +30,7 @@ export default async function KitchenPage({ searchParams }: { searchParams: { sa
         </div>
         <p className="rounded-full bg-[var(--surface-muted)] px-3 py-2 text-sm text-[var(--text-muted)]">Realtime + refresco automatico.</p>
       </div>
-      <OrdersBoard clients={(clients || []) as Client[]} orders={activeOrders} />
+      <OrdersBoard clients={(clients || []) as Client[]} orders={activeOrders} surface="kitchen" />
     </div>
   );
 }
