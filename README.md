@@ -44,6 +44,9 @@ supabase/migrations/006_business_admin_access.sql
 supabase/migrations/007_realtime_kitchen_delivery.sql
 supabase/migrations/008_client_users_roles_permissions.sql
 supabase/migrations/009_growth_modules.sql
+supabase/migrations/010_client_visual_settings_sync.sql
+supabase/migrations/011_menu_hero_and_promo_cta.sql
+supabase/migrations/012_menu_category_images.sql
 ```
 
 4. Crea en Supabase Auth un usuario con el correo configurado en `ADMIN_EMAIL`.

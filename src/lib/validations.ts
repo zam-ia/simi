@@ -77,6 +77,7 @@ export function validateCategoryInput(formData: FormData) {
     data: {
       client_id: clientId,
       name,
+      image_url: String(formData.get("image_url") || "").trim() || null,
       display_order: Number.isFinite(displayOrder) ? displayOrder : 0,
       is_active: formData.get("is_active") === "on"
     }

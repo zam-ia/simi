@@ -1,0 +1,4 @@
+ALTER TABLE public.menu_categories
+  ADD COLUMN IF NOT EXISTS image_url TEXT;
+
+NOTIFY pgrst, 'reload schema';

@@ -24,6 +24,17 @@ function missingVisualSettingsMessage() {
   return "Supabase todavia no reconoce los campos visuales del cliente. Aplica las migraciones 010 y 011, luego vuelve a guardar.";
 }
 
+function isMissingCategoryImageError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const code = "code" in error ? String(error.code) : "";
+  const message = "message" in error ? String(error.message) : "";
+  return code === "PGRST204" || code === "42703" || message.includes("image_url");
+}
+
+function missingCategoryImageMessage() {
+  return "Supabase todavia no reconoce imagenes para categorias. Aplica la migracion 012 y luego vuelve a guardar.";
+}
+
 async function revalidateClientSurfaces(supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"], clientId: string, knownSlug?: string | null) {
   let slug = knownSlug || null;
 
@@ -104,7 +115,12 @@ export async function createCategoryAction(clientId: string, formData: FormData)
   if (validation.error || !validation.data) redirect(`/admin/clients/${clientId}${encodedError(validation.error || "Datos inválidos.")}`);
 
   const { error } = await supabase.from("menu_categories").insert(validation.data);
-  if (error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo guardar la categoría.")}`);
+  if (error && isMissingCategoryImageError(error)) {
+    if (validation.data.image_url) redirect(`/admin/clients/${clientId}${encodedError(missingCategoryImageMessage())}`);
+    const { image_url: _imageUrl, ...fallbackData } = validation.data;
+    const fallback = await supabase.from("menu_categories").insert(fallbackData);
+    if (fallback.error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo guardar la categoria.")}`);
+  } else if (error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo guardar la categoria.")}`);
 
   await revalidateClientSurfaces(supabase, clientId);
   redirect(`/admin/clients/${clientId}?saved=category`);
@@ -120,7 +136,12 @@ export async function updateCategoryAction(clientId: string, categoryId: string,
   if (validation.error || !validation.data) redirect(`/admin/clients/${clientId}${encodedError(validation.error || "Datos inválidos.")}`);
 
   const { error } = await supabase.from("menu_categories").update(validation.data).eq("id", categoryId).eq("client_id", clientId);
-  if (error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo actualizar la categoría.")}`);
+  if (error && isMissingCategoryImageError(error)) {
+    if (validation.data.image_url) redirect(`/admin/clients/${clientId}${encodedError(missingCategoryImageMessage())}`);
+    const { image_url: _imageUrl, ...fallbackData } = validation.data;
+    const fallback = await supabase.from("menu_categories").update(fallbackData).eq("id", categoryId).eq("client_id", clientId);
+    if (fallback.error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo actualizar la categoria.")}`);
+  } else if (error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo actualizar la categoria.")}`);
 
   await revalidateClientSurfaces(supabase, clientId);
   redirect(`/admin/clients/${clientId}?saved=category`);

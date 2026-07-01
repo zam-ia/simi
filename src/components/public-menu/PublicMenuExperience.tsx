@@ -213,7 +213,11 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
                     onClick={() => setSearchQuery(category.name)}
                     className="focus-ring grid min-h-24 min-w-[112px] shrink-0 content-center justify-items-center gap-2 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] px-3 text-center shadow-panel transition hover:-translate-y-0.5"
                   >
-                    <span className="grid h-11 w-11 place-items-center rounded-[16px] text-lg" style={{ backgroundColor: `${client.primary_color}18`, color: client.primary_color }}>{getCategoryIcon(category.name)}</span>
+                    {category.image_url ? (
+                      <img alt={category.name} src={category.image_url} className="h-11 w-11 rounded-[16px] object-cover" />
+                    ) : (
+                      <span className="grid h-11 w-11 place-items-center rounded-[16px] text-lg" style={{ backgroundColor: `${client.primary_color}18`, color: client.primary_color }}>{getCategoryIcon(category.name)}</span>
+                    )}
                     <span className="line-clamp-2 text-sm font-medium leading-tight">{category.name}</span>
                   </button>
                 ))}
