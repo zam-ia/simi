@@ -34,6 +34,13 @@ type PublicMenuExperienceProps = {
   initialTableNumber?: string;
 };
 
+type SearchSuggestion = {
+  id: string;
+  label: string;
+  detail: string;
+  categoryId: string;
+};
+
 const orderTypeLabels: Record<OrderType, string> = {
   dine_in: "Mesa",
   pickup: "Recojo",
@@ -61,6 +68,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [lastAdded, setLastAdded] = useState<string | null>(null);
 
   const flatItems = useMemo(() => categories.flatMap((category) => category.items), [categories]);
@@ -92,6 +100,33 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
   const featuredCategories = categories.filter((category) => category.items.length > 0).slice(0, 8);
   const fastestDelivery = deliveryZones.find((zone) => zone.estimated_time)?.estimated_time || "20-35 min";
   const lowestDeliveryFee = deliveryZones.length ? Math.min(...deliveryZones.map((zone) => Number(zone.delivery_fee || 0))) : 0;
+  const searchSuggestions = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (query.length < 2) return [];
+
+    const categorySuggestions: SearchSuggestion[] = categories
+      .filter((category) => category.name.toLowerCase().includes(query))
+      .map((category) => ({
+        id: `category-${category.id}`,
+        label: category.name,
+        detail: `${category.items.length} productos`,
+        categoryId: category.id
+      }));
+
+    const itemSuggestions: SearchSuggestion[] = categories.flatMap((category) =>
+      category.items
+        .filter((item) => `${item.name} ${item.description || ""}`.toLowerCase().includes(query))
+        .slice(0, 4)
+        .map((item) => ({
+          id: `item-${item.id}`,
+          label: item.name,
+          detail: category.name,
+          categoryId: category.id
+        }))
+    );
+
+    return [...categorySuggestions, ...itemSuggestions].slice(0, 7);
+  }, [categories, searchQuery]);
 
   useEffect(() => {
     if (!lastAdded) return;
@@ -127,6 +162,14 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
     setSearchQuery("");
     window.setTimeout(() => {
       document.getElementById(categoryId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  }
+
+  function selectSearchSuggestion(suggestion: SearchSuggestion) {
+    setSearchQuery(suggestion.label);
+    setIsSearchFocused(false);
+    window.setTimeout(() => {
+      document.getElementById(suggestion.categoryId)?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 50);
   }
 
@@ -204,19 +247,48 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
               <ServiceModeButton active={orderType === "pickup"} label="Recojo" detail="Pide y pasa por tienda" onClick={() => setOrderType("pickup")} />
               <ServiceModeButton active={orderType === "dine_in"} label="Mesa" detail="Escanea QR y ordena" onClick={() => setOrderType("dine_in")} />
             </div>
-            <div className="flex min-w-0 gap-2">
-              <label className="focus-within:shadow-panel flex min-h-12 min-w-0 flex-1 items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface-muted)] px-4 text-sm transition">
+            <div className="relative min-w-0">
+              <label className="focus-within:shadow-panel flex min-h-12 min-w-0 items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface-muted)] px-4 text-sm transition">
                 <SearchIcon className="h-5 w-5 text-[var(--text-muted)]" />
                 <input
                   className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-[var(--text-muted)]"
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() => window.setTimeout(() => setIsSearchFocused(false), 140)}
                   placeholder={`Buscar en ${client.name}`}
                 />
+                {searchQuery ? (
+                  <button type="button" className="grid h-7 w-7 place-items-center rounded-full bg-[var(--surface)] text-sm font-medium text-[var(--text-muted)]" onClick={() => setSearchQuery("")} aria-label="Limpiar busqueda">
+                    x
+                  </button>
+                ) : null}
               </label>
-              <a href={`/reservar/${client.slug}`} className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 text-sm font-medium text-[var(--text)] shadow-panel">
-                Reservar
-              </a>
+              {isSearchFocused && searchQuery.trim().length >= 2 ? (
+                <div className="absolute inset-x-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-[22px] border border-[var(--line)] bg-[var(--surface)] p-2 shadow-soft">
+                  {searchSuggestions.length > 0 ? (
+                    <div className="grid gap-1">
+                      {searchSuggestions.map((suggestion) => (
+                        <button
+                          key={suggestion.id}
+                          type="button"
+                          className="grid min-h-12 grid-cols-[1fr_auto] items-center gap-3 rounded-[16px] px-3 text-left text-sm hover:bg-[var(--surface-muted)]"
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => selectSearchSuggestion(suggestion)}
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate font-medium">{suggestion.label}</span>
+                            <span className="block truncate text-xs text-[var(--text-muted)]">{suggestion.detail}</span>
+                          </span>
+                          <span className="text-xs font-medium text-[var(--accent)]">Ver</span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-[16px] bg-[var(--surface-muted)] px-3 py-3 text-sm text-[var(--text-muted)]">No encontramos platos con esa palabra.</div>
+                  )}
+                </div>
+              ) : null}
             </div>
           </section>
 

@@ -13,13 +13,9 @@ export function MenuHeader({ client }: MenuHeaderProps) {
     : `radial-gradient(circle at 82% 18%, color-mix(in srgb, ${client.primary_color} 35%, transparent), transparent 28%), linear-gradient(145deg, ${client.primary_color} 0%, color-mix(in srgb, ${secondaryColor} 82%, #111827) 100%)`;
 
   return (
-    <header className="relative pb-20 text-white lg:pb-24">
-      <div className="min-h-[230px] bg-cover bg-center px-4 pt-4 sm:px-5 lg:min-h-[300px] lg:px-8 lg:pt-6" style={{ background }}>
-        <div className="mx-auto flex max-w-[1320px] items-center justify-between gap-3">
-          <a href="#menu-content" className="focus-ring inline-flex min-h-11 flex-1 items-center gap-2 rounded-full bg-white/94 px-4 text-sm font-medium text-[#1d1d1f] shadow-panel backdrop-blur">
-            <SearchIcon className="h-5 w-5 text-[var(--text-muted)]" />
-            Buscar platos en {client.name}
-          </a>
+    <header className="relative pb-16 text-white sm:pb-20 lg:pb-24">
+      <div className="min-h-[250px] bg-cover bg-center px-4 pt-4 sm:px-5 lg:min-h-[320px] lg:px-8 lg:pt-6" style={{ background }}>
+        <div className="mx-auto flex max-w-[1320px] items-center justify-end">
           <ThemeToggle compact />
         </div>
       </div>
@@ -42,14 +38,5 @@ export function MenuHeader({ client }: MenuHeaderProps) {
         </div>
       </div>
     </header>
-  );
-}
-
-function SearchIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-      <path d="m21 21-4.3-4.3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
-    </svg>
   );
 }
