@@ -16,14 +16,14 @@ export function PromoBanner({ client, promoItem, onAddPromo, onBrowseMenu }: Pro
   const canAddPromo = Boolean(promoItem?.is_available && onAddPromo);
 
   return (
-    <section className="overflow-hidden rounded-[28px] border border-[var(--line)] bg-[var(--surface)] shadow-soft">
+    <section className="min-w-0 max-w-full overflow-hidden rounded-[28px] border border-[var(--line)] bg-[var(--surface)] shadow-soft">
       {client.promo_banner_image_url ? (
         <div className="relative h-44 overflow-hidden bg-[var(--surface-muted)]">
           <img alt={client.promo_banner_title || "Promocion"} src={client.promo_banner_image_url} className="h-full w-full object-cover" />
           <div className="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1 text-xs font-medium text-[#1d1d1f] shadow-panel">Promocion</div>
         </div>
       ) : null}
-      <div className="grid gap-4 p-4">
+      <div className="grid grid-cols-1 gap-4 p-4">
         <div>
           {!client.promo_banner_image_url ? (
             <div className="mb-2 inline-flex rounded-full px-3 py-1 text-xs font-medium text-white" style={{ backgroundColor: client.primary_color }}>

@@ -9,16 +9,16 @@ type CategorySectionProps = {
 
 export function CategorySection({ category, accentColor, onAdd }: CategorySectionProps) {
   return (
-    <section id={category.id} className="scroll-mt-24 grid gap-3">
-      <div className="flex items-end justify-between gap-3">
-        <h2 className="text-xl font-medium">{category.name}</h2>
+    <section id={category.id} className="scroll-mt-24 grid min-w-0 max-w-full grid-cols-1 gap-3">
+      <div className="flex min-w-0 items-end justify-between gap-3">
+        <h2 className="min-w-0 text-xl font-medium">{category.name}</h2>
         <span className="text-xs text-[var(--text-muted)]">{category.items.length} productos</span>
       </div>
 
       {category.items.length === 0 ? (
         <div className="rounded-[20px] border border-dashed border-[var(--line)] bg-[var(--surface)] p-5 text-sm text-[var(--text-muted)]">Esta categoría aún no tiene productos disponibles.</div>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
           {category.items.map((item) => (
             <MenuItemCard key={item.id} item={item} accentColor={accentColor} onAdd={onAdd} />
           ))}

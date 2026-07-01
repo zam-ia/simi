@@ -176,15 +176,15 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
     <main className="min-h-screen bg-[var(--background)] pb-32">
       <MenuHeader client={client} />
       <div id="menu-content" className="mx-auto grid max-w-[1320px] gap-6 px-4 py-5 sm:px-5 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:px-8">
-        <div className="grid min-w-0 gap-6">
-          <section className="grid gap-3 rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-3 shadow-soft">
-            <div className="grid grid-cols-3 gap-2">
+        <div className="grid min-w-0 max-w-full grid-cols-1 gap-6">
+          <section className="grid min-w-0 max-w-full grid-cols-1 gap-3 rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-3 shadow-soft">
+            <div className="grid min-w-0 grid-cols-[repeat(3,minmax(0,1fr))] gap-2">
               <ServiceModeButton active={orderType === "delivery"} label="Delivery" detail={`${fastestDelivery} - desde ${formatPrice(lowestDeliveryFee)}`} onClick={() => setOrderType("delivery")} />
               <ServiceModeButton active={orderType === "pickup"} label="Recojo" detail="Pide y pasa por tienda" onClick={() => setOrderType("pickup")} />
               <ServiceModeButton active={orderType === "dine_in"} label="Mesa" detail="Escanea QR y ordena" onClick={() => setOrderType("dine_in")} />
             </div>
-            <div className="flex gap-2">
-              <label className="focus-within:shadow-panel flex min-h-12 flex-1 items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface-muted)] px-4 text-sm transition">
+            <div className="flex min-w-0 gap-2">
+              <label className="focus-within:shadow-panel flex min-h-12 min-w-0 flex-1 items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface-muted)] px-4 text-sm transition">
                 <SearchIcon className="h-5 w-5 text-[var(--text-muted)]" />
                 <input
                   className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-[var(--text-muted)]"
@@ -193,19 +193,19 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
                   placeholder={`Buscar en ${client.name}`}
                 />
               </label>
-              <a href={`/reservar/${client.slug}`} className="inline-flex min-h-12 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 text-sm font-medium text-[var(--text)] shadow-panel">
+              <a href={`/reservar/${client.slug}`} className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 text-sm font-medium text-[var(--text)] shadow-panel">
                 Reservar
               </a>
             </div>
           </section>
 
           {featuredCategories.length > 0 ? (
-            <section className="grid gap-3">
+            <section className="grid min-w-0 max-w-full grid-cols-1 gap-3">
               <div className="flex items-center justify-between gap-3 px-1">
                 <h2 className="text-lg font-medium">Explora por antojo</h2>
                 {searchQuery ? <button type="button" className="text-sm font-medium text-[var(--accent)]" onClick={() => setSearchQuery("")}>Limpiar</button> : null}
               </div>
-              <div className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="flex min-w-0 max-w-full gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {featuredCategories.map((category) => (
                   <button
                     key={category.id}
@@ -224,12 +224,12 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
         <PromoBanner client={client} promoItem={promoItem} onAddPromo={addItem} onBrowseMenu={browseMenu} />
 
         {step === "menu" && activePromotions.length > 0 ? (
-          <section className="grid gap-3">
+          <section className="grid min-w-0 max-w-full grid-cols-1 gap-3">
             <div className="flex items-center justify-between gap-3 px-1">
               <h2 className="text-lg font-medium">Promociones para hoy</h2>
               <span className="text-sm text-[var(--text-muted)]">{activePromotions.length} activas</span>
             </div>
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               {activePromotions.slice(0, 3).map((promotion) => (
                 <article key={promotion.id} className="rounded-[20px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
                   <div className="flex items-start justify-between gap-3">
@@ -508,9 +508,9 @@ function ServiceModeButton({ active, label, detail, onClick }: { active: boolean
     <button
       type="button"
       onClick={onClick}
-      className={`focus-ring grid min-h-16 content-center rounded-[18px] border px-2 text-center transition ${active ? "border-[var(--accent)] bg-[var(--surface)] shadow-panel" : "border-transparent bg-[var(--surface-muted)]"}`}
+      className={`focus-ring grid min-h-16 min-w-0 content-center overflow-hidden rounded-[18px] border px-1 text-center transition sm:px-2 ${active ? "border-[var(--accent)] bg-[var(--surface)] shadow-panel" : "border-transparent bg-[var(--surface-muted)]"}`}
     >
-      <span className="text-sm font-medium text-[var(--text)]">{label}</span>
+      <span className="truncate text-sm font-medium text-[var(--text)]">{label}</span>
       <span className="mt-1 line-clamp-2 text-[11px] leading-4 text-[var(--text-muted)]">{detail}</span>
     </button>
   );
