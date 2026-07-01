@@ -27,6 +27,10 @@ export default async function AdminPage() {
     const ordersToday = todayOrders || [];
     const activeOrders = ordersToday.filter((order) => order.order_status !== "delivered" && order.order_status !== "cancelled");
     const revenueToday = ordersToday.reduce((sum, order) => sum + Number(order.total || 0), 0);
+    const averageTicket = ordersToday.length > 0 ? revenueToday / ordersToday.length : 0;
+    const newOrders = activeOrders.filter((order) => order.order_status === "new" || order.order_status === "payment_pending");
+    const preparingOrders = activeOrders.filter((order) => ["received", "payment_validated", "preparing"].includes(order.order_status));
+    const readyOrders = activeOrders.filter((order) => ["ready", "handed_to_courier", "on_the_way", "arriving"].includes(order.order_status));
     const problemOrders = ordersToday.filter((order) => order.payment_status === "proof_submitted" || order.order_status === "new" || order.order_status === "payment_pending");
 
     return (
@@ -53,11 +57,39 @@ export default async function AdminPage() {
           )}
         </section>
 
+        <section className="grid gap-3 md:grid-cols-[1.2fr_1fr]">
+          <div className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-sm text-[var(--text-muted)]">Estado operativo</p>
+                <h3 className="mt-1 text-2xl font-medium">Local activo</h3>
+                <p className="mt-2 max-w-xl text-sm leading-5 text-[var(--text-muted)]">Prioriza aceptar pedidos nuevos, validar comprobantes y mover cocina sin dejar pedidos detenidos.</p>
+              </div>
+              {hasModuleAccess(context, "orders") ? <LinkButton href="/admin/orders">Ver pedidos</LinkButton> : null}
+            </div>
+            <div className="mt-5 grid gap-2 sm:grid-cols-3">
+              <OperationStep label="Nuevos" value={newOrders.length} tone="amber" />
+              <OperationStep label="Preparando" value={preparingOrders.length} tone="blue" />
+              <OperationStep label="Listos / camino" value={readyOrders.length} tone="green" />
+            </div>
+          </div>
+
+          <div className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+            <p className="text-sm text-[var(--text-muted)]">Regla de hora punta</p>
+            <h3 className="mt-1 text-xl font-medium">Responder antes de 5 min</h3>
+            <div className="mt-4 grid gap-2 text-sm text-[var(--text-muted)]">
+              <p className="rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-3">1. Acepta o revisa cada pedido nuevo.</p>
+              <p className="rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-3">2. Marca agotados para evitar cancelaciones.</p>
+              <p className="rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-3">3. Mueve cocina a listo apenas termine.</p>
+            </div>
+          </div>
+        </section>
+
         <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
             ["Pedidos activos", activeOrders.length, "Ahora"],
             ["Ingresos hoy", formatPrice(revenueToday), "Venta del dia"],
-            ["Pagos por revisar", pendingPaymentCount || 0, "Yape / comprobantes"],
+            ["Ticket promedio", formatPrice(averageTicket), "Pedidos de hoy"],
             ["Productos", productCount || 0, `${categoryCount || 0} categorias`]
           ].map(([label, value, helper]) => (
             <div key={label} className="rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
@@ -67,6 +99,12 @@ export default async function AdminPage() {
             </div>
           ))}
         </section>
+
+        {pendingPaymentCount ? (
+          <div className="rounded-[var(--radius-card)] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow-panel dark:border-amber-900/50 dark:bg-amber-950/35 dark:text-amber-100">
+            Hay {pendingPaymentCount} pago{pendingPaymentCount === 1 ? "" : "s"} por revisar. Validarlos rapido reduce dudas del comensal y evita retrasos en cocina.
+          </div>
+        ) : null}
 
         <section className="grid gap-4 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -127,6 +165,21 @@ export default async function AdminPage() {
       ) : (
         <ClientTable clients={(data || []) as Client[]} />
       )}
+    </div>
+  );
+}
+
+function OperationStep({ label, value, tone }: { label: string; value: number; tone: "amber" | "blue" | "green" }) {
+  const tones = {
+    amber: "bg-amber-100 text-amber-900 dark:bg-amber-950/35 dark:text-amber-100",
+    blue: "bg-blue-100 text-blue-900 dark:bg-blue-950/35 dark:text-blue-100",
+    green: "bg-green-100 text-green-900 dark:bg-green-950/35 dark:text-green-100"
+  };
+
+  return (
+    <div className={`rounded-[var(--radius-card)] p-3 ${tones[tone]}`}>
+      <p className="text-xs">{label}</p>
+      <p className="mt-1 text-2xl font-medium">{value}</p>
     </div>
   );
 }

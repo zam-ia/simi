@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CategoryTabs } from "@/components/public-menu/CategoryTabs";
 import { CategorySection } from "@/components/public-menu/CategorySection";
 import { EmptyMenuState } from "@/components/public-menu/EmptyMenuState";
 import { MenuHeader } from "@/components/public-menu/MenuHeader";
+import { MenuItemCard } from "@/components/public-menu/MenuItemCard";
 import { PromoBanner } from "@/components/public-menu/PromoBanner";
 import { Button } from "@/components/shared/Button";
 import { buildWhatsappUrl, formatPrice } from "@/lib/utils";
@@ -49,6 +50,7 @@ const orderTypeLabels: Record<OrderType, string> = {
 
 export function PublicMenuExperience({ client, categories, tables, deliveryZones, promotions, paymentMethods, initialTableNumber }: PublicMenuExperienceProps) {
   const initialTable = tables.find((table) => table.table_number === initialTableNumber || table.label.toLowerCase() === `mesa ${initialTableNumber}`.toLowerCase());
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [step, setStep] = useState<"menu" | "checkout" | "payment">("menu");
   const [orderType, setOrderType] = useState<OrderType>(initialTable ? "dine_in" : "pickup");
@@ -100,6 +102,27 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
   const featuredCategories = categories.filter((category) => category.items.length > 0).slice(0, 8);
   const fastestDelivery = deliveryZones.find((zone) => zone.estimated_time)?.estimated_time || "20-35 min";
   const lowestDeliveryFee = deliveryZones.length ? Math.min(...deliveryZones.map((zone) => Number(zone.delivery_fee || 0))) : 0;
+  const recommendedItems = useMemo(() => {
+    const priorityWords = ["combo", "pollo", "chaufa", "broaster", "familiar", "oferta"];
+    return flatItems
+      .filter((item) => item.is_available)
+      .sort((first, second) => {
+        const firstScore = priorityWords.filter((word) => `${first.name} ${first.description || ""}`.toLowerCase().includes(word)).length;
+        const secondScore = priorityWords.filter((word) => `${second.name} ${second.description || ""}`.toLowerCase().includes(word)).length;
+        return secondScore - firstScore || Number(first.price) - Number(second.price);
+      })
+      .slice(0, 4);
+  }, [flatItems]);
+  const quickFilters = useMemo(
+    () => [
+      { label: "Promos", query: "combo" },
+      { label: "Chaufas", query: "chaufa" },
+      { label: "Pollo", query: "pollo" },
+      { label: "Chifa", query: "chaufa" },
+      { label: "Broaster", query: "broaster" }
+    ],
+    []
+  );
   const searchSuggestions = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     if (query.length < 2) return [];
@@ -156,6 +179,20 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
 
   function browseMenu() {
     document.getElementById("menu-content")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function scrollToId(id: string) {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function focusSearch() {
+    scrollToId("menu-content");
+    window.setTimeout(() => searchInputRef.current?.focus(), 120);
+  }
+
+  function applyQuickFilter(query: string) {
+    setSearchQuery(query);
+    scrollToId("menu-results");
   }
 
   function goToCategory(categoryId: string) {
@@ -237,7 +274,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
   }
 
   return (
-    <main className="min-h-screen bg-[var(--background)] pb-32">
+    <main className="min-h-screen bg-[var(--background)] pb-44">
       <MenuHeader client={client} />
       <div id="menu-content" className="mx-auto grid max-w-[1320px] gap-6 px-4 py-5 sm:px-5 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:px-8">
         <div className="grid min-w-0 max-w-full grid-cols-1 gap-6">
@@ -251,6 +288,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
               <label className="focus-within:shadow-panel flex min-h-12 min-w-0 items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface-muted)] px-4 text-sm transition">
                 <SearchIcon className="h-5 w-5 text-[var(--text-muted)]" />
                 <input
+                  ref={searchInputRef}
                   className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-[var(--text-muted)]"
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
@@ -290,6 +328,18 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
                 </div>
               ) : null}
             </div>
+            <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {quickFilters.map((filter) => (
+                <button
+                  key={filter.label}
+                  type="button"
+                  className="shrink-0 rounded-full bg-[var(--surface-muted)] px-3 py-2 text-xs font-medium text-[var(--text)] transition hover:bg-[var(--surface)] hover:shadow-panel"
+                  onClick={() => applyQuickFilter(filter.query)}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
           </section>
 
           <QuickTrustInfo client={client} deliveryZones={deliveryZones} paymentMethods={paymentMethods} fastestDelivery={fastestDelivery} />
@@ -320,10 +370,26 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
             </section>
           ) : null}
 
+        {recommendedItems.length > 0 ? (
+          <section id="recommended" className="grid min-w-0 max-w-full grid-cols-1 gap-3">
+            <div className="flex items-center justify-between gap-3 px-1">
+              <div>
+                <h2 className="text-lg font-medium">Mas pedidos para decidir rapido</h2>
+                <p className="mt-1 text-sm text-[var(--text-muted)]">Opciones fuertes para quien quiere resolver en pocos taps.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {recommendedItems.map((item) => (
+                <MenuItemCard key={item.id} item={item} accentColor={client.primary_color} onAdd={addItem} quantity={cartQuantities[item.id] || 0} />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
         <PromoBanner client={client} promoItem={promoItem} onAddPromo={addItem} onBrowseMenu={browseMenu} />
 
         {step === "menu" && activePromotions.length > 0 ? (
-          <section className="grid min-w-0 max-w-full grid-cols-1 gap-3">
+          <section id="promotions" className="grid min-w-0 max-w-full grid-cols-1 gap-3 scroll-mt-24">
             <div className="flex items-center justify-between gap-3 px-1">
               <h2 className="text-lg font-medium">Promociones para hoy</h2>
               <span className="text-sm text-[var(--text-muted)]">{activePromotions.length} activas</span>
@@ -345,10 +411,10 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
         ) : null}
 
         {step === "menu" ? (
-          <>
+          <div id="menu-results" className="grid gap-6 scroll-mt-24">
             <CategoryTabs categories={visibleCategories} accentColor={client.primary_color} />
             {hasProducts ? visibleCategories.map((category) => <CategorySection key={category.id} category={category} accentColor={client.primary_color} onAdd={addItem} quantities={cartQuantities} />) : <EmptyMenuState client={client} />}
-          </>
+          </div>
         ) : null}
 
         {step === "checkout" ? (
@@ -531,7 +597,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
         ) : null}
         </div>
 
-        <aside className="sticky top-6 hidden rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-soft lg:grid lg:gap-4">
+        <aside id="cart-panel" className="sticky top-6 hidden rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-soft lg:grid lg:gap-4">
           <div>
             <p className="text-sm text-[var(--text-muted)]">Tu pedido</p>
             <h2 className="mt-1 text-xl font-medium">{itemCount ? `${itemCount} producto${itemCount === 1 ? "" : "s"}` : "Listo para ordenar"}</h2>
@@ -580,7 +646,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
       </div>
 
       {step === "menu" && cart.length > 0 ? (
-        <div className="fixed inset-x-0 bottom-0 z-40 flex justify-center border-t border-[var(--line)] bg-[var(--surface)]/94 px-3 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl lg:hidden">
+        <div className="fixed inset-x-0 bottom-[68px] z-40 flex justify-center border-t border-[var(--line)] bg-[var(--surface)]/94 px-3 py-3 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl lg:hidden">
           <div className="flex w-full max-w-[480px] items-center gap-3">
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{itemCount} producto{itemCount === 1 ? "" : "s"} en tu pedido</p>
@@ -592,11 +658,21 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
           </div>
         </div>
       ) : step === "menu" ? (
-        <div className="fixed inset-x-0 bottom-0 z-40 flex justify-center border-t border-[var(--line)] bg-[var(--surface)]/94 px-3 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl lg:hidden">
+        <div className="fixed inset-x-0 bottom-[68px] z-40 flex justify-center border-t border-[var(--line)] bg-[var(--surface)]/94 px-3 py-3 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl lg:hidden">
           <a className="flex min-h-12 w-full max-w-[480px] items-center justify-center rounded-full bg-[#25D366] px-4 text-sm font-medium text-white" href={buildWhatsappUrl(client.whatsapp_number, "Hola, quiero hacer un pedido")} target="_blank" rel="noreferrer">
             Consultar por WhatsApp
           </a>
         </div>
+      ) : null}
+
+      {step === "menu" ? (
+        <nav className="fixed inset-x-0 bottom-0 z-40 grid h-[68px] grid-cols-5 border-t border-[var(--line)] bg-[var(--surface)]/96 px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(0,0,0,0.06)] backdrop-blur-xl lg:hidden" aria-label="Navegacion de carta">
+          <MobileNavButton label="Inicio" icon="home" onClick={() => scrollToId("menu-content")} />
+          <MobileNavButton label="Buscar" icon="search" onClick={focusSearch} />
+          <MobileNavButton label="Promos" icon="tag" onClick={() => scrollToId("promotions")} />
+          <MobileNavButton label="Pedido" icon="cart" onClick={() => (cart.length > 0 ? setStep("checkout") : scrollToId("recommended"))} />
+          <MobileNavButton label="Info" icon="info" onClick={() => scrollToId("quick-info")} />
+        </nav>
       ) : null}
 
       {lastAdded ? (
@@ -618,7 +694,7 @@ function QuickTrustInfo({ client, deliveryZones, paymentMethods, fastestDelivery
   const deliveryText = deliveryZones.length > 0 ? `${deliveryZones.length} zonas registradas` : "Cobertura por confirmar";
 
   return (
-    <section className="grid gap-3 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel md:grid-cols-4">
+    <section id="quick-info" className="grid scroll-mt-24 gap-3 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel md:grid-cols-4">
       <InfoPill label="Entrega" value={fastestDelivery} />
       <InfoPill label="Delivery" value={deliveryText} />
       <InfoPill label="Pagos" value={paymentText} />
@@ -633,6 +709,61 @@ function InfoPill({ label, value }: { label: string; value: string }) {
       <p className="text-[11px] font-medium text-[var(--text-muted)]">{label}</p>
       <p className="mt-1 line-clamp-2 text-sm font-medium text-[var(--text)]">{value}</p>
     </div>
+  );
+}
+
+function MobileNavButton({ label, icon, onClick }: { label: string; icon: "home" | "search" | "tag" | "cart" | "info"; onClick: () => void }) {
+  return (
+    <button type="button" className="grid min-w-0 place-items-center content-center gap-1 rounded-[16px] px-1 text-[11px] font-medium text-[var(--text-muted)] active:scale-[0.97]" onClick={onClick}>
+      <MobileNavIcon name={icon} className="h-5 w-5 text-[var(--text)]" />
+      <span className="truncate">{label}</span>
+    </button>
+  );
+}
+
+function MobileNavIcon({ name, className }: { name: "home" | "search" | "tag" | "cart" | "info"; className?: string }) {
+  const paths = {
+    home: (
+      <>
+        <path d="M3 10.5 12 4l9 6.5" />
+        <path d="M5.5 9.5V20h13V9.5" />
+        <path d="M9.5 20v-5h5v5" />
+      </>
+    ),
+    search: (
+      <>
+        <circle cx="11" cy="11" r="6.5" />
+        <path d="m16 16 4 4" />
+      </>
+    ),
+    tag: (
+      <>
+        <path d="M4 12V5h7l9 9-7 7-9-9Z" />
+        <path d="M8 8h.01" />
+      </>
+    ),
+    cart: (
+      <>
+        <path d="M5 5h2l2 10h8l2-7H8" />
+        <path d="M10 20h.01" />
+        <path d="M17 20h.01" />
+      </>
+    ),
+    info: (
+      <>
+        <circle cx="12" cy="12" r="8" />
+        <path d="M12 11v5" />
+        <path d="M12 8h.01" />
+      </>
+    )
+  };
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <g stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+        {paths[name]}
+      </g>
+    </svg>
   );
 }
 

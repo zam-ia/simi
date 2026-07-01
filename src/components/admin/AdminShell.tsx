@@ -135,8 +135,25 @@ export function AdminShell({ children, title, subtitle, userEmail, items, primar
             </div>
           </div>
         </header>
-        <main className="mx-auto max-w-6xl px-4 py-6 lg:px-8 lg:py-8">{children}</main>
+        <main className="mx-auto max-w-6xl px-4 pb-28 pt-6 lg:px-8 lg:py-8">{children}</main>
       </div>
+
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid h-[72px] grid-cols-5 border-t border-[var(--line)] bg-[var(--surface)]/96 px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(0,0,0,0.06)] backdrop-blur-xl lg:hidden" aria-label="Navegacion rapida administrador">
+        {items.slice(0, 5).map((item) => {
+          const active = isActive(pathname, item);
+
+          return (
+            <Link
+              key={`mobile-${item.href}-${item.label}`}
+              href={item.href}
+              className={cn("grid min-w-0 place-items-center content-center gap-1 rounded-[16px] px-1 text-[11px] font-medium active:scale-[0.97]", active ? "text-[var(--accent)]" : "text-[var(--text-muted)]")}
+            >
+              <AdminShellIcon name={item.icon} className="h-5 w-5" />
+              <span className="truncate">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }
