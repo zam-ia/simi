@@ -27,7 +27,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ADMIN_EMAIL=admin@test.com
 BUSINESS_ADMIN_EMAIL=supervisor@test.com
-BUSINESS_ADMIN_CLIENT_SLUG=demo-pollo-loco
+BUSINESS_ADMIN_CLIENT_SLUG=pollo-loco
 DEFAULT_WHATSAPP_NUMBER=+51987088359
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=
 ```
@@ -75,8 +75,8 @@ http://localhost:3000/login
 /admin/payments
 /admin/settings
 /admin/users
-/menu/demo-pollo-loco
-/reservar/demo-pollo-loco
+/menu/pollo-loco
+/reservar/pollo-loco
 /pedido/[orderId]
 ```
 
@@ -91,7 +91,7 @@ npm run seed
 Esto crea el negocio demo `Polleria El Sabor` en:
 
 ```txt
-/menu/demo-pollo-loco
+/menu/pollo-loco
 ```
 
 ## Referencia de arquitectura

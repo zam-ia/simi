@@ -9,4 +9,4 @@ UPDATE public.clients
 SET
   admin_email = COALESCE(admin_email, 'supervisor@test.com'),
   notification_whatsapp_number = COALESCE(notification_whatsapp_number, whatsapp_number)
-WHERE slug = 'demo-pollo-loco';
+WHERE slug IN ('pollo-loco', 'demo-pollo-loco');

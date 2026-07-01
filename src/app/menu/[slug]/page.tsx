@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { PublicMenuExperience } from "@/components/public-menu/PublicMenuExperience";
 import { getPublicMenuBySlug } from "@/lib/menu-data";
-import { getPublicMenuUrl } from "@/lib/utils";
+import { getPublicMenuUrl, stripDemoPrefix } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +12,8 @@ type MenuPageProps = {
 };
 
 export async function generateMetadata({ params }: MenuPageProps): Promise<Metadata> {
-  const menu = await getPublicMenuBySlug(params.slug);
+  const cleanSlug = stripDemoPrefix(params.slug);
+  const menu = cleanSlug !== params.slug ? (await getPublicMenuBySlug(cleanSlug)) || (await getPublicMenuBySlug(params.slug)) : await getPublicMenuBySlug(params.slug);
 
   if (!menu) {
     return {
@@ -36,6 +37,15 @@ export async function generateMetadata({ params }: MenuPageProps): Promise<Metad
 }
 
 export default async function PublicMenuPage({ params, searchParams }: MenuPageProps) {
+  const cleanSlug = stripDemoPrefix(params.slug);
+  if (cleanSlug !== params.slug) {
+    const cleanMenu = await getPublicMenuBySlug(cleanSlug);
+    if (cleanMenu) {
+      const query = searchParams?.mesa ? `?mesa=${encodeURIComponent(searchParams.mesa)}` : "";
+      redirect(`/menu/${cleanSlug}${query}`);
+    }
+  }
+
   const menu = await getPublicMenuBySlug(params.slug);
   if (!menu) notFound();
 

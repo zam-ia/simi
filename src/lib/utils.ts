@@ -3,7 +3,7 @@ export function cn(...classes: Array<string | false | null | undefined>) {
 }
 
 export function generateSlug(name: string) {
-  return name
+  const slug = name
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
@@ -12,6 +12,12 @@ export function generateSlug(name: string) {
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
+
+  return stripDemoPrefix(slug);
+}
+
+export function stripDemoPrefix(slug: string) {
+  return slug.replace(/^demo-+/i, "");
 }
 
 export function formatPrice(price: number | string) {

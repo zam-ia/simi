@@ -16,7 +16,7 @@ ADMIN_EMAIL=admin@test.com
 
 ```env
 BUSINESS_ADMIN_EMAIL=supervisor@test.com
-BUSINESS_ADMIN_CLIENT_SLUG=demo-pollo-loco
+BUSINESS_ADMIN_CLIENT_SLUG=pollo-loco
 DEFAULT_WHATSAPP_NUMBER=+51987088359
 ```
 

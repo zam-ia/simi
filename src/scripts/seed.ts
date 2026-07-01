@@ -24,7 +24,7 @@ async function main() {
     .upsert(
       {
         name: "Pollería El Sabor",
-        slug: "demo-polleria",
+        slug: "polleria-el-sabor",
         whatsapp_number: whatsapp,
         yape_number: whatsapp.replace(/\D/g, "").slice(-9),
         primary_color: "#0071E3",
@@ -74,7 +74,7 @@ async function main() {
   const { error: itemError } = await supabase.from("menu_items").insert(items);
   if (itemError) throw itemError;
 
-  console.log("Seed completado. Menú demo: /menu/demo-polleria");
+  console.log("Seed completado. Menu de prueba: /menu/polleria-el-sabor");
 }
 
 main().catch((error) => {
