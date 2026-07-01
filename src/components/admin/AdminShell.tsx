@@ -44,7 +44,7 @@ export function AdminShell({ children, title, subtitle, userEmail, items, primar
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col border-r border-[var(--line)] bg-[var(--surface)]/92 px-3 py-4 shadow-panel backdrop-blur-xl transition-all duration-300 ease-out lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col border-r border-[var(--line)] bg-[var(--surface)]/88 px-3 py-4 shadow-[10px_0_30px_rgba(0,0,0,0.05)] backdrop-blur-xl transition-all duration-300 ease-out lg:translate-x-0",
           isCollapsed ? "lg:w-[88px]" : "lg:w-[280px]",
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
@@ -78,7 +78,7 @@ export function AdminShell({ children, title, subtitle, userEmail, items, primar
                 onClick={() => setIsMobileOpen(false)}
                 className={cn(
                   "focus-ring group flex min-h-11 items-center gap-3 rounded-[14px] px-3 text-sm font-medium transition-all duration-200 ease-out",
-                  active ? "bg-[var(--text)] text-[var(--surface)] shadow-panel" : "text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]",
+                  active ? "bg-[var(--accent)] text-white shadow-[0_12px_26px_rgba(0,122,255,0.18)]" : "text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]",
                   isCollapsed ? "lg:justify-center lg:px-0" : ""
                 )}
                 title={item.label}
@@ -135,7 +135,7 @@ export function AdminShell({ children, title, subtitle, userEmail, items, primar
             </div>
           </div>
         </header>
-        <main className="mx-auto max-w-6xl px-4 pb-28 pt-6 lg:px-8 lg:py-8">{children}</main>
+        <main className="mx-auto max-w-[1600px] px-4 pb-28 pt-6 lg:px-8 lg:py-8">{children}</main>
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 grid h-[72px] grid-cols-5 border-t border-[var(--line)] bg-[var(--surface)]/96 px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(0,0,0,0.06)] backdrop-blur-xl lg:hidden" aria-label="Navegacion rapida administrador">
