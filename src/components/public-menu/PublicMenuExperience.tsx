@@ -68,10 +68,14 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
     const query = searchQuery.trim().toLowerCase();
     if (!query) return categories;
     return categories
-      .map((category) => ({
-        ...category,
-        items: category.items.filter((item) => `${item.name} ${item.description || ""}`.toLowerCase().includes(query))
-      }))
+      .map((category) => {
+        const categoryMatches = category.name.toLowerCase().includes(query);
+
+        return {
+          ...category,
+          items: categoryMatches ? category.items : category.items.filter((item) => `${item.name} ${item.description || ""}`.toLowerCase().includes(query))
+        };
+      })
       .filter((category) => category.items.length > 0);
   }, [categories, searchQuery]);
   const hasProducts = visibleCategories.some((category) => category.items.length > 0);
@@ -107,6 +111,13 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
 
   function browseMenu() {
     document.getElementById("menu-content")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function goToCategory(categoryId: string) {
+    setSearchQuery("");
+    window.setTimeout(() => {
+      document.getElementById(categoryId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   }
 
   async function createOrder() {
@@ -210,7 +221,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
                   <button
                     key={category.id}
                     type="button"
-                    onClick={() => setSearchQuery(category.name)}
+                    onClick={() => goToCategory(category.id)}
                     className="focus-ring grid min-h-24 min-w-[112px] shrink-0 content-center justify-items-center gap-2 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] px-3 text-center shadow-panel transition hover:-translate-y-0.5"
                   >
                     {category.image_url ? (
