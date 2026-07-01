@@ -693,6 +693,163 @@ export async function deletePaymentMethodAction(methodId: string, formData: Form
   redirect("/admin/payments?saved=payment");
 }
 
+export async function createCourierAction(formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "delivery");
+  const clientId = getClientIdForUserAction(context, formData);
+  requireClientAccess(context, clientId);
+
+  const name = String(formData.get("name") || "").trim();
+  const phone = String(formData.get("phone") || "").trim();
+  if (!name) redirect(`/admin/delivery${encodedError("Ingresa el nombre del repartidor.")}`);
+  if (phone && normalizeWhatsapp(phone).length < 11) redirect(`/admin/delivery${encodedError("El telefono del repartidor debe incluir un numero valido de Peru.")}`);
+
+  const { error } = await context.supabase.from("couriers").insert({
+    client_id: clientId,
+    name,
+    phone: phone || null,
+    document_number: String(formData.get("document_number") || "").trim() || null,
+    vehicle_type: String(formData.get("vehicle_type") || "MOTO"),
+    vehicle_plate: String(formData.get("vehicle_plate") || "").trim() || null,
+    main_zone_id: String(formData.get("main_zone_id") || "") || null,
+    status: String(formData.get("status") || "DISPONIBLE"),
+    is_active: formData.get("is_active") === "on",
+    notes: String(formData.get("notes") || "").trim() || null
+  });
+
+  if (error) redirect(`/admin/delivery${encodedError("No se pudo crear el repartidor. Aplica la migracion 010 en Supabase.")}`);
+  revalidatePath("/admin/delivery");
+  redirect("/admin/delivery?saved=courier");
+}
+
+export async function updateCourierAction(courierId: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "delivery");
+  const clientId = getClientIdForUserAction(context, formData);
+  requireClientAccess(context, clientId);
+
+  const phone = String(formData.get("phone") || "").trim();
+  if (phone && normalizeWhatsapp(phone).length < 11) redirect(`/admin/delivery${encodedError("El telefono del repartidor debe incluir un numero valido de Peru.")}`);
+
+  const { error } = await context.supabase
+    .from("couriers")
+    .update({
+      name: String(formData.get("name") || "").trim(),
+      phone: phone || null,
+      document_number: String(formData.get("document_number") || "").trim() || null,
+      vehicle_type: String(formData.get("vehicle_type") || "MOTO"),
+      vehicle_plate: String(formData.get("vehicle_plate") || "").trim() || null,
+      main_zone_id: String(formData.get("main_zone_id") || "") || null,
+      status: String(formData.get("status") || "DISPONIBLE"),
+      is_active: formData.get("is_active") === "on",
+      notes: String(formData.get("notes") || "").trim() || null
+    })
+    .eq("id", courierId)
+    .eq("client_id", clientId);
+
+  if (error) redirect(`/admin/delivery${encodedError("No se pudo actualizar el repartidor.")}`);
+  revalidatePath("/admin/delivery");
+  redirect("/admin/delivery?saved=courier");
+}
+
+export async function assignCourierToOrderAction(orderId: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "delivery");
+  const clientId = getClientIdForUserAction(context, formData);
+  requireClientAccess(context, clientId);
+
+  const courierId = String(formData.get("courier_id") || "");
+  if (!courierId) redirect(`/admin/delivery${encodedError("Selecciona un repartidor.")}`);
+
+  const [{ data: order }, { data: courier }, { data: previousAssignment }] = await Promise.all([
+    context.supabase.from("orders").select("id,client_id,delivery_zone_id,delivery_fee").eq("id", orderId).eq("client_id", clientId).maybeSingle(),
+    context.supabase.from("couriers").select("id,client_id,name,phone,is_active,status").eq("id", courierId).eq("client_id", clientId).maybeSingle(),
+    context.supabase.from("delivery_assignments").select("*").eq("order_id", orderId).maybeSingle()
+  ]);
+
+  if (!order || !courier) redirect(`/admin/delivery${encodedError("No se encontro el pedido o repartidor.")}`);
+  if (!courier.is_active || courier.status === "INACTIVO" || courier.status === "FUERA_DE_TURNO") redirect(`/admin/delivery${encodedError("Este repartidor no esta disponible para asignar.")}`);
+
+  const { data: assignment, error } = await context.supabase
+    .from("delivery_assignments")
+    .upsert({
+      order_id: orderId,
+      client_id: clientId,
+      courier_id: courierId,
+      delivery_zone_id: order.delivery_zone_id || null,
+      delivery_fee: Number(order.delivery_fee || 0),
+      status: "ASIGNADO",
+      assigned_at: new Date().toISOString()
+    }, { onConflict: "order_id" })
+    .select("id,status")
+    .single();
+
+  if (error || !assignment) redirect(`/admin/delivery${encodedError("No se pudo asignar el repartidor. Aplica la migracion 010 en Supabase.")}`);
+
+  await Promise.all([
+    context.supabase.from("couriers").update({ status: "OCUPADO" }).eq("id", courierId).eq("client_id", clientId),
+    context.supabase.from("orders").update({ assigned_courier_id: courierId, courier_name: courier.name, courier_phone: courier.phone || null, order_status: "handed_to_courier" }).eq("id", orderId).eq("client_id", clientId),
+    context.supabase.from("delivery_status_events").insert({
+      delivery_assignment_id: assignment.id,
+      order_id: orderId,
+      from_status: previousAssignment?.status || null,
+      to_status: "ASIGNADO",
+      actor_email: context.user.email || null,
+      note: `Repartidor asignado: ${courier.name}`
+    })
+  ]);
+
+  revalidatePath("/admin/delivery");
+  revalidatePath("/admin/orders");
+  redirect("/admin/delivery?saved=assignment");
+}
+
+export async function updateDeliveryAssignmentStatusAction(assignmentId: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "delivery");
+  const clientId = getClientIdForUserAction(context, formData);
+  requireClientAccess(context, clientId);
+
+  const nextStatus = String(formData.get("status") || "PENDIENTE_ASIGNACION");
+  const note = String(formData.get("note") || "").trim();
+  const { data: assignment } = await context.supabase.from("delivery_assignments").select("*").eq("id", assignmentId).eq("client_id", clientId).maybeSingle();
+  if (!assignment) redirect(`/admin/delivery${encodedError("No se encontro el despacho.")}`);
+
+  const now = new Date().toISOString();
+  const timestampPatch: Record<string, string | null> = {};
+  if (nextStatus === "REPARTIDOR_EN_LOCAL") timestampPatch.courier_arrived_at = now;
+  if (nextStatus === "RECOGIDO") timestampPatch.picked_up_at = now;
+  if (nextStatus === "EN_CAMINO") timestampPatch.on_the_way_at = now;
+  if (nextStatus === "ENTREGADO") timestampPatch.delivered_at = now;
+  if (nextStatus === "FALLIDO" || nextStatus === "INCIDENCIA") timestampPatch.failed_at = now;
+
+  const { error } = await context.supabase
+    .from("delivery_assignments")
+    .update({ status: nextStatus, incident_note: note || assignment.incident_note || null, ...timestampPatch })
+    .eq("id", assignmentId)
+    .eq("client_id", clientId);
+
+  if (error) redirect(`/admin/delivery${encodedError("No se pudo actualizar el despacho.")}`);
+
+  const orderStatus = nextStatus === "ENTREGADO" ? "delivered" : nextStatus === "EN_CAMINO" || nextStatus === "RECOGIDO" ? "on_the_way" : nextStatus === "CANCELADO" ? "cancelled" : null;
+  await Promise.all([
+    orderStatus ? context.supabase.from("orders").update({ order_status: orderStatus, tracking_note: note || null }).eq("id", assignment.order_id).eq("client_id", clientId) : Promise.resolve(),
+    nextStatus === "ENTREGADO" && assignment.courier_id ? context.supabase.from("couriers").update({ status: "DISPONIBLE" }).eq("id", assignment.courier_id).eq("client_id", clientId) : Promise.resolve(),
+    context.supabase.from("delivery_status_events").insert({
+      delivery_assignment_id: assignmentId,
+      order_id: assignment.order_id,
+      from_status: assignment.status,
+      to_status: nextStatus,
+      actor_email: context.user.email || null,
+      note: note || null
+    })
+  ]);
+
+  revalidatePath("/admin/delivery");
+  revalidatePath("/admin/orders");
+  redirect("/admin/delivery?saved=delivery");
+}
+
 export async function updateReservationStatusAction(reservationId: string, formData: FormData) {
   const context = await requireAdmin();
   requireModuleAccess(context, "reservations");
@@ -700,8 +857,58 @@ export async function updateReservationStatusAction(reservationId: string, formD
   requireClientAccess(context, clientId);
 
   const status = String(formData.get("status") || "pending");
-  const { error } = await context.supabase.from("reservations").update({ status }).eq("id", reservationId).eq("client_id", clientId);
+  const note = String(formData.get("note") || "").trim();
+  const { data: previous } = await context.supabase.from("reservations").select("status").eq("id", reservationId).eq("client_id", clientId).maybeSingle();
+  const now = new Date().toISOString();
+  const timestampPatch: Record<string, string | null> = {};
+  if (status === "confirmed") timestampPatch.confirmed_at = now;
+  if (status === "arrived") timestampPatch.arrived_at = now;
+  if (status === "seated") timestampPatch.seated_at = now;
+  if (status === "completed") timestampPatch.completed_at = now;
+  if (status === "cancelled" || status === "rejected") timestampPatch.cancelled_at = now;
+  if (status === "no_show") timestampPatch.no_show_at = now;
+
+  const { error } = await context.supabase.from("reservations").update({ status, internal_note: note || null, ...timestampPatch }).eq("id", reservationId).eq("client_id", clientId);
   if (error) redirect(`/admin/reservations${encodedError("No se pudo actualizar la reserva.")}`);
+  await context.supabase.from("reservation_events").insert({
+    reservation_id: reservationId,
+    client_id: clientId,
+    from_status: previous?.status || null,
+    to_status: status,
+    event_type: "status_changed",
+    actor_email: context.user.email || null,
+    note: note || null
+  });
+  revalidatePath("/admin/reservations");
+  redirect("/admin/reservations?saved=reservation");
+}
+
+export async function assignReservationTableAction(reservationId: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "reservations");
+  const clientId = getClientIdForUserAction(context, formData);
+  requireClientAccess(context, clientId);
+
+  const tableId = String(formData.get("table_id") || "");
+  const { data: table } = await context.supabase.from("client_tables").select("id,label,is_active,status").eq("id", tableId).eq("client_id", clientId).maybeSingle();
+  if (!table || !table.is_active || table.status === "inactive") redirect(`/admin/reservations${encodedError("Selecciona una mesa activa.")}`);
+
+  const { error } = await context.supabase.from("reservations").update({ table_id: tableId }).eq("id", reservationId).eq("client_id", clientId);
+  if (error) redirect(`/admin/reservations${encodedError("No se pudo asignar la mesa.")}`);
+
+  await Promise.all([
+    context.supabase.from("client_tables").update({ status: "reserved" }).eq("id", tableId).eq("client_id", clientId),
+    context.supabase.from("reservation_events").insert({
+      reservation_id: reservationId,
+      client_id: clientId,
+      from_status: null,
+      to_status: "table_assigned",
+      event_type: "table_assigned",
+      actor_email: context.user.email || null,
+      note: `Mesa asignada: ${table.label}`
+    })
+  ]);
+
   revalidatePath("/admin/reservations");
   redirect("/admin/reservations?saved=reservation");
 }

@@ -102,6 +102,57 @@ export type ClientDeliveryZone = {
   updated_at: string;
 };
 
+export type CourierStatus = "DISPONIBLE" | "OCUPADO" | "FUERA_DE_TURNO" | "INACTIVO";
+export type VehicleType = "MOTO" | "BICICLETA" | "AUTO" | "CAMINANDO" | "OTRO";
+
+export type Courier = {
+  id: string;
+  client_id: string;
+  name: string;
+  phone: string | null;
+  document_number: string | null;
+  vehicle_type: VehicleType;
+  vehicle_plate: string | null;
+  main_zone_id: string | null;
+  status: CourierStatus;
+  is_active: boolean;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DeliveryStatus = "PENDIENTE_ASIGNACION" | "ASIGNADO" | "REPARTIDOR_EN_LOCAL" | "RECOGIDO" | "EN_CAMINO" | "ENTREGADO" | "FALLIDO" | "CANCELADO" | "INCIDENCIA";
+
+export type DeliveryAssignment = {
+  id: string;
+  order_id: string;
+  client_id: string;
+  courier_id: string | null;
+  delivery_zone_id: string | null;
+  status: DeliveryStatus;
+  delivery_fee: number;
+  assigned_at: string | null;
+  courier_arrived_at: string | null;
+  picked_up_at: string | null;
+  on_the_way_at: string | null;
+  delivered_at: string | null;
+  failed_at: string | null;
+  incident_note: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DeliveryStatusEvent = {
+  id: string;
+  delivery_assignment_id: string;
+  order_id: string;
+  from_status: string | null;
+  to_status: string;
+  actor_email: string | null;
+  note: string | null;
+  created_at: string;
+};
+
 export type Promotion = {
   id: string;
   client_id: string;
@@ -119,7 +170,7 @@ export type Promotion = {
   updated_at: string;
 };
 
-export type ReservationStatus = "pending" | "confirmed" | "cancelled" | "seated" | "completed";
+export type ReservationStatus = "pending" | "confirmed" | "cancelled" | "seated" | "completed" | "arrived" | "no_show" | "rejected" | "waiting" | "rescheduled";
 
 export type Reservation = {
   id: string;
@@ -133,8 +184,27 @@ export type Reservation = {
   reservation_time: string;
   notes: string | null;
   status: ReservationStatus;
+  confirmed_at?: string | null;
+  arrived_at?: string | null;
+  seated_at?: string | null;
+  completed_at?: string | null;
+  cancelled_at?: string | null;
+  no_show_at?: string | null;
+  internal_note?: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type ReservationEvent = {
+  id: string;
+  reservation_id: string;
+  client_id: string;
+  from_status: string | null;
+  to_status: string;
+  event_type: string;
+  actor_email: string | null;
+  note: string | null;
+  created_at: string;
 };
 
 export type PaymentMethod = {

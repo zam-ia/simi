@@ -6,7 +6,10 @@ import type {
   Client,
   ClientDeliveryZone,
   ClientTable,
+  Courier,
   CustomerOrderItem,
+  DeliveryAssignment,
+  DeliveryStatusEvent,
   MenuCategory,
   MenuItem,
   OrderStatusEvent,
@@ -14,7 +17,8 @@ import type {
   PaymentMethod,
   PaymentProof,
   Promotion,
-  Reservation
+  Reservation,
+  ReservationEvent
 } from "@/types/menu";
 
 function normalizeItem(item: MenuItem): MenuItem {
@@ -156,5 +160,50 @@ export async function getAdminGrowthModules(clientId?: string) {
     paymentMethods: payments.error && isMissingTableError(payments.error) ? [] : (payments.data || []) as PaymentMethod[],
     reservations: reservations.error && isMissingTableError(reservations.error) ? [] : (reservations.data || []) as Reservation[],
     missingGrowthTables: Boolean(zones.error || promotions.error || payments.error || reservations.error)
+  };
+}
+
+export async function getAdminDeliveryCenter(clientId?: string) {
+  noStore();
+  const supabase = createSupabaseServerClient();
+  const orders = await getAdminClientOrders(clientId);
+  const deliveryOrders = orders.filter((order) => order.order_type === "delivery" && ["ready", "handed_to_courier", "on_the_way", "arriving", "delivered"].includes(order.order_status));
+  const orderIds = deliveryOrders.map((order) => order.id);
+
+  const zoneQuery = clientId ? supabase.from("client_delivery_zones").select("*").eq("client_id", clientId).order("display_order", { ascending: true }) : supabase.from("client_delivery_zones").select("*").order("created_at", { ascending: false });
+  const courierQuery = clientId ? supabase.from("couriers").select("*").eq("client_id", clientId).order("created_at", { ascending: false }) : supabase.from("couriers").select("*").order("created_at", { ascending: false });
+  const assignmentQuery = orderIds.length > 0 ? supabase.from("delivery_assignments").select("*").in("order_id", orderIds).order("created_at", { ascending: false }) : Promise.resolve({ data: [], error: null });
+  const eventQuery = orderIds.length > 0 ? supabase.from("delivery_status_events").select("*").in("order_id", orderIds).order("created_at", { ascending: false }) : Promise.resolve({ data: [], error: null });
+
+  const [zones, couriers, assignments, events] = await Promise.all([zoneQuery, courierQuery, assignmentQuery, eventQuery]);
+  const missingDeliveryTables = Boolean(couriers.error || assignments.error || events.error);
+  const assignmentRows = ((assignments.data || []) as DeliveryAssignment[]).map((assignment) => ({ ...assignment, delivery_fee: Number(assignment.delivery_fee || 0) }));
+  const eventRows = (events.data || []) as DeliveryStatusEvent[];
+
+  return {
+    orders: deliveryOrders,
+    zones: zones.error && isMissingTableError(zones.error) ? [] : ((zones.data || []) as ClientDeliveryZone[]).map((zone) => ({ ...zone, delivery_fee: Number(zone.delivery_fee), minimum_order: Number(zone.minimum_order) })),
+    couriers: missingDeliveryTables ? [] : (couriers.data || []) as Courier[],
+    assignments: missingDeliveryTables ? [] : assignmentRows,
+    events: missingDeliveryTables ? [] : eventRows,
+    missingDeliveryTables
+  };
+}
+
+export async function getAdminReservationsCenter(clientId?: string) {
+  noStore();
+  const supabase = createSupabaseServerClient();
+  const reservationQuery = clientId ? supabase.from("reservations").select("*").eq("client_id", clientId).order("reservation_date", { ascending: true }).order("reservation_time", { ascending: true }) : supabase.from("reservations").select("*").order("reservation_date", { ascending: true }).order("reservation_time", { ascending: true });
+  const tableQuery = clientId ? supabase.from("client_tables").select("*").eq("client_id", clientId).order("table_number", { ascending: true }) : supabase.from("client_tables").select("*").order("table_number", { ascending: true });
+  const [reservations, tables] = await Promise.all([reservationQuery, tableQuery]);
+  const reservationRows = (reservations.data || []) as Reservation[];
+  const reservationIds = reservationRows.map((reservation) => reservation.id);
+  const events = reservationIds.length > 0 ? await supabase.from("reservation_events").select("*").in("reservation_id", reservationIds).order("created_at", { ascending: false }) : { data: [], error: null };
+
+  return {
+    reservations: reservationRows,
+    tables: (tables.data || []) as ClientTable[],
+    events: events.error && isMissingTableError(events.error) ? [] : (events.data || []) as ReservationEvent[],
+    missingReservationTables: Boolean(reservations.error || tables.error || events.error)
   };
 }
