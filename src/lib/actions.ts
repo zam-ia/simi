@@ -913,6 +913,65 @@ export async function assignReservationTableAction(reservationId: string, formDa
   redirect("/admin/reservations?saved=reservation");
 }
 
+export async function updateDeliverySettingsAction(formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "delivery");
+  const clientId = getClientIdForUserAction(context, formData);
+  requireClientAccess(context, clientId);
+
+  const supportWhatsapp = String(formData.get("support_whatsapp") || "").trim();
+  if (supportWhatsapp && normalizeWhatsapp(supportWhatsapp).length < 11) redirect(`/admin/delivery${encodedError("El WhatsApp de soporte debe incluir un numero valido de Peru.")}`);
+
+  const { error } = await context.supabase
+    .from("delivery_settings")
+    .upsert({
+      client_id: clientId,
+      delivery_enabled: formData.get("delivery_enabled") === "on",
+      pickup_enabled: formData.get("pickup_enabled") === "on",
+      scheduled_orders_enabled: formData.get("scheduled_orders_enabled") === "on",
+      base_preparation_minutes: Number(formData.get("base_preparation_minutes") || 20),
+      base_delivery_minutes: Number(formData.get("base_delivery_minutes") || 30),
+      require_courier_before_departure: formData.get("require_courier_before_departure") === "on",
+      allow_delivered_without_courier: formData.get("allow_delivered_without_courier") === "on",
+      support_whatsapp: supportWhatsapp || null,
+      automatic_customer_message: String(formData.get("automatic_customer_message") || "").trim() || null
+    }, { onConflict: "client_id" });
+
+  if (error) redirect(`/admin/delivery${encodedError("No se pudo guardar la configuracion. Aplica la migracion 010 en Supabase.")}`);
+  revalidatePath("/admin/delivery");
+  redirect("/admin/delivery?tab=config&saved=settings");
+}
+
+export async function updateReservationSettingsAction(formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "reservations");
+  const clientId = getClientIdForUserAction(context, formData);
+  requireClientAccess(context, clientId);
+
+  const { error } = await context.supabase
+    .from("reservation_settings")
+    .upsert({
+      client_id: clientId,
+      reservations_enabled: formData.get("reservations_enabled") === "on",
+      confirmation_mode: String(formData.get("confirmation_mode") || "MANUAL"),
+      default_duration_minutes: Number(formData.get("default_duration_minutes") || 90),
+      slot_interval_minutes: Number(formData.get("slot_interval_minutes") || 30),
+      max_people_per_block: Number(formData.get("max_people_per_block") || 20),
+      min_notice_hours: Number(formData.get("min_notice_hours") || 2),
+      max_days_ahead: Number(formData.get("max_days_ahead") || 30),
+      max_people_per_reservation: Number(formData.get("max_people_per_reservation") || 12),
+      require_deposit: formData.get("require_deposit") === "on",
+      deposit_amount: String(formData.get("deposit_amount") || "").trim() ? Number(formData.get("deposit_amount")) : null,
+      opening_hours_note: String(formData.get("opening_hours_note") || "").trim() || null,
+      blocked_dates_note: String(formData.get("blocked_dates_note") || "").trim() || null,
+      auto_whatsapp_message: String(formData.get("auto_whatsapp_message") || "").trim() || null
+    }, { onConflict: "client_id" });
+
+  if (error) redirect(`/admin/reservations${encodedError("No se pudo guardar la configuracion. Aplica la migracion 010 en Supabase.")}`);
+  revalidatePath("/admin/reservations");
+  redirect("/admin/reservations?tab=config&saved=settings");
+}
+
 export async function signOutAction() {
   const { supabase } = await requireAdmin();
   await supabase.auth.signOut();

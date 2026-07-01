@@ -153,6 +153,22 @@ export type DeliveryStatusEvent = {
   created_at: string;
 };
 
+export type DeliverySettings = {
+  id: string;
+  client_id: string;
+  delivery_enabled: boolean;
+  pickup_enabled: boolean;
+  scheduled_orders_enabled: boolean;
+  base_preparation_minutes: number;
+  base_delivery_minutes: number;
+  require_courier_before_departure: boolean;
+  allow_delivered_without_courier: boolean;
+  support_whatsapp: string | null;
+  automatic_customer_message: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Promotion = {
   id: string;
   client_id: string;
@@ -205,6 +221,26 @@ export type ReservationEvent = {
   actor_email: string | null;
   note: string | null;
   created_at: string;
+};
+
+export type ReservationSettings = {
+  id: string;
+  client_id: string;
+  reservations_enabled: boolean;
+  confirmation_mode: "MANUAL" | "AUTOMATICA";
+  default_duration_minutes: number;
+  slot_interval_minutes: number;
+  max_people_per_block: number;
+  min_notice_hours: number;
+  max_days_ahead: number;
+  max_people_per_reservation: number;
+  require_deposit: boolean;
+  deposit_amount: number | null;
+  opening_hours_note: string | null;
+  blocked_dates_note: string | null;
+  auto_whatsapp_message: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type PaymentMethod = {

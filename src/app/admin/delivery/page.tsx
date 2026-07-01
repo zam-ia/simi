@@ -1,10 +1,10 @@
 import { Button } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
-import { assignCourierToOrderAction, createCourierAction, createDeliveryZoneAction, deleteDeliveryZoneAction, updateCourierAction, updateDeliveryAssignmentStatusAction, updateDeliveryZoneAction } from "@/lib/actions";
+import { assignCourierToOrderAction, createCourierAction, createDeliveryZoneAction, deleteDeliveryZoneAction, updateCourierAction, updateDeliveryAssignmentStatusAction, updateDeliverySettingsAction, updateDeliveryZoneAction } from "@/lib/actions";
 import { requireAdmin, requireModuleAccess } from "@/lib/auth";
 import { getAdminDeliveryCenter } from "@/lib/menu-data";
 import { buildWhatsappUrl, formatPrice } from "@/lib/utils";
-import type { Client, ClientDeliveryZone, Courier, DeliveryAssignment, DeliveryStatus, DeliveryStatusEvent, OrderWithDetails } from "@/types/menu";
+import type { Client, ClientDeliveryZone, Courier, DeliveryAssignment, DeliverySettings, DeliveryStatus, DeliveryStatusEvent, OrderWithDetails } from "@/types/menu";
 import type { ReactNode } from "react";
 
 export const dynamic = "force-dynamic";
@@ -86,6 +86,7 @@ export default async function AdminDeliveryPage({ searchParams }: { searchParams
         <Tab href="/admin/delivery?tab=zones" active={tab === "zones"}>Zonas</Tab>
         <Tab href="/admin/delivery?tab=couriers" active={tab === "couriers"}>Repartidores</Tab>
         <Tab href="/admin/delivery?tab=history" active={tab === "history"}>Historial</Tab>
+        <Tab href="/admin/delivery?tab=config" active={tab === "config"}>Configuracion</Tab>
       </nav>
 
       {tab === "zones" ? (
@@ -94,6 +95,8 @@ export default async function AdminDeliveryPage({ searchParams }: { searchParams
         <CouriersView role={role} clientId={client?.id} clients={clientRows} couriers={delivery.couriers} zones={delivery.zones} />
       ) : tab === "history" ? (
         <HistoryView events={delivery.events} assignments={delivery.assignments} orders={delivery.orders} couriers={delivery.couriers} />
+      ) : tab === "config" ? (
+        <DeliveryConfigView role={role} clientId={client?.id} clients={clientRows} settings={delivery.settings} />
       ) : (
         <DispatchView role={role} clientId={client?.id} clients={clientRows} items={dispatchItems} couriers={delivery.couriers} courierById={courierById} zoneById={zoneById} clientNames={clientNames} />
       )}
@@ -309,6 +312,35 @@ function HistoryView({ events, assignments, orders, couriers }: { events: Delive
           return <div key={event.id} className="rounded-[16px] bg-[var(--surface-muted)] p-3 text-sm"><p className="font-medium">#{order?.order_code || "Pedido"} - {deliveryStatusLabels[event.to_status as DeliveryStatus] || event.to_status}</p><p className="mt-1 text-xs text-[var(--text-muted)]">{new Date(event.created_at).toLocaleString("es-PE")} - {courier?.name || "Sin repartidor"}{event.actor_email ? ` - ${event.actor_email}` : ""}</p>{event.note ? <p className="mt-1 text-xs text-[var(--text-muted)]">{event.note}</p> : null}</div>;
         }) : <p className="rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-4 text-sm text-[var(--text-muted)]">Aun no hay eventos de delivery.</p>}
       </div>
+    </section>
+  );
+}
+
+function DeliveryConfigView({ role, clientId, clients, settings }: { role: string; clientId?: string; clients: Client[]; settings: DeliverySettings | null }) {
+  return (
+    <section className="rounded-[22px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+      <div>
+        <h3 className="text-lg font-medium">Configuracion delivery</h3>
+        <p className="mt-1 text-sm text-[var(--text-muted)]">Reglas generales para despacho, recojo y mensajes al cliente.</p>
+      </div>
+      <form action={updateDeliverySettingsAction} className="mt-5 grid gap-4 md:grid-cols-2">
+        {role === "business_admin" && clientId ? <input type="hidden" name="client_id" value={clientId} /> : <ClientSelect clients={clients} defaultValue={settings?.client_id || ""} />}
+        <Input name="base_preparation_minutes" label="Tiempo base de preparacion" type="number" min="0" defaultValue={settings?.base_preparation_minutes || 20} />
+        <Input name="base_delivery_minutes" label="Tiempo base de delivery" type="number" min="0" defaultValue={settings?.base_delivery_minutes || 30} />
+        <Input name="support_whatsapp" label="WhatsApp soporte delivery" defaultValue={settings?.support_whatsapp || ""} placeholder="+51 999 999 999" />
+        <div className="grid gap-3 rounded-[18px] bg-[var(--surface-muted)] p-4 md:col-span-2">
+          <label className="flex items-center gap-2 text-sm"><input name="delivery_enabled" type="checkbox" defaultChecked={settings?.delivery_enabled ?? true} /> Delivery activo</label>
+          <label className="flex items-center gap-2 text-sm"><input name="pickup_enabled" type="checkbox" defaultChecked={settings?.pickup_enabled ?? true} /> Recojo en local activo</label>
+          <label className="flex items-center gap-2 text-sm"><input name="scheduled_orders_enabled" type="checkbox" defaultChecked={settings?.scheduled_orders_enabled ?? false} /> Permitir pedidos programados</label>
+          <label className="flex items-center gap-2 text-sm"><input name="require_courier_before_departure" type="checkbox" defaultChecked={settings?.require_courier_before_departure ?? true} /> Requerir repartidor antes de salir</label>
+          <label className="flex items-center gap-2 text-sm"><input name="allow_delivered_without_courier" type="checkbox" defaultChecked={settings?.allow_delivered_without_courier ?? false} /> Permitir marcar entregado sin repartidor</label>
+        </div>
+        <label className="grid gap-2 text-sm md:col-span-2">
+          <span className="font-medium">Mensaje automatico al cliente</span>
+          <textarea name="automatic_customer_message" defaultValue={settings?.automatic_customer_message || ""} className="focus-ring min-h-28 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2" placeholder="Ej. Tu pedido ya salio a reparto. Gracias por comprar con nosotros." />
+        </label>
+        <div className="md:col-span-2"><Button type="submit">Guardar configuracion</Button></div>
+      </form>
     </section>
   );
 }

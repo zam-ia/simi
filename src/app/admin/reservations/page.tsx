@@ -1,9 +1,10 @@
 import { Button } from "@/components/shared/Button";
-import { assignReservationTableAction, updateReservationStatusAction } from "@/lib/actions";
+import { Input } from "@/components/shared/Input";
+import { assignReservationTableAction, updateReservationSettingsAction, updateReservationStatusAction } from "@/lib/actions";
 import { requireAdmin, requireModuleAccess } from "@/lib/auth";
 import { getAdminReservationsCenter } from "@/lib/menu-data";
 import { buildWhatsappUrl } from "@/lib/utils";
-import type { Client, ClientTable, Reservation, ReservationEvent, ReservationStatus } from "@/types/menu";
+import type { Client, ClientTable, Reservation, ReservationEvent, ReservationSettings, ReservationStatus } from "@/types/menu";
 import type { ReactNode } from "react";
 
 export const dynamic = "force-dynamic";
@@ -82,6 +83,7 @@ export default async function AdminReservationsPage({ searchParams }: { searchPa
         <Tab href="/admin/reservations?tab=kanban" active={tab === "kanban"}>Kanban</Tab>
         <Tab href="/admin/reservations?tab=tables" active={tab === "tables"}>Mesas</Tab>
         <Tab href="/admin/reservations?tab=history" active={tab === "history"}>Historial</Tab>
+        <Tab href="/admin/reservations?tab=config" active={tab === "config"}>Configuracion</Tab>
       </nav>
 
       {tab === "requests" ? (
@@ -92,6 +94,8 @@ export default async function AdminReservationsPage({ searchParams }: { searchPa
         <TablesView tables={center.tables} reservations={center.reservations} />
       ) : tab === "history" ? (
         <ReservationHistory events={center.events} reservations={center.reservations} />
+      ) : tab === "config" ? (
+        <ReservationConfigView role={role} clientId={client?.id} clients={clientRows} settings={center.settings} />
       ) : (
         <AgendaView reservations={todayReservations.length ? todayReservations : center.reservations} tables={center.tables} tableById={tableById} events={center.events} clientNames={clientNames} clients={clientRows} role={role} clientId={client?.id} />
       )}
@@ -242,6 +246,51 @@ function getReservationAlert(reservation: Reservation) {
   if (!["completed", "cancelled", "no_show", "rejected"].includes(reservation.status) && minutes < -30) return { label: "Vencida", level: "critical" as const, className: "bg-red-100 text-red-700" };
   if (reservation.status === "completed") return { label: "Completada", level: "normal" as const, className: "bg-green-100 text-green-700" };
   return { label: "En agenda", level: "normal" as const, className: "bg-blue-100 text-blue-700" };
+}
+
+function ReservationConfigView({ role, clientId, clients, settings }: { role: string; clientId?: string; clients: Pick<Client, "id" | "name">[]; settings: ReservationSettings | null }) {
+  return (
+    <section className="rounded-[22px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+      <div>
+        <h3 className="text-lg font-medium">Configuracion de reservas</h3>
+        <p className="mt-1 text-sm text-[var(--text-muted)]">Controla confirmacion, capacidad por bloque, horarios y reglas del local.</p>
+      </div>
+      <form action={updateReservationSettingsAction} className="mt-5 grid gap-4 md:grid-cols-2">
+        {role === "business_admin" && clientId ? <input type="hidden" name="client_id" value={clientId} /> : <ClientSelect clients={clients} defaultValue={settings?.client_id || ""} />}
+        <label className="grid gap-2 text-sm">
+          <span className="font-medium">Modo de confirmacion</span>
+          <select name="confirmation_mode" defaultValue={settings?.confirmation_mode || "MANUAL"} className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3">
+            <option value="MANUAL">Manual</option>
+            <option value="AUTOMATICA">Automatica si hay capacidad</option>
+          </select>
+        </label>
+        <Input name="default_duration_minutes" label="Duracion promedio" type="number" min="15" defaultValue={settings?.default_duration_minutes || 90} />
+        <Input name="slot_interval_minutes" label="Bloques cada" type="number" min="15" defaultValue={settings?.slot_interval_minutes || 30} />
+        <Input name="max_people_per_block" label="Capacidad maxima por bloque" type="number" min="1" defaultValue={settings?.max_people_per_block || 20} />
+        <Input name="min_notice_hours" label="Anticipacion minima en horas" type="number" min="0" defaultValue={settings?.min_notice_hours || 2} />
+        <Input name="max_days_ahead" label="Dias maximos para reservar" type="number" min="1" defaultValue={settings?.max_days_ahead || 30} />
+        <Input name="max_people_per_reservation" label="Personas maximas por reserva" type="number" min="1" defaultValue={settings?.max_people_per_reservation || 12} />
+        <Input name="deposit_amount" label="Monto de adelanto" type="number" step="0.1" min="0" defaultValue={settings?.deposit_amount || ""} />
+        <div className="grid gap-3 rounded-[18px] bg-[var(--surface-muted)] p-4 md:col-span-2">
+          <label className="flex items-center gap-2 text-sm"><input name="reservations_enabled" type="checkbox" defaultChecked={settings?.reservations_enabled ?? true} /> Reservas activas</label>
+          <label className="flex items-center gap-2 text-sm"><input name="require_deposit" type="checkbox" defaultChecked={settings?.require_deposit ?? false} /> Requerir adelanto</label>
+        </div>
+        <label className="grid gap-2 text-sm md:col-span-2">
+          <span className="font-medium">Horarios habilitados</span>
+          <textarea name="opening_hours_note" defaultValue={settings?.opening_hours_note || ""} className="focus-ring min-h-24 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2" placeholder="Ej. Lunes a sabado 12:00 - 22:00. Domingo 12:00 - 18:00." />
+        </label>
+        <label className="grid gap-2 text-sm md:col-span-2">
+          <span className="font-medium">Dias bloqueados o excepciones</span>
+          <textarea name="blocked_dates_note" defaultValue={settings?.blocked_dates_note || ""} className="focus-ring min-h-24 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2" placeholder="Ej. Feriados, eventos privados o dias sin atencion." />
+        </label>
+        <label className="grid gap-2 text-sm md:col-span-2">
+          <span className="font-medium">Mensaje automatico por WhatsApp</span>
+          <textarea name="auto_whatsapp_message" defaultValue={settings?.auto_whatsapp_message || ""} className="focus-ring min-h-24 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2" placeholder="Ej. Recibimos tu solicitud. Te confirmaremos por WhatsApp." />
+        </label>
+        <div className="md:col-span-2"><Button type="submit">Guardar configuracion</Button></div>
+      </form>
+    </section>
+  );
 }
 
 function Metric({ label, value, tone }: { label: string; value: number; tone: "amber" | "blue" | "purple" | "green" | "red" }) {
