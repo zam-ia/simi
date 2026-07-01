@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CategoryTabs } from "@/components/public-menu/CategoryTabs";
 import { CategorySection } from "@/components/public-menu/CategorySection";
 import { EmptyMenuState } from "@/components/public-menu/EmptyMenuState";
@@ -61,6 +61,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [lastAdded, setLastAdded] = useState<string | null>(null);
 
   const flatItems = useMemo(() => categories.flatMap((category) => category.items), [categories]);
   const promoItem = useMemo(() => flatItems.find((item) => item.id === client.promo_banner_item_id) || null, [client.promo_banner_item_id, flatItems]);
@@ -84,6 +85,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
   const deliveryFee = orderType === "delivery" ? Number(selectedDeliveryZone?.delivery_fee || 0) : 0;
   const total = subtotal + deliveryFee;
   const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const cartQuantities = useMemo(() => Object.fromEntries(cart.map((item) => [item.menuItemId, item.quantity])), [cart]);
   const selectedTable = tables.find((table) => table.id === selectedTableId);
   const yapeMethod = paymentMethods.find((method) => method.method_type === "yape");
   const activePromotions = promotions.filter((promotion) => promotion.is_active);
@@ -91,7 +93,15 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
   const fastestDelivery = deliveryZones.find((zone) => zone.estimated_time)?.estimated_time || "20-35 min";
   const lowestDeliveryFee = deliveryZones.length ? Math.min(...deliveryZones.map((zone) => Number(zone.delivery_fee || 0))) : 0;
 
+  useEffect(() => {
+    if (!lastAdded) return;
+
+    const timeoutId = window.setTimeout(() => setLastAdded(null), 2200);
+    return () => window.clearTimeout(timeoutId);
+  }, [lastAdded]);
+
   function addItem(item: MenuItem) {
+    setLastAdded(item.name);
     setCart((current) => {
       const existing = current.find((cartItem) => cartItem.menuItemId === item.id);
       if (existing) {
@@ -210,6 +220,8 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
             </div>
           </section>
 
+          <QuickTrustInfo client={client} deliveryZones={deliveryZones} paymentMethods={paymentMethods} fastestDelivery={fastestDelivery} />
+
           {featuredCategories.length > 0 ? (
             <section className="grid min-w-0 max-w-full grid-cols-1 gap-3">
               <div className="flex items-center justify-between gap-3 px-1">
@@ -263,7 +275,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
         {step === "menu" ? (
           <>
             <CategoryTabs categories={visibleCategories} accentColor={client.primary_color} />
-            {hasProducts ? visibleCategories.map((category) => <CategorySection key={category.id} category={category} accentColor={client.primary_color} onAdd={addItem} />) : <EmptyMenuState client={client} />}
+            {hasProducts ? visibleCategories.map((category) => <CategorySection key={category.id} category={category} accentColor={client.primary_color} onAdd={addItem} quantities={cartQuantities} />) : <EmptyMenuState client={client} />}
           </>
         ) : null}
 
@@ -514,7 +526,41 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
           </a>
         </div>
       ) : null}
+
+      {lastAdded ? (
+        <div className="fixed inset-x-3 bottom-24 z-50 mx-auto max-w-[420px] rounded-[20px] border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm shadow-soft lg:bottom-6 lg:right-6 lg:left-auto" role="status">
+          <p className="font-medium">Agregado a tu pedido</p>
+          <p className="mt-0.5 truncate text-[var(--text-muted)]">{lastAdded}</p>
+        </div>
+      ) : null}
     </main>
+  );
+}
+
+function QuickTrustInfo({ client, deliveryZones, paymentMethods, fastestDelivery }: { client: Client; deliveryZones: ClientDeliveryZone[]; paymentMethods: PaymentMethod[]; fastestDelivery: string }) {
+  const activePaymentLabels = paymentMethods
+    .filter((method) => method.is_active)
+    .map((method) => method.label)
+    .slice(0, 3);
+  const paymentText = activePaymentLabels.length > 0 ? activePaymentLabels.join(", ") : client.yape_number ? "Yape disponible" : "Consulta al negocio";
+  const deliveryText = deliveryZones.length > 0 ? `${deliveryZones.length} zonas registradas` : "Cobertura por confirmar";
+
+  return (
+    <section className="grid gap-3 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel md:grid-cols-4">
+      <InfoPill label="Entrega" value={fastestDelivery} />
+      <InfoPill label="Delivery" value={deliveryText} />
+      <InfoPill label="Pagos" value={paymentText} />
+      <InfoPill label="Confirmacion" value="Por WhatsApp" />
+    </section>
+  );
+}
+
+function InfoPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[18px] bg-[var(--surface-muted)] px-3 py-3">
+      <p className="text-[11px] font-medium text-[var(--text-muted)]">{label}</p>
+      <p className="mt-1 line-clamp-2 text-sm font-medium text-[var(--text)]">{value}</p>
+    </div>
   );
 }
 

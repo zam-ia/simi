@@ -35,6 +35,14 @@ function missingCategoryImageMessage() {
   return "Supabase todavia no reconoce imagenes para categorias. Aplica la migracion 012 y luego vuelve a guardar.";
 }
 
+function isOrderHistoryReferenceError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const code = "code" in error ? String(error.code) : "";
+  const message = "message" in error ? String(error.message) : "";
+  const details = "details" in error ? String(error.details) : "";
+  return code === "23503" && (message.includes("order_items") || details.includes("order_items"));
+}
+
 async function revalidateClientSurfaces(supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"], clientId: string, knownSlug?: string | null) {
   let slug = knownSlug || null;
 
@@ -152,9 +160,21 @@ export async function deleteCategoryAction(clientId: string, categoryId: string)
   requireClientAccess(context, clientId);
   const { supabase } = context;
   const { error: itemsError } = await supabase.from("menu_items").delete().eq("client_id", clientId).eq("category_id", categoryId);
+  if (itemsError && isOrderHistoryReferenceError(itemsError)) {
+    const { error: archiveError } = await supabase.from("menu_categories").update({ is_active: false }).eq("id", categoryId).eq("client_id", clientId);
+    if (archiveError) redirect(`/admin/clients/${clientId}${encodedError("No se pudo ocultar la categoria.")}`);
+    await revalidateClientSurfaces(supabase, clientId);
+    redirect(`/admin/clients/${clientId}?saved=category`);
+  }
   if (itemsError) redirect(`/admin/clients/${clientId}${encodedError("No se pudieron eliminar los productos de la categoria.")}`);
 
   const { data: deletedCategory, error } = await supabase.from("menu_categories").delete().eq("id", categoryId).eq("client_id", clientId).select("id").maybeSingle();
+  if (error && isOrderHistoryReferenceError(error)) {
+    const { error: archiveError } = await supabase.from("menu_categories").update({ is_active: false }).eq("id", categoryId).eq("client_id", clientId);
+    if (archiveError) redirect(`/admin/clients/${clientId}${encodedError("No se pudo ocultar la categoria.")}`);
+    await revalidateClientSurfaces(supabase, clientId);
+    redirect(`/admin/clients/${clientId}?saved=category`);
+  }
   if (!deletedCategory && !error) redirect(`/admin/clients/${clientId}${encodedError("No se encontro la categoria para eliminar.")}`);
   if (error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo eliminar la categoría.")}`);
   await revalidateClientSurfaces(supabase, clientId);

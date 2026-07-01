@@ -44,7 +44,7 @@ export async function getAdminClientMenu(clientId: string) {
 
   const [{ data: client }, { data: categories }, { data: items }] = await Promise.all([
     supabase.from("clients").select("*").eq("id", clientId).single(),
-    supabase.from("menu_categories").select("*").eq("client_id", clientId).order("display_order", { ascending: true }),
+    supabase.from("menu_categories").select("*").eq("client_id", clientId).eq("is_active", true).order("display_order", { ascending: true }),
     supabase.from("menu_items").select("*").eq("client_id", clientId).order("display_order", { ascending: true })
   ]);
 

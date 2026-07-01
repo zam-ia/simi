@@ -5,9 +5,10 @@ type CategorySectionProps = {
   category: CategoryWithItems;
   accentColor: string;
   onAdd?: (item: CategoryWithItems["items"][number]) => void;
+  quantities?: Record<string, number>;
 };
 
-export function CategorySection({ category, accentColor, onAdd }: CategorySectionProps) {
+export function CategorySection({ category, accentColor, onAdd, quantities = {} }: CategorySectionProps) {
   return (
     <section id={category.id} className="scroll-mt-24 grid min-w-0 max-w-full grid-cols-1 gap-3">
       <div className="flex min-w-0 items-end justify-between gap-3">
@@ -20,7 +21,7 @@ export function CategorySection({ category, accentColor, onAdd }: CategorySectio
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
           {category.items.map((item) => (
-            <MenuItemCard key={item.id} item={item} accentColor={accentColor} onAdd={onAdd} />
+            <MenuItemCard key={item.id} item={item} accentColor={accentColor} onAdd={onAdd} quantity={quantities[item.id] || 0} />
           ))}
         </div>
       )}
