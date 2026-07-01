@@ -55,12 +55,18 @@ html[data-theme="dark"] {
 
 html {
   min-height: 100%;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
   background: var(--background);
   scroll-behavior: smooth;
 }
 
 body {
   min-height: 100%;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
   margin: 0;
   background: var(--background);
   color: var(--text);

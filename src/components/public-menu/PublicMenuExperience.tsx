@@ -284,7 +284,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
   }
 
   return (
-    <main className={`min-h-screen bg-[var(--background)] ${step === "menu" ? "pb-44" : "pb-8"}`}>
+    <main className={`min-h-screen max-w-full overflow-x-clip bg-[var(--background)] ${step === "menu" ? "pb-44" : "pb-8"}`}>
       {step === "menu" ? <MenuHeader client={client} /> : null}
       <div id="menu-content" className={`mx-auto grid max-w-[1320px] gap-6 px-4 py-5 sm:px-5 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:px-8 ${step !== "menu" ? "max-w-[760px] lg:block" : ""}`}>
         <div className="grid min-w-0 max-w-full grid-cols-1 gap-6">
@@ -421,7 +421,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
         ) : null}
 
         {step === "menu" ? (
-          <div id="menu-results" className="grid gap-6 scroll-mt-24">
+          <div id="menu-results" className="grid min-w-0 max-w-full gap-6 overflow-hidden scroll-mt-24">
             <CategoryTabs categories={visibleCategories} accentColor={client.primary_color} />
             {hasProducts ? visibleCategories.map((category) => <CategorySection key={category.id} category={category} accentColor={client.primary_color} onAdd={addItem} quantities={cartQuantities} />) : <EmptyMenuState client={client} />}
           </div>

@@ -14,7 +14,7 @@ export function MenuItemCard({ item, accentColor, onAdd, quantity = 0 }: MenuIte
   const firstLetter = item.name.trim().charAt(0).toUpperCase() || "P";
 
   return (
-    <article className={`grid grid-cols-[104px_1fr] gap-3 rounded-[20px] border border-[var(--line)] bg-[var(--surface)] p-3 shadow-panel transition md:grid-cols-1 md:gap-0 md:overflow-hidden md:p-0 ${item.is_available ? "hover:-translate-y-0.5" : "opacity-60 grayscale"}`}>
+    <article className={`grid min-w-0 max-w-full grid-cols-[104px_minmax(0,1fr)] gap-3 overflow-hidden rounded-[20px] border border-[var(--line)] bg-[var(--surface)] p-3 shadow-panel transition md:grid-cols-1 md:gap-0 md:p-0 ${item.is_available ? "hover:-translate-y-0.5" : "opacity-60 grayscale"}`}>
       <div className="relative h-24 w-24 overflow-hidden rounded-[16px] bg-[var(--surface-muted)] md:h-44 md:w-full md:rounded-none">
         {item.image_url ? (
           <img alt={item.name} src={item.image_url} className="h-full w-full object-cover" />
@@ -58,11 +58,11 @@ export function MenuItemCard({ item, accentColor, onAdd, quantity = 0 }: MenuIte
             ))}
             {!item.is_available ? <Badge tone="red">Agotado</Badge> : null}
           </div>
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="text-base font-medium leading-snug">{item.name}</h3>
+          <div className="min-w-0">
+            <h3 className="line-clamp-2 min-w-0 text-base font-medium leading-snug">{item.name}</h3>
           </div>
         </div>
-        <p className="mt-1 line-clamp-2 text-[13px] leading-5 text-[var(--text-muted)]">{item.description || (item.is_available ? "Disponible para pedir." : "Temporalmente no disponible.")}</p>
+        <p className="mt-1 line-clamp-2 min-w-0 text-[13px] leading-5 text-[var(--text-muted)]">{item.description || (item.is_available ? "Disponible para pedir." : "Temporalmente no disponible.")}</p>
         <div className="mt-3 flex items-center justify-between gap-3">
           <p className="text-base font-medium" style={{ color: item.is_available ? accentColor : "var(--text-muted)" }}>
             {formatPrice(item.price)}

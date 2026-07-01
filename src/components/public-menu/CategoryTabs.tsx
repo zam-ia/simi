@@ -39,8 +39,8 @@ export function CategoryTabs({ categories, accentColor }: CategoryTabsProps) {
   if (categories.length === 0) return null;
 
   return (
-    <div className="sticky top-0 z-30 -mx-4 border-b border-[var(--line)] bg-[var(--background)]/92 px-4 py-3 backdrop-blur-xl sm:-mx-5 sm:px-5 lg:mx-0 lg:rounded-[var(--radius-panel)] lg:border lg:px-3">
-      <nav className="mx-auto flex max-w-[1320px] gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Categorias del menu">
+    <div className="sticky top-0 z-30 min-w-0 max-w-full overflow-hidden border-b border-[var(--line)] bg-[var(--background)]/92 py-3 backdrop-blur-xl lg:rounded-[var(--radius-panel)] lg:border lg:px-3">
+      <nav className="flex min-w-0 max-w-full gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:px-0" aria-label="Categorias del menu">
         {categories.map((category) => {
           const isActive = category.id === activeId;
 
