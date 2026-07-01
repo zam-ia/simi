@@ -177,6 +177,16 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
     setCart((current) => current.filter((item) => item.menuItemId !== menuItemId));
   }
 
+  function openCheckout() {
+    setStep("checkout");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function backToMenu() {
+    setStep("menu");
+    window.setTimeout(() => scrollToId("menu-results"), 50);
+  }
+
   function browseMenu() {
     document.getElementById("menu-content")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -274,11 +284,11 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
   }
 
   return (
-    <main className="min-h-screen bg-[var(--background)] pb-44">
-      <MenuHeader client={client} />
-      <div id="menu-content" className="mx-auto grid max-w-[1320px] gap-6 px-4 py-5 sm:px-5 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:px-8">
+    <main className={`min-h-screen bg-[var(--background)] ${step === "menu" ? "pb-44" : "pb-8"}`}>
+      {step === "menu" ? <MenuHeader client={client} /> : null}
+      <div id="menu-content" className={`mx-auto grid max-w-[1320px] gap-6 px-4 py-5 sm:px-5 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:px-8 ${step !== "menu" ? "max-w-[760px] lg:block" : ""}`}>
         <div className="grid min-w-0 max-w-full grid-cols-1 gap-6">
-          <section className="grid min-w-0 max-w-full grid-cols-1 gap-3 rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-3 shadow-soft">
+          {step === "menu" ? <section className="grid min-w-0 max-w-full grid-cols-1 gap-3 rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-3 shadow-soft">
             <div className="grid min-w-0 grid-cols-[repeat(3,minmax(0,1fr))] gap-2">
               <ServiceModeButton active={orderType === "delivery"} label="Delivery" detail={`${fastestDelivery} - desde ${formatPrice(lowestDeliveryFee)}`} onClick={() => setOrderType("delivery")} />
               <ServiceModeButton active={orderType === "pickup"} label="Recojo" detail="Pide y pasa por tienda" onClick={() => setOrderType("pickup")} />
@@ -340,11 +350,11 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
                 </button>
               ))}
             </div>
-          </section>
+          </section> : null}
 
-          <QuickTrustInfo client={client} deliveryZones={deliveryZones} paymentMethods={paymentMethods} fastestDelivery={fastestDelivery} />
+          {step === "menu" ? <QuickTrustInfo client={client} deliveryZones={deliveryZones} paymentMethods={paymentMethods} fastestDelivery={fastestDelivery} /> : null}
 
-          {featuredCategories.length > 0 ? (
+          {step === "menu" && featuredCategories.length > 0 ? (
             <section className="grid min-w-0 max-w-full grid-cols-1 gap-3">
               <div className="flex items-center justify-between gap-3 px-1">
                 <h2 className="text-lg font-medium">Explora por antojo</h2>
@@ -370,7 +380,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
             </section>
           ) : null}
 
-        {recommendedItems.length > 0 ? (
+        {step === "menu" && recommendedItems.length > 0 ? (
           <section id="recommended" className="grid min-w-0 max-w-full grid-cols-1 gap-3">
             <div className="flex items-center justify-between gap-3 px-1">
               <div>
@@ -386,7 +396,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
           </section>
         ) : null}
 
-        <PromoBanner client={client} promoItem={promoItem} onAddPromo={addItem} onBrowseMenu={browseMenu} />
+        {step === "menu" ? <PromoBanner client={client} promoItem={promoItem} onAddPromo={addItem} onBrowseMenu={browseMenu} /> : null}
 
         {step === "menu" && activePromotions.length > 0 ? (
           <section id="promotions" className="grid min-w-0 max-w-full grid-cols-1 gap-3 scroll-mt-24">
@@ -418,10 +428,16 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
         ) : null}
 
         {step === "checkout" ? (
-          <section className="grid gap-4 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
-            <div>
-              <h2 className="text-xl font-medium">Confirma tu pedido</h2>
-              <p className="mt-1 text-sm text-[var(--text-muted)]">Primero creamos el pedido. Luego te mostramos Yape.</p>
+          <section className="grid min-h-[calc(100vh-40px)] gap-4 rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-soft lg:min-h-0">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm text-[var(--text-muted)]">{client.name}</p>
+                <h2 className="mt-1 text-2xl font-medium">Tu pedido</h2>
+                <p className="mt-1 text-sm text-[var(--text-muted)]">Revisa cantidades, notas y confirma para pasar al pago.</p>
+              </div>
+              <button type="button" onClick={backToMenu} className="focus-ring grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--surface-muted)] text-lg text-[var(--text)]" aria-label="Volver al menu">
+                x
+              </button>
             </div>
 
             <div className="grid gap-3 rounded-[20px] bg-[var(--surface-muted)] p-3">
@@ -549,11 +565,11 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
             {message ? <p className="rounded-[var(--radius-card)] bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/35 dark:text-red-200">{message}</p> : null}
 
             <div className="grid grid-cols-2 gap-3">
-              <Button type="button" variant="secondary" onClick={() => setStep("menu")} className="w-full">
-                Volver
+              <Button type="button" variant="secondary" onClick={backToMenu} className="w-full">
+                Seguir viendo
               </Button>
               <Button type="button" onClick={createOrder} disabled={isSubmitting || cart.length === 0} className="w-full">
-                {isSubmitting ? "Creando..." : "Confirmar pedido"}
+                {isSubmitting ? "Creando..." : `Confirmar ${formatPrice(total)}`}
               </Button>
             </div>
           </section>
@@ -632,7 +648,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
           )}
 
           {cart.length > 0 ? (
-            <Button type="button" onClick={() => setStep("checkout")} className="w-full">
+            <Button type="button" onClick={openCheckout} className="w-full">
               Ver pedido
             </Button>
           ) : null}
@@ -646,14 +662,17 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
       </div>
 
       {step === "menu" && cart.length > 0 ? (
-        <div className="fixed inset-x-0 bottom-[68px] z-40 flex justify-center border-t border-[var(--line)] bg-[var(--surface)]/94 px-3 py-3 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl lg:hidden">
-          <div className="flex w-full max-w-[480px] items-center gap-3">
-            <div className="min-w-0 flex-1">
+        <div className="fixed inset-x-3 bottom-[76px] z-40 mx-auto max-w-[480px] rounded-[26px] border border-[var(--line)] bg-[var(--surface)]/96 p-3 shadow-soft backdrop-blur-xl lg:hidden">
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={openCheckout} className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] text-white shadow-panel" style={{ backgroundColor: client.primary_color }} aria-label="Abrir pedido">
+              <CartIcon className="h-6 w-6" />
+            </button>
+            <button type="button" onClick={openCheckout} className="min-w-0 flex-1 text-left">
               <p className="truncate text-sm font-medium">{itemCount} producto{itemCount === 1 ? "" : "s"} en tu pedido</p>
               <p className="text-sm text-[var(--text-muted)]">{formatPrice(total)}</p>
-            </div>
-            <button type="button" onClick={() => setStep("checkout")} className="min-h-12 rounded-full px-5 text-sm font-medium text-white" style={{ backgroundColor: client.primary_color }}>
-              Ver pedido
+            </button>
+            <button type="button" onClick={openCheckout} className="min-h-11 rounded-full px-4 text-sm font-medium text-white" style={{ backgroundColor: client.primary_color }}>
+              Ver
             </button>
           </div>
         </div>
@@ -670,7 +689,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
           <MobileNavButton label="Inicio" icon="home" onClick={() => scrollToId("menu-content")} />
           <MobileNavButton label="Buscar" icon="search" onClick={focusSearch} />
           <MobileNavButton label="Promos" icon="tag" onClick={() => scrollToId("promotions")} />
-          <MobileNavButton label="Pedido" icon="cart" onClick={() => (cart.length > 0 ? setStep("checkout") : scrollToId("recommended"))} />
+          <MobileNavButton label="Pedido" icon="cart" onClick={() => (cart.length > 0 ? openCheckout() : scrollToId("recommended"))} badge={itemCount || undefined} />
           <MobileNavButton label="Info" icon="info" onClick={() => scrollToId("quick-info")} />
         </nav>
       ) : null}
@@ -712,12 +731,24 @@ function InfoPill({ label, value }: { label: string; value: string }) {
   );
 }
 
-function MobileNavButton({ label, icon, onClick }: { label: string; icon: "home" | "search" | "tag" | "cart" | "info"; onClick: () => void }) {
+function MobileNavButton({ label, icon, onClick, badge }: { label: string; icon: "home" | "search" | "tag" | "cart" | "info"; onClick: () => void; badge?: number }) {
   return (
     <button type="button" className="grid min-w-0 place-items-center content-center gap-1 rounded-[16px] px-1 text-[11px] font-medium text-[var(--text-muted)] active:scale-[0.97]" onClick={onClick}>
-      <MobileNavIcon name={icon} className="h-5 w-5 text-[var(--text)]" />
+      <span className="relative">
+        <MobileNavIcon name={icon} className="h-5 w-5 text-[var(--text)]" />
+        {badge ? <span className="absolute -right-2 -top-2 grid h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-[10px] font-medium text-white">{badge}</span> : null}
+      </span>
       <span className="truncate">{label}</span>
     </button>
+  );
+}
+
+function CartIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M5 5h2l2 10h8l2-7H8" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M10 20h.01M17 20h.01" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" />
+    </svg>
   );
 }
 

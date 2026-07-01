@@ -81,13 +81,19 @@ export function OrderStatusTracker({ orderId }: OrderStatusTrackerProps) {
   }
 
   const { order, items, events } = payload;
+  const menuUrl = order.clients?.slug ? `/menu/${order.clients.slug}` : "/";
 
   return (
     <main className="min-h-screen bg-[var(--background)] px-4 py-6">
       <div className="mx-auto grid max-w-[980px] gap-5 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
         <section className="overflow-hidden rounded-[28px] border border-[var(--line)] bg-[var(--surface)] shadow-soft lg:col-span-2">
           <div className="p-5 text-white" style={{ background: `linear-gradient(135deg, ${accentColor}, color-mix(in srgb, ${accentColor} 72%, #111827))` }}>
-            <p className="text-sm text-white/78">{order.clients?.name || "SIMI"}</p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm text-white/78">{order.clients?.name || "SIMI"}</p>
+              <a href={menuUrl} className="inline-flex min-h-10 items-center justify-center rounded-full bg-white/16 px-4 text-sm font-medium text-white backdrop-blur transition hover:bg-white/22">
+                Volver al menu
+              </a>
+            </div>
             <div className="mt-3 grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
               <div>
                 <h1 className="text-3xl font-medium">Pedido #{order.order_code}</h1>
