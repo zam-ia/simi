@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { recordOperationalActivity } from "@/lib/services/activity-service";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { sanitizeFileName, validateImageFile } from "@/lib/storage";
 
@@ -14,7 +15,7 @@ export async function POST(request: Request, { params }: { params: { orderId: st
       return NextResponse.json({ error: "Sube una captura o escribe el número de operación." }, { status: 400 });
     }
 
-    const { data: order } = await supabase.from("orders").select("id,order_code").eq("id", params.orderId).single();
+    const { data: order } = await supabase.from("orders").select("id,client_id,order_code,customer_name").eq("id", params.orderId).single();
     if (!order) return NextResponse.json({ error: "No encontramos el pedido." }, { status: 404 });
 
     if (file instanceof File && file.size > 0) {
@@ -47,6 +48,30 @@ export async function POST(request: Request, { params }: { params: { orderId: st
       note: operationNumber ? `Operacion Yape: ${operationNumber}` : "Comprobante enviado",
       created_by: "cliente"
     });
+
+    await recordOperationalActivity(
+      supabase,
+      {
+        clientId: order.client_id,
+        entityType: "payment",
+        entityId: params.orderId,
+        eventType: "payment.proof_uploaded",
+        fromStatus: "pending_payment",
+        toStatus: "proof_submitted",
+        actor: { role: "customer" },
+        metadata: { order_code: order.order_code, customer_name: order.customer_name, operation_number: operationNumber || null },
+        note: operationNumber ? `Operacion Yape: ${operationNumber}` : "Comprobante enviado"
+      },
+      {
+        clientId: order.client_id,
+        module: "payments",
+        title: `Comprobante por validar #${order.order_code}`,
+        message: "El cliente subio un comprobante de pago.",
+        entityType: "payment",
+        entityId: params.orderId,
+        priority: "high"
+      }
+    );
 
     return NextResponse.json({ ok: true });
   } catch (error) {

@@ -9,7 +9,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const { user, role, businessRole, client } = context;
   const isSuperAdmin = role === "super_admin";
   const items: AdminShellItem[] = [
-    { label: isSuperAdmin ? "Clientes" : "Inicio", href: "/admin", icon: "home", isExact: true },
+    { label: isSuperAdmin ? "Negocios" : "Inicio", href: "/admin", icon: "home", isExact: true },
     ...(hasModuleAccess(context, "menu") && client ? [{ label: "Carta", href: `/admin/clients/${client.id}`, icon: "menu" as const }] : []),
     ...(hasModuleAccess(context, "kitchen") ? [{ label: "Cocina", href: "/admin/kitchen", icon: "kitchen" as const }] : []),
     ...(hasModuleAccess(context, "orders") ? [{ label: "Pedidos", href: "/admin/orders", icon: "orders" as const }] : []),

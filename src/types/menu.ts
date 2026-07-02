@@ -243,6 +243,36 @@ export type ReservationSettings = {
   updated_at: string;
 };
 
+export type ActivityEvent = {
+  id: string;
+  client_id: string;
+  entity_type: "order" | "payment" | "kitchen" | "delivery" | "reservation" | "table" | "product" | "promotion" | "customer" | "system";
+  entity_id: string;
+  event_type: string;
+  from_status: string | null;
+  to_status: string | null;
+  actor_user_id: string | null;
+  actor_email: string | null;
+  actor_role: string | null;
+  metadata: Record<string, unknown>;
+  note: string | null;
+  created_at: string;
+};
+
+export type InternalNotification = {
+  id: string;
+  client_id: string;
+  user_id: string | null;
+  module: "orders" | "payments" | "kitchen" | "delivery" | "reservations" | "menu" | "promotions" | "customers" | "settings" | "system";
+  title: string;
+  message: string | null;
+  entity_type: string | null;
+  entity_id: string | null;
+  priority: "low" | "normal" | "high" | "critical";
+  is_read: boolean;
+  created_at: string;
+};
+
 export type PaymentMethod = {
   id: string;
   client_id: string;

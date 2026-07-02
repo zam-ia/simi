@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { hasModuleAccess, requireAdmin, requireClientAccess, requireModuleAccess, requireSuperAdmin } from "@/lib/auth";
 import { deliveryStatusOptions } from "@/constants/order-status";
 import { businessRoles, configurableModules, normalizeBusinessRole, resolveModulePermissions, type ModulePermissions } from "@/lib/permissions";
+import { recordOperationalActivity } from "@/lib/services/activity-service";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { normalizeWhatsapp } from "@/lib/utils";
 import { validateCategoryInput, validateClientInput, validateMenuItemInput } from "@/lib/validations";
@@ -302,14 +303,27 @@ export async function updateOrderStatusAction(orderId: string, formData: FormDat
   const courierPhone = String(formData.get("courier_phone") || "").trim();
   const estimatedDeliveryTime = String(formData.get("estimated_delivery_time") || "").trim();
   const trackingNote = String(formData.get("tracking_note") || "").trim();
+  const redirectBase = hasModuleAccess(context, "orders") ? "/admin/orders" : "/admin/kitchen";
 
   if (!deliveryStatusOptions.includes(orderStatus as never)) {
-    redirect(`/admin/orders${encodedError("Estado de pedido invalido.")}`);
+    redirect(`${redirectBase}${encodedError("Estado de pedido invalido.")}`);
   }
 
   if (courierPhone && normalizeWhatsapp(courierPhone).length < 11) {
-    redirect(`/admin/orders${encodedError("El telefono del repartidor debe incluir un numero valido de Peru.")}`);
+    redirect(`${redirectBase}${encodedError("El telefono del repartidor debe incluir un numero valido de Peru.")}`);
   }
+
+  let currentQuery = supabase
+    .from("orders")
+    .select("id,client_id,order_code,order_type,order_status,payment_status,delivery_zone_id,delivery_fee,total,customer_name")
+    .eq("id", orderId);
+
+  if (context.role === "business_admin") {
+    currentQuery = currentQuery.eq("client_id", context.client!.id);
+  }
+
+  const { data: currentOrder } = await currentQuery.maybeSingle();
+  if (!currentOrder) redirect(`${redirectBase}${encodedError("No se encontro el pedido.")}`);
 
   let updateQuery = supabase
     .from("orders")
@@ -327,8 +341,8 @@ export async function updateOrderStatusAction(orderId: string, formData: FormDat
     updateQuery = updateQuery.eq("client_id", context.client!.id);
   }
 
-  const { data, error } = await updateQuery.select("id,client_id").maybeSingle();
-  if (error || !data) redirect(`/admin/orders${encodedError("No se pudo actualizar el pedido.")}`);
+  const { data, error } = await updateQuery.select("id,client_id,order_code,order_type,order_status,payment_status").maybeSingle();
+  if (error || !data) redirect(`${redirectBase}${encodedError("No se pudo actualizar el pedido.")}`);
 
   await supabase.from("order_status_events").insert({
     order_id: orderId,
@@ -338,9 +352,79 @@ export async function updateOrderStatusAction(orderId: string, formData: FormDat
     created_by: context.user.email || null
   });
 
+  if (orderStatus === "ready" && currentOrder.order_type === "delivery") {
+    await supabase
+      .from("delivery_assignments")
+      .upsert({
+        order_id: orderId,
+        client_id: currentOrder.client_id,
+        courier_id: null,
+        delivery_zone_id: currentOrder.delivery_zone_id || null,
+        status: "PENDIENTE_ASIGNACION",
+        delivery_fee: Number(currentOrder.delivery_fee || 0)
+      }, { onConflict: "order_id" });
+  }
+
+  const eventType =
+    paymentStatus !== currentOrder.payment_status && paymentStatus === "validated"
+      ? "payment.validated"
+      : orderStatus === "preparing"
+        ? "kitchen.started"
+        : orderStatus === "ready"
+          ? "kitchen.ready"
+          : orderStatus === "delivered"
+            ? "order.completed"
+            : orderStatus === "cancelled"
+              ? "order.cancelled"
+              : "order.status_changed";
+
+  await recordOperationalActivity(
+    supabase,
+    {
+      clientId: currentOrder.client_id,
+      entityType: orderStatus === "preparing" || orderStatus === "ready" ? "kitchen" : paymentStatus !== currentOrder.payment_status ? "payment" : "order",
+      entityId: orderId,
+      eventType,
+      fromStatus: currentOrder.order_status,
+      toStatus: orderStatus,
+      actor: { userId: context.user.id, email: context.user.email, role: context.businessRole || context.role },
+      metadata: {
+        order_code: currentOrder.order_code,
+        customer_name: currentOrder.customer_name,
+        total: Number(currentOrder.total || 0),
+        order_type: currentOrder.order_type,
+        payment_status: paymentStatus
+      },
+      note: trackingNote || null
+    },
+    orderStatus === "ready" && currentOrder.order_type === "delivery"
+      ? {
+          clientId: currentOrder.client_id,
+          module: "delivery",
+          title: `Pedido #${currentOrder.order_code} listo para despacho`,
+          message: "Cocina marco el pedido como listo. Falta asignar repartidor.",
+          entityType: "delivery",
+          entityId: orderId,
+          priority: "high"
+        }
+      : paymentStatus === "validated" && paymentStatus !== currentOrder.payment_status
+        ? {
+            clientId: currentOrder.client_id,
+            module: "orders",
+            title: `Pago validado #${currentOrder.order_code}`,
+            message: "El pedido ya puede avanzar a cocina.",
+            entityType: "payment",
+            entityId: orderId,
+            priority: "normal"
+          }
+        : undefined
+  );
+
   revalidatePath("/admin/orders");
+  revalidatePath("/admin/kitchen");
+  revalidatePath("/admin/delivery");
   revalidatePath(`/pedido/${orderId}`);
-  redirect("/admin/orders?saved=order");
+  redirect(`${redirectBase}?saved=order`);
 }
 
 export async function updateNotificationWhatsappAction(clientId: string, formData: FormData) {
@@ -799,6 +883,30 @@ export async function assignCourierToOrderAction(orderId: string, formData: Form
     })
   ]);
 
+  await recordOperationalActivity(
+    context.supabase,
+    {
+      clientId,
+      entityType: "delivery",
+      entityId: orderId,
+      eventType: "delivery.courier_assigned",
+      fromStatus: previousAssignment?.status || "PENDIENTE_ASIGNACION",
+      toStatus: "ASIGNADO",
+      actor: { userId: context.user.id, email: context.user.email, role: context.businessRole || context.role },
+      metadata: { courier_id: courierId, courier_name: courier.name, order_id: orderId },
+      note: `Repartidor asignado: ${courier.name}`
+    },
+    {
+      clientId,
+      module: "orders",
+      title: "Delivery asignado",
+      message: `El pedido ya tiene repartidor: ${courier.name}.`,
+      entityType: "delivery",
+      entityId: orderId,
+      priority: "normal"
+    }
+  );
+
   revalidatePath("/admin/delivery");
   revalidatePath("/admin/orders");
   redirect("/admin/delivery?saved=assignment");
@@ -845,6 +953,42 @@ export async function updateDeliveryAssignmentStatusAction(assignmentId: string,
     })
   ]);
 
+  await recordOperationalActivity(
+    context.supabase,
+    {
+      clientId,
+      entityType: "delivery",
+      entityId: assignment.order_id,
+      eventType: nextStatus === "ENTREGADO" ? "delivery.delivered" : nextStatus === "INCIDENCIA" || nextStatus === "FALLIDO" ? "delivery.incident" : nextStatus === "EN_CAMINO" ? "delivery.on_the_way" : nextStatus === "RECOGIDO" ? "delivery.picked_up" : "delivery.status_changed",
+      fromStatus: assignment.status,
+      toStatus: nextStatus,
+      actor: { userId: context.user.id, email: context.user.email, role: context.businessRole || context.role },
+      metadata: { assignment_id: assignmentId, order_id: assignment.order_id, courier_id: assignment.courier_id },
+      note: note || null
+    },
+    nextStatus === "ENTREGADO"
+      ? {
+          clientId,
+          module: "orders",
+          title: "Pedido entregado",
+          message: "Delivery marco el pedido como entregado.",
+          entityType: "delivery",
+          entityId: assignment.order_id,
+          priority: "normal"
+        }
+      : nextStatus === "INCIDENCIA" || nextStatus === "FALLIDO"
+        ? {
+            clientId,
+            module: "orders",
+            title: "Incidencia de delivery",
+            message: note || "Un despacho requiere revision.",
+            entityType: "delivery",
+            entityId: assignment.order_id,
+            priority: "critical"
+          }
+        : undefined
+  );
+
   revalidatePath("/admin/delivery");
   revalidatePath("/admin/orders");
   redirect("/admin/delivery?saved=delivery");
@@ -879,6 +1023,31 @@ export async function updateReservationStatusAction(reservationId: string, formD
     actor_email: context.user.email || null,
     note: note || null
   });
+  await recordOperationalActivity(
+    context.supabase,
+    {
+      clientId,
+      entityType: "reservation",
+      entityId: reservationId,
+      eventType: status === "confirmed" ? "reservation.confirmed" : status === "arrived" ? "reservation.customer_arrived" : status === "seated" ? "reservation.seated" : status === "completed" ? "reservation.completed" : status === "no_show" ? "reservation.no_show" : status === "cancelled" ? "reservation.cancelled" : "reservation.status_changed",
+      fromStatus: previous?.status || null,
+      toStatus: status,
+      actor: { userId: context.user.id, email: context.user.email, role: context.businessRole || context.role },
+      metadata: { reservation_id: reservationId },
+      note: note || null
+    },
+    status === "confirmed"
+      ? {
+          clientId,
+          module: "reservations",
+          title: "Reserva confirmada",
+          message: "La reserva quedo confirmada y lista para operar.",
+          entityType: "reservation",
+          entityId: reservationId,
+          priority: "normal"
+        }
+      : undefined
+  );
   revalidatePath("/admin/reservations");
   redirect("/admin/reservations?saved=reservation");
 }
@@ -908,6 +1077,30 @@ export async function assignReservationTableAction(reservationId: string, formDa
       note: `Mesa asignada: ${table.label}`
     })
   ]);
+
+  await recordOperationalActivity(
+    context.supabase,
+    {
+      clientId,
+      entityType: "reservation",
+      entityId: reservationId,
+      eventType: "reservation.table_assigned",
+      fromStatus: null,
+      toStatus: "table_assigned",
+      actor: { userId: context.user.id, email: context.user.email, role: context.businessRole || context.role },
+      metadata: { table_id: tableId, table_label: table.label },
+      note: `Mesa asignada: ${table.label}`
+    },
+    {
+      clientId,
+      module: "reservations",
+      title: "Mesa asignada",
+      message: `La reserva ahora tiene ${table.label}.`,
+      entityType: "reservation",
+      entityId: reservationId,
+      priority: "normal"
+    }
+  );
 
   revalidatePath("/admin/reservations");
   redirect("/admin/reservations?saved=reservation");

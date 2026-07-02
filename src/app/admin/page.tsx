@@ -157,11 +157,11 @@ export default async function AdminPage() {
   return (
     <div className="grid gap-6">
       <div>
-        <h2 className="text-2xl font-medium">Clientes</h2>
-        <p className="mt-1 text-sm text-[var(--text-muted)]">Gestiona negocios, enlaces publicos y QR permanentes.</p>
+        <h2 className="text-2xl font-medium">Negocios</h2>
+        <p className="mt-1 text-sm text-[var(--text-muted)]">Gestiona restaurantes, enlaces publicos y QR permanentes.</p>
       </div>
       {error ? (
-        <div className="rounded-[var(--radius-card)] bg-red-50 p-4 text-sm text-red-700 dark:bg-red-950/35 dark:text-red-200">No se pudo cargar el listado de clientes.</div>
+        <div className="rounded-[var(--radius-card)] bg-red-50 p-4 text-sm text-red-700 dark:bg-red-950/35 dark:text-red-200">No se pudo cargar el listado de negocios.</div>
       ) : (
         <ClientTable clients={(data || []) as Client[]} />
       )}

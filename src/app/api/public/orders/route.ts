@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { recordOperationalActivity } from "@/lib/services/activity-service";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { buildWhatsappUrl, getAppUrl } from "@/lib/utils";
 
@@ -147,6 +148,36 @@ export async function POST(request: Request) {
       note: "Pedido creado desde la carta publica",
       created_by: "cliente"
     });
+
+    await recordOperationalActivity(
+      supabase,
+      {
+        clientId: insertedOrder.client_id,
+        entityType: "order",
+        entityId: insertedOrder.id,
+        eventType: "order.created",
+        fromStatus: null,
+        toStatus: insertedOrder.order_status,
+        actor: { role: "customer" },
+        metadata: {
+          order_code: insertedOrder.order_code,
+          customer_name: insertedOrder.customer_name,
+          total,
+          order_type: insertedOrder.order_type,
+          delivery_zone: deliveryZoneName
+        },
+        note: "Pedido creado desde la carta publica"
+      },
+      {
+        clientId: insertedOrder.client_id,
+        module: "orders",
+        title: `Nuevo pedido #${insertedOrder.order_code}`,
+        message: `${insertedOrder.customer_name || "Cliente"} realizo un pedido por ${new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(total)}.`,
+        entityType: "order",
+        entityId: insertedOrder.id,
+        priority: "high"
+      }
+    );
 
     const orderLines = orderItems.map((item) => `- ${item.quantity} x ${item.item_name} (${new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(item.subtotal)})`).join("\n");
     const statusUrl = `${getAppUrl()}/pedido/${insertedOrder.id}`;
