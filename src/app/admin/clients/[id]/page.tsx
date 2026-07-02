@@ -12,12 +12,14 @@ import { getPublicMenuUrl } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-export default async function EditClientPage({ params, searchParams }: { params: { id: string }; searchParams: { error?: string; saved?: string } }) {
+export default async function EditClientPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string; saved?: string }> }) {
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
   const context = await requireAdmin();
   requireModuleAccess(context, "menu");
-  requireClientAccess(context, params.id);
+  requireClientAccess(context, resolvedParams.id);
 
-  const [{ client, categories, categoriesWithItems }, tables] = await Promise.all([getAdminClientMenu(params.id), getAdminClientTables(params.id)]);
+  const [{ client, categories, categoriesWithItems }, tables] = await Promise.all([getAdminClientMenu(resolvedParams.id), getAdminClientTables(resolvedParams.id)]);
   const action = updateClientAction.bind(null, client.id);
   const publicUrl = getPublicMenuUrl(client.slug);
   const promoItems = categoriesWithItems.flatMap((category) => category.items).map((item) => ({ id: item.id, name: item.name, price: item.price }));
@@ -28,7 +30,7 @@ export default async function EditClientPage({ params, searchParams }: { params:
         <div>
           <h2 className="text-2xl font-medium">{client.name}</h2>
           <p className="mt-1 text-sm text-[var(--text-muted)]">Edita datos del negocio, categorías, productos y QR.</p>
-          {searchParams.saved ? <p className="mt-2 text-sm text-green-700 dark:text-green-300">Cambios guardados correctamente.</p> : null}
+          {resolvedSearchParams.saved ? <p className="mt-2 text-sm text-green-700 dark:text-green-300">Cambios guardados correctamente.</p> : null}
         </div>
         <div className="flex flex-wrap gap-3">
           <LinkButton href={publicUrl} variant="secondary" target="_blank">
@@ -38,7 +40,7 @@ export default async function EditClientPage({ params, searchParams }: { params:
         </div>
       </div>
 
-      <ClientForm client={client} action={action} error={searchParams.error} promoItems={promoItems} />
+      <ClientForm client={client} action={action} error={resolvedSearchParams.error} promoItems={promoItems} />
       <MenuPreview url={publicUrl} />
       <CategoryManager clientId={client.id} categories={categories} />
       <TableManager client={client} tables={tables} />

@@ -30,7 +30,8 @@ const dispatchColumns: Array<{ status: DeliveryStatus; title: string; descriptio
   { status: "INCIDENCIA", title: "Incidencia", description: "Requiere revision" }
 ];
 
-export default async function AdminDeliveryPage({ searchParams }: { searchParams: { saved?: string; error?: string; tab?: string } }) {
+export default async function AdminDeliveryPage({ searchParams }: { searchParams: Promise<{ saved?: string; error?: string; tab?: string }> }) {
+  const resolvedSearchParams = await searchParams;
   const context = await requireAdmin();
   requireModuleAccess(context, "delivery");
   const { supabase, role, client } = context;
@@ -41,7 +42,7 @@ export default async function AdminDeliveryPage({ searchParams }: { searchParams
   ]);
 
   const clientRows = (clients || []) as Client[];
-  const tab = searchParams.tab || "dispatch";
+  const tab = resolvedSearchParams.tab || "dispatch";
   const assignmentByOrder = new Map(delivery.assignments.map((assignment) => [assignment.order_id, assignment]));
   const courierById = new Map(delivery.couriers.map((courier) => [courier.id, courier]));
   const zoneById = new Map(delivery.zones.map((zone) => [zone.id, zone]));
@@ -66,8 +67,8 @@ export default async function AdminDeliveryPage({ searchParams }: { searchParams
         <div>
           <h2 className="text-3xl font-medium">Delivery</h2>
           <p className="mt-1 text-sm text-[var(--text-muted)]">Asigna repartidores, controla zonas y monitorea entregas.</p>
-          {searchParams.saved ? <p className="mt-2 text-sm text-green-700 dark:text-green-300">Delivery actualizado correctamente.</p> : null}
-          {searchParams.error ? <p className="mt-2 text-sm text-red-700 dark:text-red-300">{searchParams.error}</p> : null}
+          {resolvedSearchParams.saved ? <p className="mt-2 text-sm text-green-700 dark:text-green-300">Delivery actualizado correctamente.</p> : null}
+          {resolvedSearchParams.error ? <p className="mt-2 text-sm text-red-700 dark:text-red-300">{resolvedSearchParams.error}</p> : null}
           {delivery.missingDeliveryTables ? <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">Aplica la migracion 010 en Supabase para activar repartidores, asignaciones e historial.</p> : null}
         </div>
         <p className="rounded-full bg-[var(--surface-muted)] px-3 py-2 text-sm text-[var(--text-muted)]">Despachos conectados a pedidos listos.</p>

@@ -44,6 +44,21 @@ function isOrderHistoryReferenceError(error: unknown) {
   return code === "23503" && (message.includes("order_items") || details.includes("order_items"));
 }
 
+function isMissingManualOrderError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const code = "code" in error ? String(error.code) : "";
+  const message = "message" in error ? String(error.message) : "";
+  return code === "PGRST204" || code === "42703" || message.includes("source") || message.includes("manual_channel") || message.includes("waiter_name") || message.includes("party_size");
+}
+
+function normalizeFormText(value: FormDataEntryValue | null) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function buildOrderCode() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
 async function revalidateClientSurfaces(supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"], clientId: string, knownSlug?: string | null) {
   let slug = knownSlug || null;
 
@@ -425,6 +440,241 @@ export async function updateOrderStatusAction(orderId: string, formData: FormDat
   revalidatePath("/admin/delivery");
   revalidatePath(`/pedido/${orderId}`);
   redirect(`${redirectBase}?saved=order`);
+}
+
+export async function createManualOrderAction(formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "orders");
+  const { supabase } = context;
+  const clientId = getClientIdForUserAction(context, formData);
+  const redirectBase = "/admin/orders";
+
+  if (!clientId) redirect(`${redirectBase}${encodedError("Selecciona un negocio para crear el pedido.")}`);
+  requireClientAccess(context, clientId);
+
+  const orderType = normalizeFormText(formData.get("order_type")) || "dine_in";
+  const paymentStatus = normalizeFormText(formData.get("payment_status")) || "pending_payment";
+  const sendToKitchen = formData.get("send_to_kitchen") === "on";
+  const validOrderTypes = ["dine_in", "pickup", "delivery"];
+  const validPaymentStatuses = ["pending_payment", "proof_submitted", "validated", "rejected"];
+
+  if (!validOrderTypes.includes(orderType)) redirect(`${redirectBase}${encodedError("Tipo de pedido invalido.")}`);
+  if (!validPaymentStatuses.includes(paymentStatus)) redirect(`${redirectBase}${encodedError("Estado de pago invalido.")}`);
+
+  let parsedItems: Array<{ menuItemId: string; quantity: number; note?: string }> = [];
+  try {
+    parsedItems = JSON.parse(normalizeFormText(formData.get("items_json")) || "[]");
+  } catch {
+    redirect(`${redirectBase}${encodedError("No se pudo leer el detalle de productos.")}`);
+  }
+
+  const cleanItems = parsedItems
+    .map((item) => ({
+      menuItemId: String(item.menuItemId || "").trim(),
+      quantity: Math.max(1, Math.min(99, Number(item.quantity || 1))),
+      note: String(item.note || "").trim()
+    }))
+    .filter((item) => item.menuItemId);
+
+  if (cleanItems.length === 0) redirect(`${redirectBase}${encodedError("Agrega al menos un producto al pedido.")}`);
+
+  const itemIds = Array.from(new Set(cleanItems.map((item) => item.menuItemId)));
+  const { data: menuItems, error: menuError } = await supabase
+    .from("menu_items")
+    .select("id,client_id,name,price,is_available")
+    .eq("client_id", clientId)
+    .in("id", itemIds);
+
+  if (menuError || !menuItems?.length) redirect(`${redirectBase}${encodedError("No se pudieron validar los productos.")}`);
+
+  const menuById = new Map(menuItems.map((item) => [item.id, item]));
+  const unavailableItem = cleanItems.find((item) => {
+    const menuItem = menuById.get(item.menuItemId);
+    return !menuItem || !menuItem.is_available;
+  });
+  if (unavailableItem) redirect(`${redirectBase}${encodedError("Uno de los productos ya no esta disponible.")}`);
+
+  const orderItems = cleanItems.map((item) => {
+    const menuItem = menuById.get(item.menuItemId)!;
+
+    const unitPrice = Number(menuItem.price || 0);
+    return {
+      menu_item_id: menuItem.id,
+      item_name: menuItem.name,
+      unit_price: unitPrice,
+      quantity: item.quantity,
+      item_note: item.note || null,
+      subtotal: unitPrice * item.quantity
+    };
+  });
+
+  const subtotal = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
+  const customerName = normalizeFormText(formData.get("customer_name"));
+  const customerPhone = normalizeFormText(formData.get("customer_phone"));
+  const tableId = normalizeFormText(formData.get("table_id"));
+  let tableLabel = normalizeFormText(formData.get("table_label"));
+  const deliveryAddress = normalizeFormText(formData.get("delivery_address"));
+  const deliveryReference = normalizeFormText(formData.get("delivery_reference"));
+  const deliveryZoneId = normalizeFormText(formData.get("delivery_zone_id"));
+  const pickupTime = normalizeFormText(formData.get("pickup_time"));
+  const notes = normalizeFormText(formData.get("notes"));
+  const waiterName = normalizeFormText(formData.get("waiter_name"));
+  const manualChannel = normalizeFormText(formData.get("manual_channel")) || "salon";
+  const partySize = Math.max(0, Math.min(99, Number(formData.get("party_size") || 0))) || null;
+
+  if (orderType === "dine_in") {
+    if (!tableId && !tableLabel) redirect(`${redirectBase}${encodedError("Selecciona o escribe la mesa del pedido.")}`);
+    if (tableId) {
+      const { data: table } = await supabase
+        .from("client_tables")
+        .select("id,label,table_number")
+        .eq("id", tableId)
+        .eq("client_id", clientId)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (!table) redirect(`${redirectBase}${encodedError("La mesa seleccionada ya no esta disponible.")}`);
+      tableLabel = table.label || `Mesa ${table.table_number}`;
+    }
+  }
+
+  if ((orderType === "pickup" || orderType === "delivery") && !customerName) {
+    redirect(`${redirectBase}${encodedError("Ingresa el nombre del cliente.")}`);
+  }
+
+  if (orderType === "delivery" && !deliveryAddress) {
+    redirect(`${redirectBase}${encodedError("Ingresa la direccion de delivery.")}`);
+  }
+
+  let deliveryFee = 0;
+  let deliveryZoneName: string | null = null;
+  let estimatedDeliveryTime: string | null = null;
+
+  if (orderType === "delivery" && deliveryZoneId) {
+    const { data: zone } = await supabase
+      .from("client_delivery_zones")
+      .select("id,name,delivery_fee,minimum_order,estimated_time")
+      .eq("id", deliveryZoneId)
+      .eq("client_id", clientId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (zone) {
+      deliveryFee = Number(zone.delivery_fee || 0);
+      deliveryZoneName = zone.name;
+      estimatedDeliveryTime = zone.estimated_time || null;
+      const minimumOrder = Number(zone.minimum_order || 0);
+      if (minimumOrder > 0 && subtotal < minimumOrder) {
+        redirect(`${redirectBase}${encodedError(`El pedido minimo para ${zone.name} es S/ ${minimumOrder.toFixed(2)}.`)}`);
+      }
+    }
+  }
+
+  const total = subtotal + deliveryFee;
+  const orderStatus = sendToKitchen
+    ? "preparing"
+    : paymentStatus === "validated"
+      ? "payment_validated"
+      : paymentStatus === "proof_submitted"
+        ? "payment_submitted"
+        : "payment_pending";
+
+  let insertedOrder = null;
+  let insertError = null;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const result = await supabase
+      .from("orders")
+      .insert({
+        client_id: clientId,
+        order_code: buildOrderCode(),
+        order_type: orderType,
+        source: "manual_admin",
+        created_by_user_id: context.user.id,
+        manual_channel: manualChannel,
+        waiter_name: waiterName || null,
+        party_size: partySize,
+        table_id: orderType === "dine_in" ? tableId || null : null,
+        table_label: orderType === "dine_in" ? tableLabel || null : null,
+        customer_name: customerName || null,
+        customer_phone: customerPhone || null,
+        delivery_address: orderType === "delivery" ? deliveryAddress : null,
+        delivery_reference: orderType === "delivery" ? deliveryReference || null : null,
+        delivery_zone_id: orderType === "delivery" ? deliveryZoneId || null : null,
+        delivery_zone_name: deliveryZoneName,
+        pickup_time: orderType === "pickup" ? pickupTime || null : null,
+        notes: notes || null,
+        subtotal,
+        delivery_fee: deliveryFee,
+        total,
+        order_status: orderStatus,
+        payment_status: paymentStatus,
+        estimated_delivery_time_snapshot: estimatedDeliveryTime
+      })
+      .select("id,client_id,order_code,order_type,order_status,payment_status,total,customer_name,table_label")
+      .single();
+
+    insertedOrder = result.data;
+    insertError = result.error;
+    if (!insertError) break;
+  }
+
+  if (!insertedOrder || insertError) {
+    if (isMissingManualOrderError(insertError)) {
+      redirect(`${redirectBase}${encodedError("Falta aplicar la migracion 014_manual_orders.sql en Supabase para guardar pedidos manuales.")}`);
+    }
+    redirect(`${redirectBase}${encodedError("No se pudo crear el pedido manual.")}`);
+  }
+
+  const { error: itemError } = await supabase.from("order_items").insert(orderItems.map((item) => ({ ...item, order_id: insertedOrder.id })));
+  if (itemError) redirect(`${redirectBase}${encodedError("El pedido se creo, pero no se pudieron guardar sus productos.")}`);
+
+  await supabase.from("order_status_events").insert({
+    order_id: insertedOrder.id,
+    status: insertedOrder.order_status,
+    payment_status: insertedOrder.payment_status,
+    note: sendToKitchen ? "Pedido manual enviado a cocina" : "Pedido manual registrado",
+    created_by: context.user.email || null
+  });
+
+  await recordOperationalActivity(
+    supabase,
+    {
+      clientId,
+      entityType: sendToKitchen ? "kitchen" : "order",
+      entityId: insertedOrder.id,
+      eventType: "order.created_manual",
+      fromStatus: null,
+      toStatus: insertedOrder.order_status,
+      actor: { userId: context.user.id, email: context.user.email, role: context.businessRole || context.role },
+      metadata: {
+        order_code: insertedOrder.order_code,
+        customer_name: insertedOrder.customer_name,
+        table_label: insertedOrder.table_label,
+        total,
+        order_type: insertedOrder.order_type,
+        manual_channel: manualChannel,
+        waiter_name: waiterName || null,
+        item_count: orderItems.length
+      },
+      note: notes || null
+    },
+    {
+      clientId,
+      module: sendToKitchen ? "kitchen" : "orders",
+      title: sendToKitchen ? `Pedido manual #${insertedOrder.order_code} a cocina` : `Pedido manual #${insertedOrder.order_code}`,
+      message: `${customerName || tableLabel || "Venta en sala"} por S/ ${total.toFixed(2)}.`,
+      entityType: "order",
+      entityId: insertedOrder.id,
+      priority: sendToKitchen ? "high" : "normal"
+    }
+  );
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin/kitchen");
+  revalidatePath("/admin/delivery");
+  revalidatePath(`/pedido/${insertedOrder.id}`);
+  redirect(`${redirectBase}?saved=manual-order`);
 }
 
 export async function updateNotificationWhatsappAction(clientId: string, formData: FormData) {

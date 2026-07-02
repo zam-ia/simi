@@ -6,7 +6,8 @@ import type { Client } from "@/types/menu";
 
 export const dynamic = "force-dynamic";
 
-export default async function KitchenPage({ searchParams }: { searchParams: { saved?: string; error?: string } }) {
+export default async function KitchenPage({ searchParams }: { searchParams: Promise<{ saved?: string; error?: string }> }) {
+  const resolvedSearchParams = await searchParams;
   const context = await requireAdmin();
   requireModuleAccess(context, "kitchen");
   const { supabase, role, client } = context;
@@ -25,8 +26,8 @@ export default async function KitchenPage({ searchParams }: { searchParams: { sa
         <div>
           <h2 className="text-2xl font-medium">Cocina y reparto</h2>
           <p className="mt-1 text-sm text-[var(--text-muted)]">Controla preparacion, salida del repartidor, camino, llegada y entrega.</p>
-          {searchParams.saved ? <p className="mt-2 text-sm text-green-700 dark:text-green-300">Estado actualizado correctamente.</p> : null}
-          {searchParams.error ? <p className="mt-2 text-sm text-red-700 dark:text-red-300">{searchParams.error}</p> : null}
+          {resolvedSearchParams.saved ? <p className="mt-2 text-sm text-green-700 dark:text-green-300">Estado actualizado correctamente.</p> : null}
+          {resolvedSearchParams.error ? <p className="mt-2 text-sm text-red-700 dark:text-red-300">{resolvedSearchParams.error}</p> : null}
         </div>
         <p className="rounded-full bg-[var(--surface-muted)] px-3 py-2 text-sm text-[var(--text-muted)]">Realtime + refresco automatico.</p>
       </div>

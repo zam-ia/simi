@@ -16,7 +16,8 @@ const paymentTypes = [
   ["gateway", "Pasarela futura"]
 ];
 
-export default async function AdminPaymentsPage({ searchParams }: { searchParams: { saved?: string; error?: string } }) {
+export default async function AdminPaymentsPage({ searchParams }: { searchParams: Promise<{ saved?: string; error?: string }> }) {
+  const resolvedSearchParams = await searchParams;
   const context = await requireAdmin();
   requireModuleAccess(context, "payments");
   const { supabase, role, client } = context;
@@ -32,8 +33,8 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
       <div>
         <h2 className="text-2xl font-medium">Metodos de pago</h2>
         <p className="mt-1 text-sm text-[var(--text-muted)]">Configura Yape, Plin, efectivo u opciones manuales por negocio.</p>
-        {searchParams.saved ? <p className="mt-2 text-sm text-green-700 dark:text-green-300">Metodo guardado correctamente.</p> : null}
-        {searchParams.error ? <p className="mt-2 text-sm text-red-700 dark:text-red-300">{searchParams.error}</p> : null}
+        {resolvedSearchParams.saved ? <p className="mt-2 text-sm text-green-700 dark:text-green-300">Metodo guardado correctamente.</p> : null}
+        {resolvedSearchParams.error ? <p className="mt-2 text-sm text-red-700 dark:text-red-300">{resolvedSearchParams.error}</p> : null}
         {growth.missingGrowthTables ? <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">Aplica la migracion 009 en Supabase para habilitar este modulo.</p> : null}
       </div>
 

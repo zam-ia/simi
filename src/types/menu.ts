@@ -308,6 +308,11 @@ export type CustomerOrder = {
   client_id: string;
   order_code: string;
   order_type: OrderType;
+  source?: "public_qr" | "manual_admin" | "manual_waiter" | "whatsapp" | "phone" | "internal";
+  created_by_user_id?: string | null;
+  manual_channel?: string | null;
+  waiter_name?: string | null;
+  party_size?: number | null;
   table_id: string | null;
   table_label: string | null;
   customer_name: string | null;
@@ -326,6 +331,7 @@ export type CustomerOrder = {
   courier_latitude?: number | null;
   courier_longitude?: number | null;
   estimated_delivery_time?: string | null;
+  estimated_delivery_time_snapshot?: string | null;
   tracking_note?: string | null;
   subtotal: number;
   delivery_fee: number;

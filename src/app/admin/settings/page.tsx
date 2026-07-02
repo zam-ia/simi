@@ -6,7 +6,8 @@ import { Input } from "@/components/shared/Input";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminSettingsPage({ searchParams }: { searchParams: { saved?: string; error?: string } }) {
+export default async function AdminSettingsPage({ searchParams }: { searchParams: Promise<{ saved?: string; error?: string }> }) {
+  const resolvedSearchParams = await searchParams;
   const context = await requireAdmin();
   const { role, client } = context;
 
@@ -43,8 +44,8 @@ export default async function AdminSettingsPage({ searchParams }: { searchParams
       </section>
 
       <form action={action} className="grid gap-5 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
-        {searchParams.saved ? <div className="rounded-[var(--radius-card)] bg-green-50 p-3 text-sm text-green-700 dark:bg-green-950/35 dark:text-green-200">Configuracion guardada correctamente.</div> : null}
-        {searchParams.error ? <div className="rounded-[var(--radius-card)] bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/35 dark:text-red-200">{searchParams.error}</div> : null}
+        {resolvedSearchParams.saved ? <div className="rounded-[var(--radius-card)] bg-green-50 p-3 text-sm text-green-700 dark:bg-green-950/35 dark:text-green-200">Configuracion guardada correctamente.</div> : null}
+        {resolvedSearchParams.error ? <div className="rounded-[var(--radius-card)] bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/35 dark:text-red-200">{resolvedSearchParams.error}</div> : null}
 
         <Input
           label="WhatsApp de notificaciones"

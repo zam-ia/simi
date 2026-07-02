@@ -38,7 +38,7 @@ function isMissingTableError(error: unknown) {
 }
 
 export async function getClientById(id: string) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.from("clients").select("*").eq("id", id).single();
   if (error || !data) return null;
   return data;
@@ -46,7 +46,7 @@ export async function getClientById(id: string) {
 
 export async function getAdminClientMenu(clientId: string) {
   noStore();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const [{ data: client }, { data: categories }, { data: items }] = await Promise.all([
     supabase.from("clients").select("*").eq("id", clientId).single(),
@@ -70,9 +70,48 @@ export async function getAdminClientMenu(clientId: string) {
   };
 }
 
+export async function getAdminManualOrderCatalog(clientId?: string) {
+  noStore();
+  const supabase = await createSupabaseServerClient();
+
+  const clientQuery = clientId
+    ? supabase.from("clients").select("*").eq("id", clientId).eq("is_active", true).order("name", { ascending: true })
+    : supabase.from("clients").select("*").eq("is_active", true).order("name", { ascending: true });
+  const categoryQuery = clientId
+    ? supabase.from("menu_categories").select("*").eq("client_id", clientId).eq("is_active", true).order("display_order", { ascending: true })
+    : supabase.from("menu_categories").select("*").eq("is_active", true).order("display_order", { ascending: true });
+  const itemQuery = clientId
+    ? supabase.from("menu_items").select("*").eq("client_id", clientId).order("display_order", { ascending: true })
+    : supabase.from("menu_items").select("*").order("display_order", { ascending: true });
+  const tableQuery = clientId
+    ? supabase.from("client_tables").select("*").eq("client_id", clientId).eq("is_active", true).order("table_number", { ascending: true })
+    : supabase.from("client_tables").select("*").eq("is_active", true).order("table_number", { ascending: true });
+  const zoneQuery = clientId
+    ? supabase.from("client_delivery_zones").select("*").eq("client_id", clientId).eq("is_active", true).order("display_order", { ascending: true })
+    : supabase.from("client_delivery_zones").select("*").eq("is_active", true).order("display_order", { ascending: true });
+
+  const [clientsResult, categoriesResult, itemsResult, tablesResult, zonesResult] = await Promise.all([
+    clientQuery,
+    categoryQuery,
+    itemQuery,
+    tableQuery,
+    zoneQuery
+  ]);
+
+  return {
+    clients: (clientsResult.data || []) as Client[],
+    categories: (categoriesResult.data || []) as MenuCategory[],
+    items: ((itemsResult.data || []) as MenuItem[]).map(normalizeItem),
+    tables: (tablesResult.data || []) as ClientTable[],
+    deliveryZones: zonesResult.error && isMissingTableError(zonesResult.error)
+      ? []
+      : ((zonesResult.data || []) as ClientDeliveryZone[]).map((zone) => ({ ...zone, delivery_fee: Number(zone.delivery_fee), minimum_order: Number(zone.minimum_order) }))
+  };
+}
+
 export async function getPublicMenuBySlug(slug: string) {
   noStore();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const { data: client } = await supabase.from("clients").select("*").eq("slug", slug).eq("is_active", true).single();
   if (!client) return null;
@@ -105,14 +144,14 @@ export async function getPublicMenuBySlug(slug: string) {
 
 export async function getAdminClientTables(clientId: string) {
   noStore();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data } = await supabase.from("client_tables").select("*").eq("client_id", clientId).order("table_number", { ascending: true });
   return (data || []) as ClientTable[];
 }
 
 export async function getAdminClientOrders(clientId?: string) {
   noStore();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   let query = supabase.from("orders").select("*").order("created_at", { ascending: false });
 
   if (clientId) {
@@ -148,7 +187,7 @@ export async function getAdminClientOrders(clientId?: string) {
 
 export async function getAdminGrowthModules(clientId?: string) {
   noStore();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const zoneQuery = clientId ? supabase.from("client_delivery_zones").select("*").eq("client_id", clientId).order("display_order", { ascending: true }) : supabase.from("client_delivery_zones").select("*").order("created_at", { ascending: false });
   const promotionQuery = clientId ? supabase.from("promotions").select("*").eq("client_id", clientId).order("display_order", { ascending: true }) : supabase.from("promotions").select("*").order("created_at", { ascending: false });
   const paymentQuery = clientId ? supabase.from("client_payment_methods").select("*").eq("client_id", clientId).order("display_order", { ascending: true }) : supabase.from("client_payment_methods").select("*").order("created_at", { ascending: false });
@@ -167,7 +206,7 @@ export async function getAdminGrowthModules(clientId?: string) {
 
 export async function getAdminDeliveryCenter(clientId?: string) {
   noStore();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const orders = await getAdminClientOrders(clientId);
   const deliveryOrders = orders.filter((order) => order.order_type === "delivery" && ["ready", "handed_to_courier", "on_the_way", "arriving", "delivered"].includes(order.order_status));
   const orderIds = deliveryOrders.map((order) => order.id);
@@ -196,7 +235,7 @@ export async function getAdminDeliveryCenter(clientId?: string) {
 
 export async function getAdminReservationsCenter(clientId?: string) {
   noStore();
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const reservationQuery = clientId ? supabase.from("reservations").select("*").eq("client_id", clientId).order("reservation_date", { ascending: true }).order("reservation_time", { ascending: true }) : supabase.from("reservations").select("*").order("reservation_date", { ascending: true }).order("reservation_time", { ascending: true });
   const tableQuery = clientId ? supabase.from("client_tables").select("*").eq("client_id", clientId).order("table_number", { ascending: true }) : supabase.from("client_tables").select("*").order("table_number", { ascending: true });
   const settingsQuery = clientId ? supabase.from("reservation_settings").select("*").eq("client_id", clientId).maybeSingle() : Promise.resolve({ data: null, error: null });

@@ -38,7 +38,8 @@ function RoleSelect({ defaultValue }: { defaultValue?: string }) {
   );
 }
 
-export default async function AdminUsersPage({ searchParams }: { searchParams: { saved?: string; error?: string } }) {
+export default async function AdminUsersPage({ searchParams }: { searchParams: Promise<{ saved?: string; error?: string }> }) {
+  const resolvedSearchParams = await searchParams;
   const context = await requireAdmin();
   requireModuleAccess(context, "users");
   const { supabase, role, client } = context;
@@ -61,8 +62,8 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
         <p className="mt-2 text-sm text-[var(--text-muted)]">
           Crea accesos para caja, cocina, reparto o administracion. Cada usuario ve solo los modulos asignados.
         </p>
-        {searchParams.saved ? <p className="mt-3 text-sm text-green-700 dark:text-green-300">Cambios guardados correctamente.</p> : null}
-        {searchParams.error ? <p className="mt-3 text-sm text-red-700 dark:text-red-300">{searchParams.error}</p> : null}
+        {resolvedSearchParams.saved ? <p className="mt-3 text-sm text-green-700 dark:text-green-300">Cambios guardados correctamente.</p> : null}
+        {resolvedSearchParams.error ? <p className="mt-3 text-sm text-red-700 dark:text-red-300">{resolvedSearchParams.error}</p> : null}
         {usersError ? <p className="mt-3 text-sm text-red-700 dark:text-red-300">No se pudo cargar usuarios. Aplica la migracion 008 en Supabase.</p> : null}
       </section>
 

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="SIMI icono">
+  <title>SIMI - Icono principal</title>
+  <defs>
+    <linearGradient id="redGradient" x1="130" y1="90" x2="910" y2="930" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF2B17"/>
+      <stop offset="0.48" stop-color="#F42714"/>
+      <stop offset="1" stop-color="#F45A10"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1024" height="1024" rx="190" fill="url(#redGradient)"/>
+  <g fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Esquinas tipo escáner / QR -->
+    <path d="M 232 110 H 145 Q 118 110 118 137 V 226" stroke-width="27"/>
+    <path d="M 792 110 H 879 Q 906 110 906 137 V 226" stroke-width="27"/>
+    <path d="M 232 914 H 145 Q 118 914 118 887 V 798" stroke-width="27"/>
+    <path d="M 792 914 H 879 Q 906 914 906 887 V 798" stroke-width="27"/>
+
+    <!-- Trazo superior del isotipo -->
+    <path d="M 721 259 H 365 C 260 259 205 354 205 460 C 205 565 290 620 398 620 H 642" stroke-width="95"/>
+
+    <!-- Trazo inferior del isotipo -->
+    <path d="M 384 427 H 642 C 760 427 806 522 806 614 C 806 724 704 746 640 746 H 258" stroke-width="95"/>
+  </g>
+</svg>

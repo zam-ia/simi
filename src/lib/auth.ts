@@ -7,7 +7,7 @@ import type { User } from "@supabase/supabase-js";
 export type AdminRole = "super_admin" | "business_admin";
 
 export type AdminContext = {
-  supabase: ReturnType<typeof createSupabaseServerClient>;
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
   user: User;
   role: AdminRole;
   businessRole: BusinessRole | null;
@@ -37,7 +37,7 @@ export function isSuperAdminEmail(email?: string | null) {
   return Boolean(adminEmail && normalizeEmail(email) === adminEmail);
 }
 
-async function getFallbackBusinessClient(supabase: ReturnType<typeof createSupabaseServerClient>, email: string) {
+async function getFallbackBusinessClient(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, email: string) {
   const businessEmail = process.env.BUSINESS_ADMIN_EMAIL?.trim().toLowerCase();
   const businessSlug = process.env.BUSINESS_ADMIN_CLIENT_SLUG?.trim();
 
@@ -47,7 +47,7 @@ async function getFallbackBusinessClient(supabase: ReturnType<typeof createSupab
   return (data || null) as Client | null;
 }
 
-async function getClientByLegacyAdminEmail(supabase: ReturnType<typeof createSupabaseServerClient>, email: string) {
+async function getClientByLegacyAdminEmail(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, email: string) {
   const { data, error } = await supabase.from("clients").select("*").eq("admin_email", email).maybeSingle();
   if (error && !isMissingAccessTable(error)) {
     console.error("No se pudo validar admin_email del negocio", error);
@@ -56,7 +56,7 @@ async function getClientByLegacyAdminEmail(supabase: ReturnType<typeof createSup
   return (data || null) as Client | null;
 }
 
-async function getBusinessMembership(supabase: ReturnType<typeof createSupabaseServerClient>, user: User) {
+async function getBusinessMembership(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, user: User) {
   const email = normalizeEmail(user.email);
 
   let { data: membership, error } = await supabase.from("client_users").select("*").eq("user_id", user.id).eq("is_active", true).maybeSingle();
@@ -93,7 +93,7 @@ async function getBusinessMembership(supabase: ReturnType<typeof createSupabaseS
 }
 
 export async function getAdminContext(): Promise<AdminContext | null> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const {
     data: { user },
     error

@@ -1,6 +1,8 @@
 import { ClientTable } from "@/components/admin/ClientTable";
+import { ManualOrderDrawer } from "@/components/admin/ManualOrderDrawer";
 import { LinkButton } from "@/components/shared/Button";
 import { hasModuleAccess, requireAdmin } from "@/lib/auth";
+import { getAdminManualOrderCatalog } from "@/lib/menu-data";
 import { formatPrice, getPublicMenuUrl } from "@/lib/utils";
 import type { Client } from "@/types/menu";
 
@@ -14,13 +16,14 @@ export default async function AdminPage() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayIso = today.toISOString();
-    const [{ count: categoryCount }, { count: productCount }, { count: tableCount }, { data: recentOrders }, { data: todayOrders }, { count: pendingPaymentCount }] = await Promise.all([
+    const [{ count: categoryCount }, { count: productCount }, { count: tableCount }, { data: recentOrders }, { data: todayOrders }, { count: pendingPaymentCount }, manualCatalog] = await Promise.all([
       supabase.from("menu_categories").select("id", { count: "exact", head: true }).eq("client_id", client.id),
       supabase.from("menu_items").select("id", { count: "exact", head: true }).eq("client_id", client.id),
       supabase.from("client_tables").select("id", { count: "exact", head: true }).eq("client_id", client.id).eq("is_active", true),
       supabase.from("orders").select("id,total,order_status,payment_status,created_at,order_type,customer_name,delivery_address,table_label").eq("client_id", client.id).order("created_at", { ascending: false }).limit(6),
       supabase.from("orders").select("id,total,order_status,payment_status,created_at").eq("client_id", client.id).gte("created_at", todayIso),
-      supabase.from("orders").select("id", { count: "exact", head: true }).eq("client_id", client.id).in("payment_status", ["pending_payment", "proof_submitted"])
+      supabase.from("orders").select("id", { count: "exact", head: true }).eq("client_id", client.id).in("payment_status", ["pending_payment", "proof_submitted"]),
+      getAdminManualOrderCatalog(client.id)
     ]);
 
     const publicUrl = getPublicMenuUrl(client.slug);
@@ -43,6 +46,16 @@ export default async function AdminPage() {
               <p className="mt-2 max-w-2xl text-sm leading-5 text-[var(--text-muted)]">Controla pedidos, pagos, carta y reservas desde una vista preparada para operar en hora punta.</p>
             </div>
             <div className="flex flex-wrap gap-3">
+              {hasModuleAccess(context, "orders") ? (
+                <ManualOrderDrawer
+                  clients={[client as Client]}
+                  categories={manualCatalog.categories}
+                  items={manualCatalog.items}
+                  tables={manualCatalog.tables}
+                  deliveryZones={manualCatalog.deliveryZones}
+                  defaultClientId={client.id}
+                />
+              ) : null}
               {hasModuleAccess(context, "menu") ? <LinkButton href={`/admin/clients/${client.id}`} variant="secondary">Editar carta</LinkButton> : null}
               {hasModuleAccess(context, "orders") ? <LinkButton href="/admin/orders">Pedidos</LinkButton> : null}
               <LinkButton href={publicUrl} variant="secondary" target="_blank">Ver carta publica</LinkButton>

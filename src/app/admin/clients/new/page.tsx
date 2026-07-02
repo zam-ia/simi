@@ -4,7 +4,8 @@ import { requireAdmin, requireSuperAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export default async function NewClientPage({ searchParams }: { searchParams: { error?: string } }) {
+export default async function NewClientPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const resolvedSearchParams = await searchParams;
   const context = await requireAdmin();
   requireSuperAdmin(context);
 
@@ -14,7 +15,7 @@ export default async function NewClientPage({ searchParams }: { searchParams: { 
         <h2 className="text-2xl font-medium">Nuevo cliente</h2>
         <p className="mt-1 text-sm text-[var(--text-muted)]">Crea un negocio y deja listo su enlace público para QR.</p>
       </div>
-      <ClientForm action={createClientAction} error={searchParams.error} />
+      <ClientForm action={createClientAction} error={resolvedSearchParams.error} />
     </div>
   );
 }

@@ -7,14 +7,14 @@ export const metadata: Metadata = {
   title: "SIMI",
   description: "Sistema operativo para restaurantes, cartas digitales, pedidos y reservas.",
   icons: {
-    icon: "/simi/brand_app_icons/favicon.svg",
-    shortcut: "/simi/brand_app_icons/favicon.svg",
-    apple: "/simi/brand_app_icons/app-icon-source-512.svg"
+    icon: "/simi/brand_app_icons/SIMI_icono.svg",
+    shortcut: "/simi/brand_app_icons/SIMI_icono.svg",
+    apple: "/simi/brand_app_icons/SIMI_icono.svg"
   },
   openGraph: {
     title: "SIMI",
     description: "Sistema operativo para restaurantes, cartas digitales, pedidos y reservas.",
-    images: ["/simi/previews/preview_app_icon.png"]
+    images: ["/simi/brand_app_icons/SIMI_icono.svg"]
   }
 };
 

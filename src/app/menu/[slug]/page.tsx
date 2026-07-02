@@ -7,13 +7,14 @@ import { getPublicMenuUrl, stripDemoPrefix } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 type MenuPageProps = {
-  params: { slug: string };
-  searchParams?: { mesa?: string };
+  params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ mesa?: string }>;
 };
 
 export async function generateMetadata({ params }: MenuPageProps): Promise<Metadata> {
-  const cleanSlug = stripDemoPrefix(params.slug);
-  const menu = cleanSlug !== params.slug ? (await getPublicMenuBySlug(cleanSlug)) || (await getPublicMenuBySlug(params.slug)) : await getPublicMenuBySlug(params.slug);
+  const resolvedParams = await params;
+  const cleanSlug = stripDemoPrefix(resolvedParams.slug);
+  const menu = cleanSlug !== resolvedParams.slug ? (await getPublicMenuBySlug(cleanSlug)) || (await getPublicMenuBySlug(resolvedParams.slug)) : await getPublicMenuBySlug(resolvedParams.slug);
 
   if (!menu) {
     return {
@@ -37,16 +38,18 @@ export async function generateMetadata({ params }: MenuPageProps): Promise<Metad
 }
 
 export default async function PublicMenuPage({ params, searchParams }: MenuPageProps) {
-  const cleanSlug = stripDemoPrefix(params.slug);
-  if (cleanSlug !== params.slug) {
+  const resolvedParams = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const cleanSlug = stripDemoPrefix(resolvedParams.slug);
+  if (cleanSlug !== resolvedParams.slug) {
     const cleanMenu = await getPublicMenuBySlug(cleanSlug);
     if (cleanMenu) {
-      const query = searchParams?.mesa ? `?mesa=${encodeURIComponent(searchParams.mesa)}` : "";
+      const query = resolvedSearchParams?.mesa ? `?mesa=${encodeURIComponent(resolvedSearchParams.mesa)}` : "";
       redirect(`/menu/${cleanSlug}${query}`);
     }
   }
 
-  const menu = await getPublicMenuBySlug(params.slug);
+  const menu = await getPublicMenuBySlug(resolvedParams.slug);
   if (!menu) notFound();
 
   return (
@@ -57,7 +60,7 @@ export default async function PublicMenuPage({ params, searchParams }: MenuPageP
       deliveryZones={menu.deliveryZones || []}
       promotions={menu.promotions || []}
       paymentMethods={menu.paymentMethods || []}
-      initialTableNumber={searchParams?.mesa}
+      initialTableNumber={resolvedSearchParams?.mesa}
     />
   );
 }

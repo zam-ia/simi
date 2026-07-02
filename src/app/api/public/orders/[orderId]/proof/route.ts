@@ -3,8 +3,9 @@ import { recordOperationalActivity } from "@/lib/services/activity-service";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { sanitizeFileName, validateImageFile } from "@/lib/storage";
 
-export async function POST(request: Request, { params }: { params: { orderId: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ orderId: string }> }) {
   try {
+    const resolvedParams = await params;
     const formData = await request.formData();
     const operationNumber = String(formData.get("operation_number") || "").trim();
     const file = formData.get("proof_image");
@@ -15,7 +16,7 @@ export async function POST(request: Request, { params }: { params: { orderId: st
       return NextResponse.json({ error: "Sube una captura o escribe el número de operación." }, { status: 400 });
     }
 
-    const { data: order } = await supabase.from("orders").select("id,client_id,order_code,customer_name").eq("id", params.orderId).single();
+    const { data: order } = await supabase.from("orders").select("id,client_id,order_code,customer_name").eq("id", resolvedParams.orderId).single();
     if (!order) return NextResponse.json({ error: "No encontramos el pedido." }, { status: 404 });
 
     if (file instanceof File && file.size > 0) {
@@ -23,7 +24,7 @@ export async function POST(request: Request, { params }: { params: { orderId: st
       if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
 
       await supabase.storage.createBucket("order-proofs", { public: true }).catch(() => null);
-      const filePath = `${params.orderId}/${Date.now()}-${sanitizeFileName(file.name)}`;
+      const filePath = `${resolvedParams.orderId}/${Date.now()}-${sanitizeFileName(file.name)}`;
       const { error: uploadError } = await supabase.storage.from("order-proofs").upload(filePath, file, { upsert: true });
       if (uploadError) throw uploadError;
 
@@ -32,7 +33,7 @@ export async function POST(request: Request, { params }: { params: { orderId: st
     }
 
     const { error: proofError } = await supabase.from("payment_proofs").insert({
-      order_id: params.orderId,
+      order_id: resolvedParams.orderId,
       operation_number: operationNumber || null,
       proof_image_url: proofImageUrl,
       status: "submitted"
@@ -40,9 +41,9 @@ export async function POST(request: Request, { params }: { params: { orderId: st
 
     if (proofError) throw proofError;
 
-    await supabase.from("orders").update({ payment_status: "proof_submitted", order_status: "payment_submitted" }).eq("id", params.orderId);
+    await supabase.from("orders").update({ payment_status: "proof_submitted", order_status: "payment_submitted" }).eq("id", resolvedParams.orderId);
     await supabase.from("order_status_events").insert({
-      order_id: params.orderId,
+      order_id: resolvedParams.orderId,
       status: "payment_submitted",
       payment_status: "proof_submitted",
       note: operationNumber ? `Operacion Yape: ${operationNumber}` : "Comprobante enviado",
@@ -54,7 +55,7 @@ export async function POST(request: Request, { params }: { params: { orderId: st
       {
         clientId: order.client_id,
         entityType: "payment",
-        entityId: params.orderId,
+        entityId: resolvedParams.orderId,
         eventType: "payment.proof_uploaded",
         fromStatus: "pending_payment",
         toStatus: "proof_submitted",
@@ -68,7 +69,7 @@ export async function POST(request: Request, { params }: { params: { orderId: st
         title: `Comprobante por validar #${order.order_code}`,
         message: "El cliente subio un comprobante de pago.",
         entityType: "payment",
-        entityId: params.orderId,
+        entityId: resolvedParams.orderId,
         priority: "high"
       }
     );
