@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">SIMI — Confianza</title>
+  <desc id="desc">Disponibilidad, respaldo y confiabilidad.</desc>
+  
+  <path d="M12 3l7 3.5v5.5c0 4.5-3 7.1-7 8.5-4-1.4-7-4-7-8.5V6.5L12 3z" fill="none" stroke="#6B7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+  <polyline points="8.5 12 11 14.5 15.8 9.8" fill="none" stroke="#111111" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="18" cy="6" r="1.6" fill="#D92D20" stroke="#D92D20" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

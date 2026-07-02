@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">SIMI Mobile — Escanear QR</title>
+  <desc id="desc">Esquinas de escaneo para acceso inmediato por QR.</desc>
+  <rect x="1" y="1" width="30" height="30" rx="8" fill="#FFF4E5" stroke="#F6E6CE" stroke-width="1"/>
+  <path d="M5 5h7" stroke="#D92D20" stroke-width="1.5" stroke-linecap="round"/>
+  <g transform="translate(4 4)">
+    <path d="M4 8V5a1 1 0 0 1 1-1h3" fill="none" stroke="#D92D20" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M16 4h3a1 1 0 0 1 1 1v3" fill="none" stroke="#D92D20" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M20 16v3a1 1 0 0 1-1 1h-3" fill="none" stroke="#D92D20" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M8 20H5a1 1 0 0 1-1-1v-3" fill="none" stroke="#D92D20" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round" />
+    <line x1="7" y1="12" x2="17" y2="12" stroke="#111111" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="12" cy="12" r="2.2" fill="none" stroke="#111111" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

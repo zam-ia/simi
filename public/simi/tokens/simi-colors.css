@@ -1,0 +1,21 @@
+:root {
+  --simi-rojo-brasa: #D92D20;
+  --simi-aji-amarillo: #FFB000;
+  --simi-naranja-delivery: #FF6B00;
+  --simi-carbon-parrilla: #111111;
+  --simi-crema-carta: #FFF4E5;
+  --simi-blanco-pedido: #FFFFFF;
+  --simi-tinta-menu: #1F2933;
+  --simi-acero-cocina: #6B7280;
+  --simi-exito: #16A34A;
+  --simi-advertencia: #F59E0B;
+  --simi-error: #DC2626;
+  --simi-informacion: #2563EB;
+}
+
+.simi-icon {
+  width: 24px;
+  height: 24px;
+  display: inline-block;
+  vertical-align: middle;
+}

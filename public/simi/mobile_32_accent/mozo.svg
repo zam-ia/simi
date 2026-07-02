@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">SIMI Mobile — Mozo / encargado</title>
+  <desc id="desc">Registro manual de pedidos por personal de sala.</desc>
+  <rect x="1" y="1" width="30" height="30" rx="8" fill="#FFF4E5" stroke="#F6E6CE" stroke-width="1"/>
+  <path d="M5 5h7" stroke="#D92D20" stroke-width="1.5" stroke-linecap="round"/>
+  <g transform="translate(4 4)">
+    <circle cx="12" cy="6.5" r="2.5" fill="none" stroke="#111111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M7 21v-3.5a5 5 0 0 1 10 0V21" fill="none" stroke="#111111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M9 13h6l-1 4h-4l-1-4z" fill="none" stroke="#D92D20" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M17 12h3v7h-3" fill="none" stroke="#FF6B00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>

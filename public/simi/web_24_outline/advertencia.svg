@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">SIMI — Advertencia</title>
+  <desc id="desc">Alerta no crítica, atención requerida o stock bajo.</desc>
+  
+  <path d="M12 4l9 16H3L12 4z" fill="none" stroke="#F59E0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+  <line x1="12" y1="10" x2="12" y2="14" stroke="#F59E0B" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="12" cy="17" r="0.6" fill="#F59E0B" stroke="#F59E0B" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

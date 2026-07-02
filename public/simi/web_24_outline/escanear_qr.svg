@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">SIMI — Escanear QR</title>
+  <desc id="desc">Esquinas de escaneo para acceso inmediato por QR.</desc>
+  
+  <path d="M4 8V5a1 1 0 0 1 1-1h3" fill="none" stroke="#D92D20" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M16 4h3a1 1 0 0 1 1 1v3" fill="none" stroke="#D92D20" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M20 16v3a1 1 0 0 1-1 1h-3" fill="none" stroke="#D92D20" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M8 20H5a1 1 0 0 1-1-1v-3" fill="none" stroke="#D92D20" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round" />
+  <line x1="7" y1="12" x2="17" y2="12" stroke="#111111" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="12" cy="12" r="2.2" fill="none" stroke="#111111" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

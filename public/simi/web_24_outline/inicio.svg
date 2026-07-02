@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">SIMI — Inicio</title>
+  <desc id="desc">Entrada principal de navegación.</desc>
+  
+  <path d="M4 11l8-7 8 7" fill="none" stroke="#111111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M6 10v10h12V10" fill="none" stroke="#111111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M10 20v-6h4v6" fill="none" stroke="#D92D20" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

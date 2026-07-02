@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">SIMI Mobile — Mesa / salón</title>
+  <desc id="desc">Mesa para atención en sala.</desc>
+  <rect x="1" y="1" width="30" height="30" rx="8" fill="#FFF4E5" stroke="#F6E6CE" stroke-width="1"/>
+  <path d="M5 5h7" stroke="#D92D20" stroke-width="1.5" stroke-linecap="round"/>
+  <g transform="translate(4 4)">
+    <path d="M5 9h14l-1 4H6L5 9z" fill="none" stroke="#111111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+    <line x1="8" y1="13" x2="7" y2="20" stroke="#111111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="16" y1="13" x2="17" y2="20" stroke="#111111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="6" y1="20" x2="9" y2="20" stroke="#6B7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="15" y1="20" x2="18" y2="20" stroke="#6B7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="12" cy="6" r="2.2" fill="none" stroke="#D92D20" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

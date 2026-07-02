@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">SIMI Mobile — Código QR</title>
+  <desc id="desc">Código QR modular para carta digital.</desc>
+  <rect x="1" y="1" width="30" height="30" rx="8" fill="#FFF4E5" stroke="#F6E6CE" stroke-width="1"/>
+  <path d="M5 5h7" stroke="#D92D20" stroke-width="1.5" stroke-linecap="round"/>
+  <g transform="translate(4 4)">
+    <rect x="3" y="3" width="6" height="6" rx="1.4" fill="none" stroke="#D92D20" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="15" y="3" width="6" height="6" rx="1.4" fill="none" stroke="#111111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="3" y="15" width="6" height="6" rx="1.4" fill="none" stroke="#111111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="16" y="16" width="2" height="2" rx="0.6" fill="none" stroke="#FF6B00" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="20" y="16" width="1" height="1" rx="0.3" fill="none" stroke="#111111" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="16" y="20" width="5" height="1" rx="0.3" fill="none" stroke="#111111" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="12" y1="4" x2="12" y2="8" stroke="#6B7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="12" y1="12" x2="20" y2="12" stroke="#6B7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="12" y1="16" x2="12" y2="21" stroke="#6B7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

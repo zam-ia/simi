@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">SIMI — Buscar</title>
+  <desc id="desc">Búsqueda de productos, pedidos y clientes.</desc>
+  
+  <circle cx="10.5" cy="10.5" r="5.5" fill="none" stroke="#111111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="15" y1="15" x2="20" y2="20" stroke="#D92D20" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

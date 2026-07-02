@@ -151,7 +151,7 @@ export function AdminRealtimeAlerts({ clientId }: AdminRealtimeAlertsProps) {
         </div>
       ) : null}
 
-      <div className="fixed right-4 top-4 z-[65]">
+      <div className="fixed right-4 top-24 z-[65]">
         <button
           type="button"
           className="focus-ring relative grid h-11 w-11 place-items-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-[var(--text)] shadow-soft"
@@ -187,7 +187,7 @@ export function AdminRealtimeAlerts({ clientId }: AdminRealtimeAlertsProps) {
       </div>
 
       {alert ? (
-        <div className="fixed right-4 top-20 z-[60] max-w-sm rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-soft">
+        <div className="fixed right-4 top-40 z-[60] max-w-sm rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-soft">
           <div className="flex items-start gap-3">
             <span className={`mt-1 h-2.5 w-2.5 rounded-full ${alert.priority === "critical" ? "bg-red-500" : alert.priority === "high" ? "bg-[#FF9500]" : alert.module === "orders" ? "bg-green-500" : "bg-[var(--accent)]"}`} />
             <div>

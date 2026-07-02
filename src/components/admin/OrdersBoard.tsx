@@ -56,7 +56,7 @@ export function OrdersBoard({ clients, orders, surface = "orders" }: OrdersBoard
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | "all">("all");
   const [orderType, setOrderType] = useState<OrderWithDetails["order_type"] | "all">("all");
   const [onlyUrgent, setOnlyUrgent] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(orders[0]?.id || null);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(() => (shouldSuppressOrderDrawer() ? null : orders[0]?.id || null));
 
   const enrichedOrders = useMemo(
     () =>
@@ -139,6 +139,11 @@ export function OrdersBoard({ clients, orders, surface = "orders" }: OrdersBoard
   }, [enrichedOrders, isKitchenSurface]);
 
   const columns = isKitchenSurface ? kitchenColumns : boardColumns;
+
+  function closeOrderPanel() {
+    suppressOrderDrawerOnce();
+    setSelectedOrderId(null);
+  }
 
   return (
     <div className="grid gap-5">
@@ -281,7 +286,7 @@ export function OrdersBoard({ clients, orders, surface = "orders" }: OrdersBoard
         <OrdersList items={viewMode === "history" ? historyOrders : sortedFilteredOrders} surface={surface} onOpen={(orderId) => setSelectedOrderId(orderId)} />
       )}
 
-      {selectedOrder && viewMode !== "operational" ? <OrderDetailPanel item={selectedOrder} surface={surface} onClose={() => setSelectedOrderId(null)} /> : null}
+      {selectedOrder && viewMode !== "operational" ? <OrderDetailPanel item={selectedOrder} surface={surface} onClose={closeOrderPanel} /> : null}
     </div>
   );
 }
@@ -573,8 +578,9 @@ function OrderDetailPanel({ item, surface, onClose }: { item: EnrichedOrder; sur
             <h2 className="mt-1 text-2xl font-medium">Pedido #{order.order_code}</h2>
             <p className="mt-1 text-sm text-[var(--text-muted)]">{order.customer_name || order.table_label || order.delivery_address || "Sin cliente registrado"}</p>
           </div>
-          <button type="button" className="grid h-10 w-10 place-items-center rounded-full bg-[var(--surface-muted)] text-xl" onClick={onClose} aria-label="Cerrar detalle">
-            x
+          <button type="button" className="focus-ring inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--surface-muted)] px-4 text-sm font-medium text-[var(--text)]" onClick={onClose} aria-label="Cerrar detalle">
+            <CloseIcon className="h-4 w-4" />
+            Cerrar
           </button>
         </div>
 
@@ -596,18 +602,18 @@ function OrderDetailPanel({ item, surface, onClose }: { item: EnrichedOrder; sur
             <section className="grid gap-3 rounded-[var(--radius-panel)] border border-[var(--line)] p-4">
               <h3 className="text-sm font-medium">Acciones rapidas</h3>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {surface === "orders" ? <QuickStatusForm order={order} label="Aceptar" orderStatus="payment_validated" paymentStatus={order.payment_status === "validated" ? "validated" : order.payment_status} /> : null}
-                <QuickStatusForm order={order} label={surface === "kitchen" ? "Empezar" : "Enviar a cocina"} orderStatus="preparing" />
-                <QuickStatusForm order={order} label="Marcar listo" orderStatus="ready" />
-                {isDelivery ? <QuickStatusForm order={order} label="En camino" orderStatus="on_the_way" /> : null}
-                <QuickStatusForm order={order} label="Entregado" orderStatus="delivered" />
-                {surface === "orders" ? <QuickStatusForm order={order} label="Cancelar" orderStatus="cancelled" /> : null}
+                {surface === "orders" ? <QuickStatusForm order={order} label="Aceptar" orderStatus="payment_validated" paymentStatus={order.payment_status === "validated" ? "validated" : order.payment_status} onSubmitted={onClose} /> : null}
+                <QuickStatusForm order={order} label={surface === "kitchen" ? "Empezar" : "Enviar a cocina"} orderStatus="preparing" onSubmitted={onClose} />
+                <QuickStatusForm order={order} label="Marcar listo" orderStatus="ready" onSubmitted={onClose} />
+                {isDelivery ? <QuickStatusForm order={order} label="En camino" orderStatus="on_the_way" onSubmitted={onClose} /> : null}
+                <QuickStatusForm order={order} label="Entregado" orderStatus="delivered" onSubmitted={onClose} />
+                {surface === "orders" ? <QuickStatusForm order={order} label="Cancelar" orderStatus="cancelled" onSubmitted={onClose} /> : null}
               </div>
               {surface === "orders" ? (
                 <>
                   <div className="grid grid-cols-2 gap-2">
-                    <QuickStatusForm order={order} label="Validar pago" orderStatus={order.order_status} paymentStatus="validated" />
-                    <QuickStatusForm order={order} label="Rechazar pago" orderStatus={order.order_status} paymentStatus="rejected" />
+                    <QuickStatusForm order={order} label="Validar pago" orderStatus={order.order_status} paymentStatus="validated" onSubmitted={onClose} />
+                    <QuickStatusForm order={order} label="Rechazar pago" orderStatus={order.order_status} paymentStatus="rejected" onSubmitted={onClose} />
                   </div>
                   <WhatsAppButton order={order} className="min-h-10 rounded-full bg-[#25D366] px-3 text-sm font-medium text-white" />
                 </>
@@ -668,7 +674,7 @@ function OrderDetailPanel({ item, surface, onClose }: { item: EnrichedOrder; sur
               </section>
             ) : null}
 
-            <form action={action} className="grid gap-3 rounded-[var(--radius-panel)] border border-[var(--line)] p-4">
+            <form action={action} onSubmit={onClose} className="grid gap-3 rounded-[var(--radius-panel)] border border-[var(--line)] p-4">
               <h3 className="text-sm font-medium">Editar seguimiento</h3>
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="grid gap-2 text-sm">
@@ -760,11 +766,11 @@ function InfoTile({ label, value }: { label: string; value: string }) {
   );
 }
 
-function QuickStatusForm({ order, label, orderStatus, paymentStatus }: { order: OrderWithDetails; label: string; orderStatus: OrderStatus; paymentStatus?: PaymentStatus }) {
+function QuickStatusForm({ order, label, orderStatus, paymentStatus, onSubmitted }: { order: OrderWithDetails; label: string; orderStatus: OrderStatus; paymentStatus?: PaymentStatus; onSubmitted?: () => void }) {
   const action = updateOrderStatusAction.bind(null, order.id);
 
   return (
-    <form action={action}>
+    <form action={action} onSubmit={onSubmitted}>
       <input type="hidden" name="order_status" value={orderStatus} />
       <input type="hidden" name="payment_status" value={paymentStatus || order.payment_status} />
       <input type="hidden" name="courier_name" value={order.courier_name || ""} />
@@ -775,6 +781,32 @@ function QuickStatusForm({ order, label, orderStatus, paymentStatus }: { order: 
         {label}
       </button>
     </form>
+  );
+}
+
+function suppressOrderDrawerOnce() {
+  try {
+    window.sessionStorage.setItem("simi-suppress-order-drawer", String(Date.now()));
+  } catch {
+    // La UI puede seguir funcionando aunque storage no este disponible.
+  }
+}
+
+function shouldSuppressOrderDrawer() {
+  try {
+    const value = window.sessionStorage.getItem("simi-suppress-order-drawer");
+    if (!value) return false;
+    return Date.now() - Number(value) < 10000;
+  } catch {
+    return false;
+  }
+}
+
+function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
   );
 }
 

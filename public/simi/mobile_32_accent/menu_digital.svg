@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">SIMI Mobile — Menú digital</title>
+  <desc id="desc">Lista de productos disponible en web y móvil.</desc>
+  <rect x="1" y="1" width="30" height="30" rx="8" fill="#FFF4E5" stroke="#F6E6CE" stroke-width="1"/>
+  <path d="M5 5h7" stroke="#D92D20" stroke-width="1.5" stroke-linecap="round"/>
+  <g transform="translate(4 4)">
+    <rect x="5" y="3" width="14" height="18" rx="2" fill="none" stroke="#111111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="8" y1="8" x2="16" y2="8" stroke="#D92D20" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="8" y1="12" x2="16" y2="12" stroke="#FF6B00" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="8" y1="16" x2="13" y2="16" stroke="#FFB000" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

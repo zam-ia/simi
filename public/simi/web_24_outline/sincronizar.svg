@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">SIMI — Sincronizar</title>
+  <desc id="desc">Comunicación entre módulos en tiempo real.</desc>
+  
+  <path d="M7 7a7 7 0 0 1 11 2" fill="none" stroke="#111111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M18 4v5h-5" fill="none" stroke="#D92D20" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M17 17a7 7 0 0 1-11-2" fill="none" stroke="#111111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M6 20v-5h5" fill="none" stroke="#FF6B00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

@@ -1,0 +1,316 @@
+{
+  "brand": "SIMI",
+  "version": "1.0",
+  "grid": "24px web / 32px mobile",
+  "style": "rounded outline, two-tone accent",
+  "colors": {
+    "rojo_brasa": "#D92D20",
+    "aji_amarillo": "#FFB000",
+    "naranja_delivery": "#FF6B00",
+    "carbon_parrilla": "#111111",
+    "crema_carta": "#FFF4E5",
+    "blanco_pedido": "#FFFFFF",
+    "tinta_menu": "#1F2933",
+    "acero_cocina": "#6B7280",
+    "exito": "#16A34A",
+    "advertencia": "#F59E0B",
+    "error": "#DC2626",
+    "informacion": "#2563EB"
+  },
+  "icons": [
+    {
+      "name": "escanear_qr",
+      "title": "Escanear QR",
+      "description": "Esquinas de escaneo para acceso inmediato por QR.",
+      "web": "web_24_outline/escanear_qr.svg",
+      "mobile": "mobile_32_accent/escanear_qr.svg"
+    },
+    {
+      "name": "codigo_qr",
+      "title": "Código QR",
+      "description": "Código QR modular para carta digital.",
+      "web": "web_24_outline/codigo_qr.svg",
+      "mobile": "mobile_32_accent/codigo_qr.svg"
+    },
+    {
+      "name": "menu_digital",
+      "title": "Menú digital",
+      "description": "Lista de productos disponible en web y móvil.",
+      "web": "web_24_outline/menu_digital.svg",
+      "mobile": "mobile_32_accent/menu_digital.svg"
+    },
+    {
+      "name": "editar_menu",
+      "title": "Editar menú",
+      "description": "Actualización de carta, productos y precios.",
+      "web": "web_24_outline/editar_menu.svg",
+      "mobile": "mobile_32_accent/editar_menu.svg"
+    },
+    {
+      "name": "pedido_nuevo",
+      "title": "Pedido nuevo",
+      "description": "Registro y recepción de nuevos pedidos.",
+      "web": "web_24_outline/pedido_nuevo.svg",
+      "mobile": "mobile_32_accent/pedido_nuevo.svg"
+    },
+    {
+      "name": "estado_pedido",
+      "title": "Estado de pedido",
+      "description": "Cambio de estados del pedido y sincronización.",
+      "web": "web_24_outline/estado_pedido.svg",
+      "mobile": "mobile_32_accent/estado_pedido.svg"
+    },
+    {
+      "name": "reservas",
+      "title": "Reservas",
+      "description": "Calendario y control de reservas.",
+      "web": "web_24_outline/reservas.svg",
+      "mobile": "mobile_32_accent/reservas.svg"
+    },
+    {
+      "name": "mesa_salon",
+      "title": "Mesa / salón",
+      "description": "Mesa para atención en sala.",
+      "web": "web_24_outline/mesa_salon.svg",
+      "mobile": "mobile_32_accent/mesa_salon.svg"
+    },
+    {
+      "name": "cocina",
+      "title": "Cocina",
+      "description": "Módulo de preparación y operaciones de cocina.",
+      "web": "web_24_outline/cocina.svg",
+      "mobile": "mobile_32_accent/cocina.svg"
+    },
+    {
+      "name": "campana_cocina",
+      "title": "Campana de cocina",
+      "description": "Aviso de pedido listo para despacho.",
+      "web": "web_24_outline/campana_cocina.svg",
+      "mobile": "mobile_32_accent/campana_cocina.svg"
+    },
+    {
+      "name": "delivery",
+      "title": "Delivery",
+      "description": "Despacho y reparto de pedidos.",
+      "web": "web_24_outline/delivery.svg",
+      "mobile": "mobile_32_accent/delivery.svg"
+    },
+    {
+      "name": "recojo_local",
+      "title": "Recojo en local",
+      "description": "Pedido para recojo en tienda.",
+      "web": "web_24_outline/recojo_local.svg",
+      "mobile": "mobile_32_accent/recojo_local.svg"
+    },
+    {
+      "name": "pagos",
+      "title": "Pagos",
+      "description": "Cobros digitales o presenciales.",
+      "web": "web_24_outline/pagos.svg",
+      "mobile": "mobile_32_accent/pagos.svg"
+    },
+    {
+      "name": "billetera",
+      "title": "Billetera",
+      "description": "Saldo, caja y transacciones.",
+      "web": "web_24_outline/billetera.svg",
+      "mobile": "mobile_32_accent/billetera.svg"
+    },
+    {
+      "name": "clientes",
+      "title": "Clientes",
+      "description": "Base de clientes y perfiles.",
+      "web": "web_24_outline/clientes.svg",
+      "mobile": "mobile_32_accent/clientes.svg"
+    },
+    {
+      "name": "personal",
+      "title": "Personal",
+      "description": "Equipo, mozos y encargados.",
+      "web": "web_24_outline/personal.svg",
+      "mobile": "mobile_32_accent/personal.svg"
+    },
+    {
+      "name": "dashboard",
+      "title": "Dashboard",
+      "description": "Vista general de métricas y operaciones.",
+      "web": "web_24_outline/dashboard.svg",
+      "mobile": "mobile_32_accent/dashboard.svg"
+    },
+    {
+      "name": "reportes",
+      "title": "Reportes",
+      "description": "Reporte operativo y comercial.",
+      "web": "web_24_outline/reportes.svg",
+      "mobile": "mobile_32_accent/reportes.svg"
+    },
+    {
+      "name": "analitica",
+      "title": "Analítica",
+      "description": "Gráficos de rendimiento e indicadores.",
+      "web": "web_24_outline/analitica.svg",
+      "mobile": "mobile_32_accent/analitica.svg"
+    },
+    {
+      "name": "notificaciones",
+      "title": "Notificaciones",
+      "description": "Alertas en tiempo real.",
+      "web": "web_24_outline/notificaciones.svg",
+      "mobile": "mobile_32_accent/notificaciones.svg"
+    },
+    {
+      "name": "promociones",
+      "title": "Promociones",
+      "description": "Cupones, descuentos y campañas.",
+      "web": "web_24_outline/promociones.svg",
+      "mobile": "mobile_32_accent/promociones.svg"
+    },
+    {
+      "name": "inventario",
+      "title": "Inventario",
+      "description": "Control de stock e insumos.",
+      "web": "web_24_outline/inventario.svg",
+      "mobile": "mobile_32_accent/inventario.svg"
+    },
+    {
+      "name": "horarios",
+      "title": "Horarios",
+      "description": "Disponibilidad y turnos.",
+      "web": "web_24_outline/horarios.svg",
+      "mobile": "mobile_32_accent/horarios.svg"
+    },
+    {
+      "name": "sincronizar",
+      "title": "Sincronizar",
+      "description": "Comunicación entre módulos en tiempo real.",
+      "web": "web_24_outline/sincronizar.svg",
+      "mobile": "mobile_32_accent/sincronizar.svg"
+    },
+    {
+      "name": "integraciones",
+      "title": "Integraciones",
+      "description": "Conexión con herramientas externas.",
+      "web": "web_24_outline/integraciones.svg",
+      "mobile": "mobile_32_accent/integraciones.svg"
+    },
+    {
+      "name": "seguridad",
+      "title": "Seguridad",
+      "description": "Confianza, acceso seguro y estabilidad.",
+      "web": "web_24_outline/seguridad.svg",
+      "mobile": "mobile_32_accent/seguridad.svg"
+    },
+    {
+      "name": "ajustes",
+      "title": "Ajustes",
+      "description": "Configuración general de la plataforma.",
+      "web": "web_24_outline/ajustes.svg",
+      "mobile": "mobile_32_accent/ajustes.svg"
+    },
+    {
+      "name": "soporte",
+      "title": "Soporte",
+      "description": "Ayuda y atención a usuarios.",
+      "web": "web_24_outline/soporte.svg",
+      "mobile": "mobile_32_accent/soporte.svg"
+    },
+    {
+      "name": "sucursal",
+      "title": "Sucursal",
+      "description": "Local, restaurante o sede.",
+      "web": "web_24_outline/sucursal.svg",
+      "mobile": "mobile_32_accent/sucursal.svg"
+    },
+    {
+      "name": "sitio_web",
+      "title": "Sitio web",
+      "description": "Acceso web responsive.",
+      "web": "web_24_outline/sitio_web.svg",
+      "mobile": "mobile_32_accent/sitio_web.svg"
+    },
+    {
+      "name": "app_movil",
+      "title": "App móvil",
+      "description": "Interfaz de aplicativo móvil.",
+      "web": "web_24_outline/app_movil.svg",
+      "mobile": "mobile_32_accent/app_movil.svg"
+    },
+    {
+      "name": "inicio",
+      "title": "Inicio",
+      "description": "Entrada principal de navegación.",
+      "web": "web_24_outline/inicio.svg",
+      "mobile": "mobile_32_accent/inicio.svg"
+    },
+    {
+      "name": "buscar",
+      "title": "Buscar",
+      "description": "Búsqueda de productos, pedidos y clientes.",
+      "web": "web_24_outline/buscar.svg",
+      "mobile": "mobile_32_accent/buscar.svg"
+    },
+    {
+      "name": "perfil",
+      "title": "Perfil",
+      "description": "Cuenta de usuario.",
+      "web": "web_24_outline/perfil.svg",
+      "mobile": "mobile_32_accent/perfil.svg"
+    },
+    {
+      "name": "carrito",
+      "title": "Carrito",
+      "description": "Canasta de productos.",
+      "web": "web_24_outline/carrito.svg",
+      "mobile": "mobile_32_accent/carrito.svg"
+    },
+    {
+      "name": "mozo",
+      "title": "Mozo / encargado",
+      "description": "Registro manual de pedidos por personal de sala.",
+      "web": "web_24_outline/mozo.svg",
+      "mobile": "mobile_32_accent/mozo.svg"
+    },
+    {
+      "name": "exito",
+      "title": "Éxito",
+      "description": "Confirmaciones, pedidos completados y operaciones correctas.",
+      "web": "web_24_outline/exito.svg",
+      "mobile": "mobile_32_accent/exito.svg"
+    },
+    {
+      "name": "advertencia",
+      "title": "Advertencia",
+      "description": "Alerta no crítica, atención requerida o stock bajo.",
+      "web": "web_24_outline/advertencia.svg",
+      "mobile": "mobile_32_accent/advertencia.svg"
+    },
+    {
+      "name": "error",
+      "title": "Error",
+      "description": "Errores, fallas o pagos rechazados.",
+      "web": "web_24_outline/error.svg",
+      "mobile": "mobile_32_accent/error.svg"
+    },
+    {
+      "name": "informacion",
+      "title": "Información",
+      "description": "Novedades y datos relevantes.",
+      "web": "web_24_outline/informacion.svg",
+      "mobile": "mobile_32_accent/informacion.svg"
+    },
+    {
+      "name": "confianza",
+      "title": "Confianza",
+      "description": "Disponibilidad, respaldo y confiabilidad.",
+      "web": "web_24_outline/confianza.svg",
+      "mobile": "mobile_32_accent/confianza.svg"
+    },
+    {
+      "name": "gestionar",
+      "title": "Gestionar",
+      "description": "Administración rápida de carta y operaciones.",
+      "web": "web_24_outline/gestionar.svg",
+      "mobile": "mobile_32_accent/gestionar.svg"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 1024 1024" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">SIMI — App icon fuente</title>
+  <desc id="desc">Icono fuente vectorial para app móvil, favicon o launcher.</desc>
+  <defs>
+    <linearGradient id="g" x1="128" y1="96" x2="896" y2="928" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#D92D20"/>
+      <stop offset="0.58" stop-color="#F04438"/>
+      <stop offset="1" stop-color="#FF6B00"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="32" stdDeviation="36" flood-opacity="0.20"/>
+    </filter>
+  </defs>
+  <rect x="96" y="96" width="832" height="832" rx="184" fill="url(#g)" filter="url(#shadow)"/>
+  <path d="M260 300v-58a32 32 0 0 1 32-32h58" stroke="white" stroke-width="44" stroke-linecap="round"/>
+  <path d="M764 300v-58a32 32 0 0 0-32-32h-58" stroke="white" stroke-width="44" stroke-linecap="round"/>
+  <path d="M260 724v58a32 32 0 0 0 32 32h58" stroke="white" stroke-width="44" stroke-linecap="round"/>
+  <path d="M764 724v58a32 32 0 0 1-32 32h-58" stroke="white" stroke-width="44" stroke-linecap="round"/>
+  <path d="M654 328H450c-86 0-156 70-156 156s70 156 156 156h154c49 0 88-39 88-88s-39-88-88-88H368" stroke="white" stroke-width="84" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="654" cy="328" r="43" fill="white"/>
+  <circle cx="304" cy="640" r="43" fill="white"/>
+</svg>
