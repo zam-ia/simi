@@ -8,6 +8,7 @@ import { deliveryStatusOptions } from "@/constants/order-status";
 import { businessRoles, configurableModules, normalizeBusinessRole, resolveModulePermissions, type ModulePermissions } from "@/lib/permissions";
 import { recordOperationalActivity } from "@/lib/services/activity-service";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { landingSectionKeys, type LandingSectionKey } from "@/lib/landing-content";
 import { generateSlug, normalizeWhatsapp } from "@/lib/utils";
 import { validateCategoryInput, validateClientInput, validateMenuItemInput } from "@/lib/validations";
 
@@ -35,6 +36,17 @@ function isMissingCommercialSettingsError(error: unknown) {
 
 function missingCommercialSettingsMessage() {
   return "Supabase todavia no reconoce los campos comerciales del cliente. Aplica la migracion 015_commercial_layer.sql y luego vuelve a guardar.";
+}
+
+function isMissingLandingEditorError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const code = "code" in error ? String(error.code) : "";
+  const message = "message" in error ? String(error.message) : "";
+  return code === "42P01" || code === "42703" || code === "PGRST204" || message.includes("landing_");
+}
+
+function missingLandingEditorMessage() {
+  return "Supabase todavia no reconoce el editor de landing. Aplica la migracion 016_landing_editor.sql y luego vuelve a intentar.";
 }
 
 function isMissingCategoryImageError(error: unknown) {
@@ -818,6 +830,250 @@ export async function convertDemoRequestToClientAction(requestId: string, formDa
   revalidatePath("/admin/demos");
   revalidatePath(`/admin/clients/${insertedClient.id}`);
   redirect(`/admin/clients/${insertedClient.id}?saved=converted`);
+}
+
+function landingRedirect(message?: string) {
+  return `/admin/landing${message ? encodedError(message) : ""}`;
+}
+
+function normalizeLandingSectionKey(value: string): LandingSectionKey | null {
+  return landingSectionKeys.includes(value as LandingSectionKey) ? (value as LandingSectionKey) : null;
+}
+
+function landingMetadataFromForm(formData: FormData) {
+  const metadata: Record<string, string> = {};
+  const badge = normalizeFormText(formData.get("metadata_badge"));
+  const successMessage = normalizeFormText(formData.get("metadata_success_message"));
+  const legalText = normalizeFormText(formData.get("metadata_legal_text"));
+
+  if (badge) metadata.badge = badge;
+  if (successMessage) metadata.successMessage = successMessage;
+  if (legalText) metadata.legalText = legalText;
+  return metadata;
+}
+
+export async function updateLandingSectionAction(sectionKey: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireSuperAdmin(context);
+  const adminSupabase = createSupabaseAdminClient();
+  const normalizedKey = normalizeLandingSectionKey(sectionKey);
+  if (!normalizedKey) redirect(landingRedirect("Seccion no valida."));
+
+  const payload = {
+    section_key: normalizedKey,
+    title: normalizeFormText(formData.get("title")),
+    subtitle: normalizeFormText(formData.get("subtitle")) || null,
+    description: normalizeFormText(formData.get("description")) || null,
+    primary_cta_label: normalizeFormText(formData.get("primary_cta_label")) || null,
+    primary_cta_url: normalizeFormText(formData.get("primary_cta_url")) || null,
+    secondary_cta_label: normalizeFormText(formData.get("secondary_cta_label")) || null,
+    secondary_cta_url: normalizeFormText(formData.get("secondary_cta_url")) || null,
+    image_light_url: normalizeFormText(formData.get("image_light_url")) || null,
+    image_dark_url: normalizeFormText(formData.get("image_dark_url")) || null,
+    alt_text: normalizeFormText(formData.get("alt_text")) || null,
+    sort_order: Number(formData.get("sort_order") || 0),
+    is_visible: formData.get("is_visible") === "on",
+    status: "draft",
+    metadata: landingMetadataFromForm(formData)
+  };
+
+  if (!payload.title) redirect(landingRedirect("El titulo de la seccion es obligatorio."));
+  if (!Number.isFinite(payload.sort_order)) payload.sort_order = 0;
+
+  const { error } = await adminSupabase
+    .from("landing_sections")
+    .upsert(payload, { onConflict: "section_key,status" });
+
+  if (error && isMissingLandingEditorError(error)) redirect(landingRedirect(missingLandingEditorMessage()));
+  if (error) redirect(landingRedirect("No se pudo guardar la seccion."));
+
+  await adminSupabase.from("landing_change_logs").insert({
+    user_id: context.user.id,
+    action: "landing.draft_saved",
+    section_key: normalizedKey,
+    new_value: payload
+  });
+
+  revalidatePath("/");
+  revalidatePath("/admin/landing");
+  redirect("/admin/landing?saved=section");
+}
+
+export async function moveLandingSectionAction(sectionKey: string, direction: "up" | "down") {
+  const context = await requireAdmin();
+  requireSuperAdmin(context);
+  const adminSupabase = createSupabaseAdminClient();
+  const normalizedKey = normalizeLandingSectionKey(sectionKey);
+  if (!normalizedKey) redirect(landingRedirect("Seccion no valida."));
+
+  const { data, error } = await adminSupabase
+    .from("landing_sections")
+    .select("section_key,sort_order")
+    .eq("status", "draft")
+    .order("sort_order", { ascending: true });
+
+  if (error && isMissingLandingEditorError(error)) redirect(landingRedirect(missingLandingEditorMessage()));
+  if (error || !data) redirect(landingRedirect("No se pudo mover la seccion."));
+
+  const rows = data as Array<{ section_key: string; sort_order: number }>;
+  const index = rows.findIndex((row) => row.section_key === normalizedKey);
+  const targetIndex = direction === "up" ? index - 1 : index + 1;
+  if (index < 0 || targetIndex < 0 || targetIndex >= rows.length) redirect("/admin/landing");
+
+  const current = rows[index];
+  const target = rows[targetIndex];
+
+  const [{ error: firstError }, { error: secondError }] = await Promise.all([
+    adminSupabase.from("landing_sections").update({ sort_order: target.sort_order }).eq("status", "draft").eq("section_key", current.section_key),
+    adminSupabase.from("landing_sections").update({ sort_order: current.sort_order }).eq("status", "draft").eq("section_key", target.section_key)
+  ]);
+
+  if (firstError || secondError) redirect(landingRedirect("No se pudo reordenar la landing."));
+
+  revalidatePath("/admin/landing");
+  redirect("/admin/landing?saved=order");
+}
+
+export async function updateLandingBusinessTypeAction(name: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireSuperAdmin(context);
+  const adminSupabase = createSupabaseAdminClient();
+  const currentName = normalizeFormText(formData.get("current_name")) || name;
+  const nextName = normalizeFormText(formData.get("name"));
+  const payload = {
+    name: nextName,
+    description: normalizeFormText(formData.get("description")) || null,
+    image_light_url: normalizeFormText(formData.get("image_light_url")) || null,
+    image_dark_url: normalizeFormText(formData.get("image_dark_url")) || null,
+    alt_text: normalizeFormText(formData.get("alt_text")) || null,
+    sort_order: Number(formData.get("sort_order") || 0),
+    is_visible: formData.get("is_visible") === "on",
+    status: "draft"
+  };
+
+  if (!payload.name) redirect(landingRedirect("El nombre del rubro es obligatorio."));
+  if (!Number.isFinite(payload.sort_order)) payload.sort_order = 0;
+
+  if (currentName !== payload.name) {
+    await adminSupabase.from("landing_business_types").delete().eq("status", "draft").eq("name", currentName);
+  }
+
+  const { error } = await adminSupabase.from("landing_business_types").upsert(payload, { onConflict: "name,status" });
+  if (error && isMissingLandingEditorError(error)) redirect(landingRedirect(missingLandingEditorMessage()));
+  if (error) redirect(landingRedirect("No se pudo guardar el rubro."));
+
+  await adminSupabase.from("landing_change_logs").insert({
+    user_id: context.user.id,
+    action: "landing.business_type_saved",
+    section_key: "business_types",
+    new_value: payload
+  });
+
+  revalidatePath("/admin/landing");
+  redirect("/admin/landing?saved=business-type");
+}
+
+export async function updateLandingSeoAction(formData: FormData) {
+  const context = await requireAdmin();
+  requireSuperAdmin(context);
+  const adminSupabase = createSupabaseAdminClient();
+  const payload = {
+    meta_title: normalizeFormText(formData.get("meta_title")) || null,
+    meta_description: normalizeFormText(formData.get("meta_description")) || null,
+    og_title: normalizeFormText(formData.get("og_title")) || null,
+    og_description: normalizeFormText(formData.get("og_description")) || null,
+    og_image_url: normalizeFormText(formData.get("og_image_url")) || null,
+    canonical_url: normalizeFormText(formData.get("canonical_url")) || null,
+    keywords: normalizeFormText(formData.get("keywords")) || null,
+    status: "draft"
+  };
+
+  const { error } = await adminSupabase.from("landing_seo_settings").upsert(payload, { onConflict: "status" });
+  if (error && isMissingLandingEditorError(error)) redirect(landingRedirect(missingLandingEditorMessage()));
+  if (error) redirect(landingRedirect("No se pudo guardar el SEO."));
+
+  await adminSupabase.from("landing_change_logs").insert({
+    user_id: context.user.id,
+    action: "landing.seo_updated",
+    section_key: "seo",
+    new_value: payload
+  });
+
+  revalidatePath("/admin/landing");
+  redirect("/admin/landing?saved=seo");
+}
+
+export async function publishLandingAction() {
+  const context = await requireAdmin();
+  requireSuperAdmin(context);
+  const adminSupabase = createSupabaseAdminClient();
+  const [sectionsResult, businessTypesResult, seoResult] = await Promise.all([
+    adminSupabase.from("landing_sections").select("*").eq("status", "draft"),
+    adminSupabase.from("landing_business_types").select("*").eq("status", "draft"),
+    adminSupabase.from("landing_seo_settings").select("*").eq("status", "draft").maybeSingle()
+  ]);
+
+  if (sectionsResult.error && isMissingLandingEditorError(sectionsResult.error)) redirect(landingRedirect(missingLandingEditorMessage()));
+  if (sectionsResult.error || businessTypesResult.error || seoResult.error) redirect(landingRedirect("No se pudo preparar la publicacion."));
+
+  const publishedSections = (sectionsResult.data || []).map(({ id: _id, created_at: _createdAt, updated_at: _updatedAt, ...section }) => ({
+    ...section,
+    status: "published"
+  }));
+  const publishedBusinessTypes = (businessTypesResult.data || []).map(({ id: _id, created_at: _createdAt, updated_at: _updatedAt, ...item }) => ({
+    ...item,
+    status: "published"
+  }));
+  const seoData = seoResult.data;
+  const publishedSeo = seoData
+    ? (({ id: _id, created_at: _createdAt, updated_at: _updatedAt, ...seo }) => ({ ...seo, status: "published" }))(seoData)
+    : null;
+
+  const [sectionsUpsert, businessTypesUpsert, seoUpsert] = await Promise.all([
+    adminSupabase.from("landing_sections").upsert(publishedSections, { onConflict: "section_key,status" }),
+    adminSupabase.from("landing_business_types").upsert(publishedBusinessTypes, { onConflict: "name,status" }),
+    publishedSeo ? adminSupabase.from("landing_seo_settings").upsert(publishedSeo, { onConflict: "status" }) : Promise.resolve({ error: null })
+  ]);
+
+  if (sectionsUpsert.error || businessTypesUpsert.error || seoUpsert.error) redirect(landingRedirect("No se pudo publicar la landing."));
+
+  await adminSupabase.from("landing_change_logs").insert({
+    user_id: context.user.id,
+    action: "landing.published",
+    section_key: "all",
+    new_value: { sections: publishedSections.length, businessTypes: publishedBusinessTypes.length }
+  });
+
+  revalidatePath("/");
+  revalidatePath("/admin/landing");
+  redirect("/admin/landing?saved=published");
+}
+
+export async function discardLandingDraftAction() {
+  const context = await requireAdmin();
+  requireSuperAdmin(context);
+  const adminSupabase = createSupabaseAdminClient();
+  const [sectionsResult, businessTypesResult, seoResult] = await Promise.all([
+    adminSupabase.from("landing_sections").select("*").eq("status", "published"),
+    adminSupabase.from("landing_business_types").select("*").eq("status", "published"),
+    adminSupabase.from("landing_seo_settings").select("*").eq("status", "published").maybeSingle()
+  ]);
+
+  if (sectionsResult.error && isMissingLandingEditorError(sectionsResult.error)) redirect(landingRedirect(missingLandingEditorMessage()));
+  if (sectionsResult.error || businessTypesResult.error || seoResult.error) redirect(landingRedirect("No se pudo descartar el borrador."));
+
+  const draftSections = (sectionsResult.data || []).map(({ id: _id, created_at: _createdAt, updated_at: _updatedAt, ...section }) => ({ ...section, status: "draft" }));
+  const draftBusinessTypes = (businessTypesResult.data || []).map(({ id: _id, created_at: _createdAt, updated_at: _updatedAt, ...item }) => ({ ...item, status: "draft" }));
+  const draftSeo = seoResult.data ? (({ id: _id, created_at: _createdAt, updated_at: _updatedAt, ...seo }) => ({ ...seo, status: "draft" }))(seoResult.data) : null;
+
+  await Promise.all([
+    adminSupabase.from("landing_sections").upsert(draftSections, { onConflict: "section_key,status" }),
+    adminSupabase.from("landing_business_types").upsert(draftBusinessTypes, { onConflict: "name,status" }),
+    draftSeo ? adminSupabase.from("landing_seo_settings").upsert(draftSeo, { onConflict: "status" }) : Promise.resolve({ error: null })
+  ]);
+
+  revalidatePath("/admin/landing");
+  redirect("/admin/landing?saved=discarded");
 }
 
 export async function updateNotificationWhatsappAction(clientId: string, formData: FormData) {

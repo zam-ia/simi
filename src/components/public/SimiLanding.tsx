@@ -1,42 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { businessTypeOptions } from "@/constants/commercial";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
-
-const featureBlocks = [
-  {
-    eyebrow: "QR + link",
-    title: "QR permanente + link para redes",
-    text: "Pon tu carta en mesas, Instagram, WhatsApp o Google Maps sin volver a cambiar el QR.",
-    visual: "qr"
-  },
-  {
-    eyebrow: "Carta actualizable",
-    title: "Actualiza tu menu en segundos",
-    text: "Edita precios, productos, fotos o promociones desde tu panel y el cambio se refleja en tu carta digital.",
-    visual: "sync"
-  },
-  {
-    eyebrow: "Pedidos",
-    title: "Pedidos mas ordenados",
-    text: "Recibe pedidos para mesa, recojo o delivery desde el mismo menu, sin depender de chats desordenados.",
-    visual: "orders"
-  },
-  {
-    eyebrow: "Agenda",
-    title: "Agenda y reservas segun tu negocio",
-    text: "Organiza reservas, pedidos programados o entregas desde una vista mas clara.",
-    visual: "calendar"
-  },
-  {
-    eyebrow: "Panel",
-    title: "Controla tu negocio desde un solo panel",
-    text: "Gestiona carta, pedidos, pagos, agenda y operacion desde una interfaz clara.",
-    visual: "dashboard"
-  }
-] as const;
+import type { LandingContent, LandingSection } from "@/lib/landing-content";
 
 const steps = [
   ["01", "Configuramos tu carta", "Productos, precios, fotos y categorias."],
@@ -45,17 +13,27 @@ const steps = [
   ["04", "Tu gestionas el negocio", "Carta, pedidos, pagos, reservas o agenda."]
 ];
 
-const segments = [
-  ["Restaurantes", "Menu + pedido en mesa + reservas", "Mesa 12"],
-  ["Pastelerias", "Catalogo + agenda de entregas", "Entrega sabado"],
-  ["Cafeterias", "Recojo + delivery + venta rapida", "Recojo 15 min"],
-  ["Pollerias", "Combos + cocina + delivery", "Combo familiar"]
-];
+type SimiLandingProps = {
+  content: LandingContent;
+  previewMode?: boolean;
+  forcedTheme?: "light" | "dark";
+};
 
-export function SimiLanding() {
+const featureVisuals = ["qr", "sync", "orders", "calendar", "dashboard"] as const;
+const featureKeys = ["qr_link", "menu_update", "orders", "agenda", "dashboard"] as const;
+
+export function SimiLanding({ content, previewMode = false, forcedTheme }: SimiLandingProps) {
   const [message, setMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const { sectionMap } = content;
+  const hero = sectionMap.hero;
+  const demoForm = sectionMap.demo_form;
+  const finalCta = sectionMap.final_cta;
+  const footer = sectionMap.footer;
+  const featureBlocks = featureKeys
+    .map((key, index) => ({ section: sectionMap[key], visual: featureVisuals[index] }))
+    .filter((item) => item.section?.is_visible);
 
   function submitDemo(formData: FormData) {
     startTransition(async () => {
@@ -84,12 +62,12 @@ export function SimiLanding() {
       }
 
       setIsSuccess(true);
-      setMessage("Gracias. Revisaremos tu negocio y te contactaremos por WhatsApp para agendar una demo.");
+      setMessage(String(demoForm.metadata.successMessage || "Gracias. Revisaremos tu negocio y te contactaremos por WhatsApp para agendar una demo."));
     });
   }
 
   return (
-    <main className="min-h-screen bg-[var(--background)] pb-20 text-[var(--text)] sm:pb-0">
+    <main className={`min-h-screen bg-[var(--background)] text-[var(--text)] ${previewMode ? "pb-0" : "pb-20 sm:pb-0"}`}>
       <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-[var(--surface)]/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 lg:px-8">
           <Link href="/" className="flex min-w-0 items-center gap-3">
@@ -98,7 +76,7 @@ export function SimiLanding() {
             </span>
             <span className="min-w-0">
               <span className="block text-sm font-medium">SIMI</span>
-              <span className="block truncate text-xs text-[var(--text-muted)]">Tu carta cambia. Tu QR no.</span>
+              <span className="block truncate text-xs text-[var(--text-muted)]">{String(hero.metadata.badge || "Tu carta cambia. Tu QR no.")}</span>
             </span>
           </Link>
           <div className="flex shrink-0 items-center gap-2">
@@ -111,46 +89,46 @@ export function SimiLanding() {
 
       <section className="mx-auto grid max-w-7xl gap-8 px-4 pb-8 pt-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center lg:px-8 lg:py-16">
         <div>
-          <p className="inline-flex rounded-full bg-[var(--accent-soft)] px-4 py-2 text-sm font-medium text-[var(--accent-strong)]">QR permanente + carta viva + pedidos ordenados</p>
-          <h1 className="mt-5 max-w-4xl text-4xl font-medium leading-[1.04] tracking-normal md:text-6xl">Tu carta cambia. Tu QR no.</h1>
+          <p className="inline-flex rounded-full bg-[var(--accent-soft)] px-4 py-2 text-sm font-medium text-[var(--accent-strong)]">{String(hero.metadata.badge || "QR permanente + carta viva + pedidos ordenados")}</p>
+          <h1 className="mt-5 max-w-4xl text-4xl font-medium leading-[1.04] tracking-normal md:text-6xl">{hero.title}</h1>
           <p className="mt-4 max-w-2xl text-xl font-medium leading-8 text-[var(--text)] md:text-2xl md:leading-9">
-            Deja de reenviar tu carta cada vez que cambias precios, platos o promociones.
+            {hero.subtitle}
           </p>
           <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--text-muted)] md:text-lg md:leading-8">
-            Con SIMI tienes una carta digital con QR permanente y un link para redes donde tus clientes ven el menu actualizado y hacen pedidos.
+            {hero.description}
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <a href="#demo" className="focus-ring rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--simi-aji-amarillo)] px-6 py-3 text-sm font-medium text-white shadow-panel">Solicitar demo</a>
-            <Link href="/menu/pollo-loco" className="focus-ring rounded-full border border-[var(--line)] bg-[var(--surface)] px-6 py-3 text-sm font-medium shadow-panel">Ver ejemplo</Link>
+            {hero.primary_cta_label && hero.primary_cta_url ? <a href={hero.primary_cta_url} className="focus-ring rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--simi-aji-amarillo)] px-6 py-3 text-sm font-medium text-white shadow-panel">{hero.primary_cta_label}</a> : null}
+            {hero.secondary_cta_label && hero.secondary_cta_url ? <Link href={hero.secondary_cta_url} className="focus-ring rounded-full border border-[var(--line)] bg-[var(--surface)] px-6 py-3 text-sm font-medium shadow-panel">{hero.secondary_cta_label}</Link> : null}
           </div>
         </div>
 
-        <HeroProductMockup />
+        <HeroProductMockup section={hero} forcedTheme={forcedTheme} />
       </section>
 
       <section className="mx-auto grid max-w-7xl gap-5 px-4 py-6 lg:px-8">
-        {featureBlocks.map((feature, index) => (
-          <FeatureBlock key={feature.title} feature={feature} reverse={index % 2 === 1} />
+        {featureBlocks.map(({ section, visual }, index) => (
+          <FeatureBlock key={section.section_key} section={section} visual={visual} reverse={index % 2 === 1} forcedTheme={forcedTheme} />
         ))}
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
+      {sectionMap.experience.is_visible ? <section className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
         <div className="grid gap-5 rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-soft lg:grid-cols-2 lg:p-6">
           <div>
-            <p className="text-sm font-medium text-[var(--accent-strong)]">Experiencia real</p>
-            <h2 className="mt-2 text-3xl font-medium">Asi lo ve tu cliente. Asi lo ves tu.</h2>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--text-muted)]">Explora como se veria una carta digital moderna y como se gestiona desde el panel del negocio.</p>
-            <Link href="/menu/pollo-loco" className="focus-ring mt-6 inline-flex min-h-11 items-center rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-medium text-white">Ver ejemplo</Link>
+            <p className="text-sm font-medium text-[var(--accent-strong)]">{sectionMap.experience.subtitle}</p>
+            <h2 className="mt-2 text-3xl font-medium">{sectionMap.experience.title}</h2>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--text-muted)]">{sectionMap.experience.description}</p>
+            {sectionMap.experience.primary_cta_label && sectionMap.experience.primary_cta_url ? <Link href={sectionMap.experience.primary_cta_url} className="focus-ring mt-6 inline-flex min-h-11 items-center rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-medium text-white">{sectionMap.experience.primary_cta_label}</Link> : null}
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <PhoneMockup compact />
             <AdminMockup compact />
           </div>
         </div>
-      </section>
+      </section> : null}
 
-      <section className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
-        <SectionHeading eyebrow="Como funciona" title="Cuatro pasos. Sin complicar al cliente." text="Cada paso tiene una accion clara y una vista simple para el negocio." />
+      {sectionMap.how_it_works.is_visible ? <section className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
+        <SectionHeading eyebrow={sectionMap.how_it_works.subtitle || "Como funciona"} title={sectionMap.how_it_works.title} text={sectionMap.how_it_works.description || ""} />
         <div className="mt-5 grid gap-3 lg:grid-cols-4">
           {steps.map(([number, title, text], index) => (
             <article key={number} className="rounded-[22px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
@@ -161,29 +139,29 @@ export function SimiLanding() {
             </article>
           ))}
         </div>
-      </section>
+      </section> : null}
 
-      <section className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
-        <SectionHeading eyebrow="Rubros compatibles" title="SIMI se adapta al tipo de negocio." text="La misma base se adapta a carta, catalogo, agenda, pedidos o delivery segun el rubro." />
+      {sectionMap.business_types.is_visible ? <section className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
+        <SectionHeading eyebrow={sectionMap.business_types.subtitle || "Rubros compatibles"} title={sectionMap.business_types.title} text={sectionMap.business_types.description || ""} />
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {segments.map(([title, text, tag]) => (
-            <article key={title} className="overflow-hidden rounded-[22px] border border-[var(--line)] bg-[var(--surface)] shadow-panel">
+          {content.businessTypes.filter((item) => item.is_visible).map((item) => (
+            <article key={item.name} className="overflow-hidden rounded-[22px] border border-[var(--line)] bg-[var(--surface)] shadow-panel">
               <div className="p-4">
-                <SegmentVisual tag={tag} />
-                <h3 className="mt-4 text-base font-medium">{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">{text}</p>
+                <SegmentVisual tag={item.name} imageLightUrl={item.image_light_url} imageDarkUrl={item.image_dark_url} altText={item.alt_text || item.name} forcedTheme={forcedTheme} />
+                <h3 className="mt-4 text-base font-medium">{item.name}</h3>
+                <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">{item.description}</p>
               </div>
             </article>
           ))}
         </div>
-      </section>
+      </section> : null}
 
-      <section id="demo" className="mx-auto grid max-w-7xl gap-6 px-4 py-10 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
+      {demoForm.is_visible ? <section id="demo" className="mx-auto grid max-w-7xl gap-6 px-4 py-10 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
         <div className="rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-6 shadow-soft">
-          <p className="text-sm font-medium text-[var(--accent-strong)]">Demo personalizada</p>
-          <h2 className="mt-2 text-3xl font-medium">Quieres ver como quedaria en tu negocio?</h2>
+          <p className="text-sm font-medium text-[var(--accent-strong)]">{demoForm.subtitle}</p>
+          <h2 className="mt-2 text-3xl font-medium">{demoForm.title}</h2>
           <p className="mt-3 text-sm leading-6 text-[var(--text-muted)]">
-            Dejanos tus datos y te mostraremos una demo personalizada por WhatsApp, Zoom, Meet o presencial.
+            {demoForm.description}
           </p>
         </div>
 
@@ -205,38 +183,41 @@ export function SimiLanding() {
           </label>
           {message ? <p className={`rounded-[var(--radius-card)] p-3 text-sm md:col-span-2 ${isSuccess ? "bg-green-50 text-green-800 dark:bg-green-950/35 dark:text-green-100" : "bg-red-50 text-red-800 dark:bg-red-950/35 dark:text-red-100"}`}>{message}</p> : null}
           <button type="submit" disabled={isPending} className="focus-ring min-h-12 rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-medium text-white shadow-panel disabled:opacity-60 md:col-span-2">
-            {isPending ? "Enviando..." : "Solicitar demo personalizada"}
+            {isPending ? "Enviando..." : demoForm.primary_cta_label || "Solicitar demo personalizada"}
           </button>
-          <p className="text-center text-xs leading-5 text-[var(--text-muted)] md:col-span-2">Te contactaremos por WhatsApp para agendar una demo personalizada.</p>
+          <p className="text-center text-xs leading-5 text-[var(--text-muted)] md:col-span-2">{String(demoForm.metadata.legalText || "Te contactaremos por WhatsApp para agendar una demo personalizada.")}</p>
         </form>
-      </section>
+      </section> : null}
 
-      <section className="mx-auto max-w-7xl px-4 pb-10 lg:px-8">
+      {finalCta.is_visible ? <section className="mx-auto max-w-7xl px-4 pb-10 lg:px-8">
         <div className="rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-6 text-center shadow-soft md:p-8">
-          <h2 className="text-3xl font-medium">Que el cliente vea el menu. Que tu equipo vea el control.</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">Empieza con una demo corta y revisa como se veria SIMI aplicado a tu negocio.</p>
-          <a href="#demo" className="focus-ring mt-6 inline-flex min-h-12 items-center rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-medium text-white shadow-panel">Quiero ver como se veria en mi negocio</a>
+          <h2 className="text-3xl font-medium">{finalCta.title}</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">{finalCta.description}</p>
+          {finalCta.primary_cta_label && finalCta.primary_cta_url ? <a href={finalCta.primary_cta_url} className="focus-ring mt-6 inline-flex min-h-12 items-center rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-medium text-white shadow-panel">{finalCta.primary_cta_label}</a> : null}
         </div>
-      </section>
+      </section> : null}
 
-      <footer className="border-t border-[var(--line)] bg-[var(--surface)] px-4 py-6">
+      {footer.is_visible ? <footer className="border-t border-[var(--line)] bg-[var(--surface)] px-4 py-6">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 text-sm text-[var(--text-muted)] sm:flex-row sm:items-center sm:justify-between">
-          <span>SIMI - Carta digital, pedidos y operacion para negocios gastronomicos.</span>
-          <Link href="/login" className="font-medium text-[var(--text)]">Ingresar al panel</Link>
+          <span>{footer.title}</span>
+          {footer.primary_cta_label && footer.primary_cta_url ? <Link href={footer.primary_cta_url} className="font-medium text-[var(--text)]">{footer.primary_cta_label}</Link> : null}
         </div>
-      </footer>
+      </footer> : null}
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--line)] bg-[var(--surface)]/92 p-3 backdrop-blur-xl sm:hidden">
-        <a href="#demo" className="focus-ring flex min-h-12 items-center justify-center rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-medium text-white shadow-panel">Solicitar demo</a>
-      </div>
+      {!previewMode ? <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--line)] bg-[var(--surface)]/92 p-3 backdrop-blur-xl sm:hidden">
+        <a href={hero.primary_cta_url || "#demo"} className="focus-ring flex min-h-12 items-center justify-center rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-medium text-white shadow-panel">{hero.primary_cta_label || "Solicitar demo"}</a>
+      </div> : null}
     </main>
   );
 }
 
-function HeroProductMockup() {
+function HeroProductMockup({ section, forcedTheme }: { section: LandingSection; forcedTheme?: "light" | "dark" }) {
+  const hasImage = Boolean(section.image_light_url);
   return (
     <div className="relative rounded-[32px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-soft">
-      <div className="grid gap-4 lg:grid-cols-[0.8fr_1fr]">
+      {hasImage ? (
+        <LandingImage section={section} forcedTheme={forcedTheme} className="min-h-[360px] rounded-[26px]" />
+      ) : <div className="grid gap-4 lg:grid-cols-[0.8fr_1fr]">
         <div className="mx-auto w-full max-w-[280px]">
           <PhoneMockup />
         </div>
@@ -250,25 +231,29 @@ function HeroProductMockup() {
             </div>
           </div>
         </div>
-      </div>
+      </div>}
     </div>
   );
 }
 
-function FeatureBlock({ feature, reverse }: { feature: (typeof featureBlocks)[number]; reverse: boolean }) {
+function FeatureBlock({ section, visual, reverse, forcedTheme }: { section: LandingSection; visual: (typeof featureVisuals)[number]; reverse: boolean; forcedTheme?: "light" | "dark" }) {
   return (
     <article className="grid gap-5 rounded-[30px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-soft lg:grid-cols-2 lg:items-center lg:p-6">
       <div className={reverse ? "lg:order-2" : ""}>
-        <p className="text-sm font-medium text-[var(--accent-strong)]">{feature.eyebrow}</p>
-        <h2 className="mt-2 text-3xl font-medium leading-tight">{feature.title}</h2>
-        <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--text-muted)] md:text-base">{feature.text}</p>
+        <p className="text-sm font-medium text-[var(--accent-strong)]">{section.subtitle}</p>
+        <h2 className="mt-2 text-3xl font-medium leading-tight">{section.title}</h2>
+        <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--text-muted)] md:text-base">{section.description}</p>
       </div>
-      <ProductVisual type={feature.visual} />
+      <ProductVisual section={section} type={visual} forcedTheme={forcedTheme} />
     </article>
   );
 }
 
-function ProductVisual({ type }: { type: (typeof featureBlocks)[number]["visual"] }) {
+function ProductVisual({ section, type, forcedTheme }: { section: LandingSection; type: (typeof featureVisuals)[number]; forcedTheme?: "light" | "dark" }) {
+  if (section.image_light_url) {
+    return <LandingImage section={section} forcedTheme={forcedTheme} className="min-h-[280px] rounded-[26px]" />;
+  }
+
   if (type === "qr") {
     return (
       <div className="grid gap-4 rounded-[26px] border border-[var(--line)] bg-[var(--background)] p-4 sm:grid-cols-[150px_1fr]">
@@ -475,7 +460,14 @@ function MiniVisual({ index }: { index: number }) {
   );
 }
 
-function SegmentVisual({ tag }: { tag: string }) {
+function SegmentVisual({ tag, imageLightUrl, imageDarkUrl, altText, forcedTheme }: { tag: string; imageLightUrl?: string | null; imageDarkUrl?: string | null; altText?: string | null; forcedTheme?: "light" | "dark" }) {
+  const theme = useLandingTheme(forcedTheme);
+  const src = theme === "dark" && imageDarkUrl ? imageDarkUrl : imageLightUrl;
+
+  if (src) {
+    return <img src={src} alt={altText || tag} className="h-32 w-full rounded-[18px] object-cover" loading="lazy" />;
+  }
+
   return (
     <div className="rounded-[18px] bg-[var(--background)] p-3">
       <div className="h-24 rounded-[16px] bg-gradient-to-br from-[var(--accent-soft)] via-[var(--surface-muted)] to-[var(--background)] p-3">
@@ -483,6 +475,35 @@ function SegmentVisual({ tag }: { tag: string }) {
       </div>
     </div>
   );
+}
+
+function LandingImage({ section, className, forcedTheme }: { section: LandingSection; className?: string; forcedTheme?: "light" | "dark" }) {
+  const theme = useLandingTheme(forcedTheme);
+  const src = theme === "dark" && section.image_dark_url ? section.image_dark_url : section.image_light_url;
+  if (!src) return null;
+  return <img src={src} alt={section.alt_text || section.title} className={`w-full object-cover shadow-panel ${className || ""}`} loading="lazy" />;
+}
+
+function useLandingTheme(forcedTheme?: "light" | "dark") {
+  const [theme, setTheme] = useState<"light" | "dark">(forcedTheme || "light");
+
+  useEffect(() => {
+    if (forcedTheme) {
+      setTheme(forcedTheme);
+      return;
+    }
+
+    function readTheme() {
+      setTheme((document.documentElement.dataset.theme as "light" | "dark" | undefined) || "light");
+    }
+
+    readTheme();
+    const observer = new MutationObserver(readTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  }, [forcedTheme]);
+
+  return theme;
 }
 
 function SectionHeading({ eyebrow, title, text }: { eyebrow: string; title: string; text: string }) {
