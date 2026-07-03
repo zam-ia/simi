@@ -286,16 +286,16 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
   return (
     <main className={`min-h-screen max-w-full overflow-x-clip bg-[var(--background)] ${step === "menu" ? "pb-44" : "pb-8"}`}>
       {step === "menu" ? <MenuHeader client={client} /> : null}
-      <div id="menu-content" className={`mx-auto grid max-w-[1320px] gap-6 px-4 py-5 sm:px-5 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:px-8 ${step !== "menu" ? "max-w-[760px] lg:block" : ""}`}>
+      <div id="menu-content" className={`mx-auto grid max-w-[1320px] gap-6 px-4 py-5 sm:px-5 lg:grid-cols-[minmax(0,1fr)_390px] lg:items-start lg:px-8 ${step !== "menu" ? "max-w-[760px] lg:block" : ""}`}>
         <div className="grid min-w-0 max-w-full grid-cols-1 gap-6">
-          {step === "menu" ? <section className="grid min-w-0 max-w-full grid-cols-1 gap-3 rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-3 shadow-soft">
+          {step === "menu" ? <section className="grid min-w-0 max-w-full grid-cols-1 gap-3 rounded-[30px] border border-white/70 bg-[var(--surface)]/96 p-3 shadow-soft backdrop-blur-xl">
             <div className="grid min-w-0 grid-cols-[repeat(3,minmax(0,1fr))] gap-2">
               <ServiceModeButton active={orderType === "delivery"} label="Delivery" detail={`${fastestDelivery} - desde ${formatPrice(lowestDeliveryFee)}`} onClick={() => setOrderType("delivery")} />
               <ServiceModeButton active={orderType === "pickup"} label="Recojo" detail="Pide y pasa por tienda" onClick={() => setOrderType("pickup")} />
               <ServiceModeButton active={orderType === "dine_in"} label="Mesa" detail="Escanea QR y ordena" onClick={() => setOrderType("dine_in")} />
             </div>
             <div className="relative min-w-0">
-              <label className="focus-within:shadow-panel flex min-h-12 min-w-0 items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface-muted)] px-4 text-sm transition">
+              <label className="focus-within:shadow-panel flex min-h-[52px] min-w-0 items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 py-1 text-sm transition">
                 <SearchIcon className="h-5 w-5 text-[var(--text-muted)]" />
                 <input
                   ref={searchInputRef}
@@ -343,7 +343,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
                 <button
                   key={filter.label}
                   type="button"
-                  className="shrink-0 rounded-full bg-[var(--surface-muted)] px-3 py-2 text-xs font-medium text-[var(--text)] transition hover:bg-[var(--surface)] hover:shadow-panel"
+                  className="shrink-0 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-xs font-medium text-[var(--text)] shadow-panel transition hover:bg-[var(--accent-soft)] hover:text-[var(--accent-strong)]"
                   onClick={() => applyQuickFilter(filter.query)}
                 >
                   {filter.label}
@@ -366,7 +366,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
                     key={category.id}
                     type="button"
                     onClick={() => goToCategory(category.id)}
-                    className="focus-ring grid min-h-24 min-w-[112px] shrink-0 content-center justify-items-center gap-2 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] px-3 text-center shadow-panel transition hover:-translate-y-0.5"
+                    className="focus-ring grid min-h-24 min-w-[118px] shrink-0 content-center justify-items-center gap-2 rounded-[24px] border border-white/70 bg-[var(--surface)] px-3 text-center shadow-panel transition hover:-translate-y-0.5"
                   >
                     {category.image_url ? (
                       <img alt={category.name} src={category.image_url} className="h-11 w-11 rounded-[16px] object-cover" />
@@ -613,7 +613,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
         ) : null}
         </div>
 
-        <aside id="cart-panel" className="sticky top-6 hidden rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-soft lg:grid lg:gap-4">
+        <aside id="cart-panel" className="sticky top-6 hidden rounded-[30px] border border-white/70 bg-[var(--surface)]/96 p-5 shadow-soft backdrop-blur-xl lg:grid lg:gap-4">
           <div>
             <p className="text-sm text-[var(--text-muted)]">Tu pedido</p>
             <h2 className="mt-1 text-xl font-medium">{itemCount ? `${itemCount} producto${itemCount === 1 ? "" : "s"}` : "Listo para ordenar"}</h2>
@@ -662,16 +662,16 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
       </div>
 
       {step === "menu" && cart.length > 0 ? (
-        <div className="fixed inset-x-3 bottom-[76px] z-40 mx-auto max-w-[480px] rounded-[26px] border border-[var(--line)] bg-[var(--surface)]/96 p-3 shadow-soft backdrop-blur-xl lg:hidden">
+        <div className="fixed inset-x-3 bottom-[76px] z-40 mx-auto max-w-[480px] rounded-[26px] border border-white/70 bg-[var(--surface)]/96 p-3 shadow-soft backdrop-blur-xl lg:hidden">
           <div className="flex items-center gap-3">
-            <button type="button" onClick={openCheckout} className="grid h-12 w-12 shrink-0 place-items-center rounded-[18px] text-white shadow-panel" style={{ backgroundColor: client.primary_color }} aria-label="Abrir pedido">
+            <button type="button" onClick={openCheckout} className="simi-gradient grid h-12 w-12 shrink-0 place-items-center rounded-[18px] text-white shadow-panel" aria-label="Abrir pedido">
               <CartIcon className="h-6 w-6" />
             </button>
             <button type="button" onClick={openCheckout} className="min-w-0 flex-1 text-left">
               <p className="truncate text-sm font-medium">{itemCount} producto{itemCount === 1 ? "" : "s"} en tu pedido</p>
               <p className="text-sm text-[var(--text-muted)]">{formatPrice(total)}</p>
             </button>
-            <button type="button" onClick={openCheckout} className="min-h-11 rounded-full px-4 text-sm font-medium text-white" style={{ backgroundColor: client.primary_color }}>
+            <button type="button" onClick={openCheckout} className="simi-gradient min-h-11 rounded-full px-4 text-sm font-medium text-white">
               Ver
             </button>
           </div>
@@ -695,7 +695,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
       ) : null}
 
       {lastAdded ? (
-        <div className="fixed inset-x-3 bottom-24 z-50 mx-auto max-w-[420px] rounded-[20px] border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm shadow-soft lg:bottom-6 lg:right-6 lg:left-auto" role="status">
+        <div className="fixed inset-x-3 bottom-24 z-50 mx-auto max-w-[420px] rounded-[20px] border border-white/70 bg-[var(--surface)] px-4 py-3 text-sm shadow-soft lg:bottom-6 lg:left-auto lg:right-6" role="status">
           <p className="font-medium">Agregado a tu pedido</p>
           <p className="mt-0.5 truncate text-[var(--text-muted)]">{lastAdded}</p>
         </div>

@@ -44,25 +44,25 @@ export function AdminShell({ children, title, subtitle, userEmail, items, primar
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col border-r border-[var(--line)] bg-[var(--surface)]/88 px-3 py-4 shadow-[10px_0_30px_rgba(0,0,0,0.05)] backdrop-blur-xl transition-all duration-300 ease-out lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col border-r border-white/10 bg-[#0b1524] px-3 py-4 text-white shadow-[18px_0_40px_rgba(9,16,28,0.18)] transition-all duration-300 ease-out lg:translate-x-0",
           isCollapsed ? "lg:w-[88px]" : "lg:w-[280px]",
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         <div className="flex items-center justify-between gap-3 px-2">
           <Link href="/admin" className="flex min-w-0 items-center gap-3" onClick={() => setIsMobileOpen(false)}>
-            <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-[16px] bg-[var(--surface)] shadow-panel">
+            <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-[16px] bg-white shadow-panel">
               <img src="/simi/brand_app_icons/SIMI_icono.svg" alt="SIMI" className="h-full w-full object-cover" />
             </span>
             <span className={cn("min-w-0 transition-opacity duration-200", isCollapsed ? "lg:hidden" : "")}>
-              <span className="block text-sm font-medium text-[var(--text)]">SIMI</span>
-              <span className="block truncate text-xs text-[var(--text-muted)]">{title}</span>
+              <span className="block text-sm font-medium text-white">SIMI</span>
+              <span className="block truncate text-xs text-white/56">{title}</span>
             </span>
           </Link>
           <button
             type="button"
             onClick={() => setIsCollapsed((current) => !current)}
-            className="focus-ring hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface-muted)] text-[var(--text)] transition-all duration-200 ease-out hover:bg-[var(--surface)] hover:shadow-panel lg:inline-flex"
+            className="focus-ring hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/8 text-white transition-all duration-200 ease-out hover:bg-white/14 hover:shadow-panel lg:inline-flex"
             aria-label={isCollapsed ? "Desplegar menu" : "Contraer menu"}
             title={isCollapsed ? "Desplegar menu" : "Contraer menu"}
           >
@@ -80,12 +80,12 @@ export function AdminShell({ children, title, subtitle, userEmail, items, primar
                 onClick={() => setIsMobileOpen(false)}
                 className={cn(
                   "focus-ring group flex min-h-11 items-center gap-3 rounded-[14px] px-3 text-sm font-medium transition-all duration-200 ease-out",
-                  active ? "bg-[var(--accent)] text-white shadow-[0_12px_26px_rgba(0,122,255,0.18)]" : "text-[var(--text-muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--text)]",
+                  active ? "simi-gradient text-white shadow-[0_14px_30px_rgba(255,90,31,0.26)]" : "text-white/68 hover:bg-white/8 hover:text-white",
                   isCollapsed ? "lg:justify-center lg:px-0" : ""
                 )}
                 title={item.label}
               >
-                <span className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-[12px] transition-colors duration-200 ease-out", active ? "bg-white/18 text-white" : "bg-black/[0.06] text-[var(--text)] dark:bg-white/[0.1]")}>
+                <span className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-[12px] transition-colors duration-200 ease-out", active ? "bg-white/18 text-white" : "bg-white/[0.08] text-white/86")}>
                   <AdminShellIcon name={item.icon} className="h-[18px] w-[18px]" />
                 </span>
                 <span className={cn("truncate", isCollapsed ? "lg:hidden" : "")}>{item.label}</span>
@@ -94,15 +94,15 @@ export function AdminShell({ children, title, subtitle, userEmail, items, primar
           })}
         </nav>
 
-        <div className="mt-auto grid gap-3 border-t border-[var(--line)] px-2 pt-4">
-          <div className={cn("flex items-center gap-3 rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-2", isCollapsed ? "lg:justify-center" : "")}>
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--surface)] text-sm font-medium text-[var(--text)] shadow-panel">{userEmail.slice(0, 1).toUpperCase()}</span>
+        <div className="mt-auto grid gap-3 border-t border-white/10 px-2 pt-4">
+          <div className={cn("flex items-center gap-3 rounded-[var(--radius-card)] bg-white/[0.08] p-2", isCollapsed ? "lg:justify-center" : "")}>
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-sm font-medium text-[#0b1524] shadow-panel">{userEmail.slice(0, 1).toUpperCase()}</span>
             <div className={cn("min-w-0 flex-1", isCollapsed ? "lg:hidden" : "")}>
-              <span className="block truncate text-xs text-[var(--text-muted)]">{userEmail}</span>
-              {subtitle ? <span className="block truncate text-xs font-medium text-[var(--text)]">{subtitle}</span> : null}
+              <span className="block truncate text-xs text-white/58">{userEmail}</span>
+              {subtitle ? <span className="block truncate text-xs font-medium text-white">{subtitle}</span> : null}
             </div>
             <form action={signOutAction} className={cn(isCollapsed ? "lg:hidden" : "")}>
-              <button type="submit" className="focus-ring grid h-9 w-9 place-items-center rounded-full text-[var(--text-muted)] transition-colors duration-200 ease-out hover:bg-[var(--surface)] hover:text-[var(--text)]" title="Cerrar sesion" aria-label="Cerrar sesion">
+              <button type="submit" className="focus-ring grid h-9 w-9 place-items-center rounded-full text-white/66 transition-colors duration-200 ease-out hover:bg-white/10 hover:text-white" title="Cerrar sesion" aria-label="Cerrar sesion">
                 <LogoutIcon className="h-[18px] w-[18px]" />
               </button>
             </form>

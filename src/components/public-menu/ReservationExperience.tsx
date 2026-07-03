@@ -59,43 +59,51 @@ export function ReservationExperience({ client, tables }: ReservationExperienceP
 
   return (
     <main className="min-h-screen bg-[var(--background)] px-4 py-6">
-      <section className="mx-auto grid max-w-[480px] gap-5">
-        <a href={`/menu/${client.slug}`} className="text-sm font-medium text-[var(--text-muted)]">
-          Volver al menu
-        </a>
-        <div className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
-          <p className="text-sm text-[var(--text-muted)]">{client.name}</p>
-          <h1 className="mt-2 text-2xl font-medium">Reservar mesa</h1>
-          <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">Completa tus datos y el local revisara la solicitud desde SIMI.</p>
+      <section className="mx-auto grid max-w-[520px] gap-5">
+        <div className="flex items-center justify-between gap-3">
+          <a href={`/menu/${client.slug}`} className="focus-ring inline-flex min-h-10 items-center rounded-full bg-[var(--surface)] px-3 text-sm font-medium text-[var(--text)] shadow-panel">
+            Atras
+          </a>
+          <div className="flex items-center gap-2">
+            <img src="/simi/brand_app_icons/SIMI_icono.svg" alt="SIMI" className="h-10 w-10 rounded-[14px]" />
+            <span className="text-xl font-medium">SIMI</span>
+          </div>
+          <span className="h-10 w-14" />
         </div>
 
-        <section className="grid gap-4 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+        <div className="rounded-[28px] border border-white/70 bg-[var(--surface)]/96 p-5 shadow-soft backdrop-blur-xl">
+          <p className="text-sm text-[var(--text-muted)]">{client.name}</p>
+          <h1 className="mt-2 text-4xl font-medium leading-tight">Reservar <span className="text-[var(--accent)]">mesa</span></h1>
+          <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">Asegura tu lugar y disfruta sin esperar.</p>
+        </div>
+
+        <section className="grid gap-4 rounded-[28px] border border-white/70 bg-[var(--surface)]/96 p-5 shadow-soft backdrop-blur-xl">
           <label className="grid gap-2 text-sm">
             <span className="font-medium">Nombre</span>
-            <input className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Carlos" />
+            <input className="focus-ring min-h-12 rounded-[14px] border border-[var(--line)] bg-[var(--surface)] px-3" value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Carlos" />
           </label>
           <label className="grid gap-2 text-sm">
             <span className="font-medium">Telefono</span>
-            <input className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" value={customerPhone} onChange={(event) => setCustomerPhone(event.target.value)} placeholder="+51 999 999 999" />
+            <input className="focus-ring min-h-12 rounded-[14px] border border-[var(--line)] bg-[var(--surface)] px-3" value={customerPhone} onChange={(event) => setCustomerPhone(event.target.value)} placeholder="+51 999 999 999" />
           </label>
           <label className="grid gap-2 text-sm">
             <span className="font-medium">Personas</span>
-            <input className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" type="number" min="1" max="30" value={partySize} onChange={(event) => setPartySize(Number(event.target.value || 1))} />
+            <input className="focus-ring min-h-12 rounded-[14px] border border-[var(--line)] bg-[var(--surface)] px-3" type="number" min="1" max="30" value={partySize} onChange={(event) => setPartySize(Number(event.target.value || 1))} />
           </label>
           <div className="grid grid-cols-2 gap-3">
             <label className="grid gap-2 text-sm">
               <span className="font-medium">Fecha</span>
-              <input className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" type="date" value={reservationDate} onChange={(event) => setReservationDate(event.target.value)} />
+              <input className="focus-ring min-h-12 rounded-[14px] border border-[var(--line)] bg-[var(--surface)] px-3" type="date" value={reservationDate} onChange={(event) => setReservationDate(event.target.value)} />
             </label>
             <label className="grid gap-2 text-sm">
               <span className="font-medium">Hora</span>
-              <input className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" type="time" value={reservationTime} onChange={(event) => setReservationTime(event.target.value)} />
+              <input className="focus-ring min-h-12 rounded-[14px] border border-[var(--line)] bg-[var(--surface)] px-3" type="time" value={reservationTime} onChange={(event) => setReservationTime(event.target.value)} />
             </label>
           </div>
           {tables.length ? (
             <label className="grid gap-2 text-sm">
               <span className="font-medium">Mesa preferida</span>
-              <select className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" value={tableId} onChange={(event) => setTableId(event.target.value)}>
+              <select className="focus-ring min-h-12 rounded-[14px] border border-[var(--line)] bg-[var(--surface)] px-3" value={tableId} onChange={(event) => setTableId(event.target.value)}>
                 <option value="">Sin preferencia</option>
                 {tables.map((table) => (
                   <option key={table.id} value={table.id}>{table.label}</option>
@@ -105,7 +113,7 @@ export function ReservationExperience({ client, tables }: ReservationExperienceP
           ) : null}
           <label className="grid gap-2 text-sm">
             <span className="font-medium">Nota</span>
-            <textarea className="focus-ring min-h-24 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2" value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Cumpleanos, silla de bebe, preferencia de zona..." />
+            <textarea className="focus-ring min-h-24 rounded-[14px] border border-[var(--line)] bg-[var(--surface)] px-3 py-2" value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Cumpleanos, silla de bebe, preferencia de zona..." />
           </label>
           {message ? (
             <p className="rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-3 text-sm text-[var(--text-muted)]">

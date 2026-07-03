@@ -214,7 +214,7 @@ export function SimiLanding({ content, previewMode = false, forcedTheme }: SimiL
 function HeroProductMockup({ section, forcedTheme }: { section: LandingSection; forcedTheme?: "light" | "dark" }) {
   const hasImage = Boolean(section.image_light_url);
   return (
-    <div className="relative rounded-[32px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-soft">
+    <div className="relative rounded-[32px] border border-white/70 bg-[var(--surface)] p-4 shadow-soft">
       {hasImage ? (
         <LandingImage section={section} forcedTheme={forcedTheme} className="min-h-[360px] rounded-[26px]" />
       ) : <div className="grid gap-4 lg:grid-cols-[0.8fr_1fr]">
@@ -238,7 +238,7 @@ function HeroProductMockup({ section, forcedTheme }: { section: LandingSection; 
 
 function FeatureBlock({ section, visual, reverse, forcedTheme }: { section: LandingSection; visual: (typeof featureVisuals)[number]; reverse: boolean; forcedTheme?: "light" | "dark" }) {
   return (
-    <article className="grid gap-5 rounded-[30px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-soft lg:grid-cols-2 lg:items-center lg:p-6">
+    <article className="grid gap-5 rounded-[30px] border border-white/70 bg-[var(--surface)] p-4 shadow-soft lg:grid-cols-2 lg:items-center lg:p-6">
       <div className={reverse ? "lg:order-2" : ""}>
         <p className="text-sm font-medium text-[var(--accent-strong)]">{section.subtitle}</p>
         <h2 className="mt-2 text-3xl font-medium leading-tight">{section.title}</h2>
@@ -481,7 +481,7 @@ function LandingImage({ section, className, forcedTheme }: { section: LandingSec
   const theme = useLandingTheme(forcedTheme);
   const src = theme === "dark" && section.image_dark_url ? section.image_dark_url : section.image_light_url;
   if (!src) return null;
-  return <img src={src} alt={section.alt_text || section.title} className={`w-full object-cover shadow-panel ${className || ""}`} loading="lazy" />;
+  return <img src={src} alt={section.alt_text || section.title} className={`w-full bg-[var(--accent-soft)] object-contain shadow-panel ${className || ""}`} loading="lazy" />;
 }
 
 function useLandingTheme(forcedTheme?: "light" | "dark") {

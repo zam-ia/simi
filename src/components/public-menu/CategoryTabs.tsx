@@ -39,7 +39,7 @@ export function CategoryTabs({ categories, accentColor }: CategoryTabsProps) {
   if (categories.length === 0) return null;
 
   return (
-    <div className="sticky top-0 z-30 min-w-0 max-w-full overflow-hidden border-b border-[var(--line)] bg-[var(--background)]/92 py-3 backdrop-blur-xl lg:rounded-[var(--radius-panel)] lg:border lg:px-3">
+    <div className="sticky top-0 z-30 min-w-0 max-w-full overflow-hidden border-b border-[var(--line)] bg-[var(--background)]/88 py-3 backdrop-blur-xl lg:rounded-[24px] lg:border lg:border-white/70 lg:bg-[var(--surface)]/88 lg:px-3 lg:shadow-panel">
       <nav className="flex min-w-0 max-w-full gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:px-0" aria-label="Categorias del menu">
         {categories.map((category) => {
           const isActive = category.id === activeId;

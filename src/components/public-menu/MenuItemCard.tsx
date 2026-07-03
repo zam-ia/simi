@@ -14,14 +14,14 @@ export function MenuItemCard({ item, accentColor, onAdd, quantity = 0 }: MenuIte
   const firstLetter = item.name.trim().charAt(0).toUpperCase() || "P";
 
   return (
-    <article className={`grid min-w-0 max-w-full grid-cols-[104px_minmax(0,1fr)] gap-3 overflow-hidden rounded-[20px] border border-[var(--line)] bg-[var(--surface)] p-3 shadow-panel transition md:grid-cols-1 md:gap-0 md:p-0 ${item.is_available ? "hover:-translate-y-0.5" : "opacity-60 grayscale"}`}>
-      <div className="relative h-24 w-24 overflow-hidden rounded-[16px] bg-[var(--surface-muted)] md:h-44 md:w-full md:rounded-none">
+    <article className={`grid min-w-0 max-w-full grid-cols-[112px_minmax(0,1fr)] gap-3 overflow-hidden rounded-[22px] border border-[var(--line)] bg-[var(--surface)] p-3 shadow-panel transition md:grid-cols-1 md:gap-0 md:p-0 ${item.is_available ? "hover:-translate-y-0.5 hover:shadow-soft" : "opacity-60 grayscale"}`}>
+      <div className="relative h-28 w-28 overflow-hidden rounded-[18px] bg-[var(--surface-muted)] md:h-44 md:w-full md:rounded-none">
         {item.image_url ? (
           <img alt={item.name} src={item.image_url} className="h-full w-full object-cover" />
         ) : (
           <div className="grid h-full w-full place-items-center bg-[linear-gradient(135deg,var(--surface-muted),var(--surface))] px-3 text-center">
             <div className="grid justify-items-center gap-1">
-              <span className="grid h-11 w-11 place-items-center rounded-[16px] text-base font-medium" style={{ backgroundColor: `${accentColor}18`, color: accentColor }}>
+              <span className="grid h-12 w-12 place-items-center rounded-full text-base font-medium" style={{ backgroundColor: `${accentColor}18`, color: accentColor }}>
                 {firstLetter}
               </span>
               <span className="text-[11px] font-medium text-[var(--text-muted)]">Foto pendiente</span>
@@ -37,7 +37,7 @@ export function MenuItemCard({ item, accentColor, onAdd, quantity = 0 }: MenuIte
         {item.is_available && onAdd ? (
           <button
             type="button"
-            className="focus-ring absolute bottom-2 right-2 grid h-9 w-9 place-items-center rounded-full border border-white/70 text-lg font-medium text-white shadow-panel backdrop-blur transition-transform duration-200 ease-out active:scale-[0.97]"
+            className="focus-ring absolute bottom-2 right-2 grid h-10 w-10 place-items-center rounded-full border border-white/70 text-xl font-medium text-white shadow-panel backdrop-blur transition-transform duration-200 ease-out active:scale-[0.97]"
             style={{ backgroundColor: accentColor }}
             onClick={() => onAdd(item)}
             aria-label={`Agregar ${item.name}`}
@@ -64,7 +64,7 @@ export function MenuItemCard({ item, accentColor, onAdd, quantity = 0 }: MenuIte
         </div>
         <p className="mt-1 line-clamp-2 min-w-0 text-[13px] leading-5 text-[var(--text-muted)]">{item.description || (item.is_available ? "Disponible para pedir." : "Temporalmente no disponible.")}</p>
         <div className="mt-3 flex items-center justify-between gap-3">
-          <p className="text-base font-medium" style={{ color: item.is_available ? accentColor : "var(--text-muted)" }}>
+          <p className="text-lg font-medium" style={{ color: item.is_available ? accentColor : "var(--text-muted)" }}>
             {formatPrice(item.price)}
           </p>
           {item.is_available && onAdd ? (

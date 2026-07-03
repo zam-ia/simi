@@ -3,22 +3,22 @@
 @tailwind utilities;
 
 :root {
-  --background: #f8fafc;
+  --background: #fff8ef;
   --surface: #ffffff;
-  --surface-muted: #fff4e5;
-  --text: #0f172a;
-  --text-muted: rgba(15, 23, 42, 0.62);
-  --line: rgba(0, 0, 0, 0.1);
-  --accent: #ff6a00;
-  --accent-strong: #ff3d00;
-  --accent-soft: #fff4e5;
-  --simi-rojo-brasa: #ff6a00;
+  --surface-muted: #fff1df;
+  --text: #111827;
+  --text-muted: rgba(17, 24, 39, 0.62);
+  --line: rgba(17, 24, 39, 0.11);
+  --accent: #ff5a1f;
+  --accent-strong: #f43f1a;
+  --accent-soft: #fff0e4;
+  --simi-rojo-brasa: #ff5a1f;
   --simi-aji-amarillo: #ffc107;
   --simi-naranja-delivery: #ff6b00;
-  --simi-carbon-parrilla: #0f172a;
-  --simi-crema-carta: #fff4e5;
-  --simi-crema-suave: #fdedd5;
-  --simi-tinta-menu: #0f172a;
+  --simi-carbon-parrilla: #111827;
+  --simi-crema-carta: #fff8ef;
+  --simi-crema-suave: #fff1df;
+  --simi-tinta-menu: #111827;
   --simi-acero-cocina: #64748b;
   --danger: #dc2626;
   --success: #22c55e;
@@ -29,36 +29,36 @@
 }
 
 html[data-theme="light"] {
-  --background: #f8fafc;
+  --background: #fff8ef;
   --surface: #ffffff;
-  --surface-muted: #fff4e5;
-  --text: #0f172a;
-  --text-muted: rgba(15, 23, 42, 0.62);
-  --line: rgba(0, 0, 0, 0.1);
-  --accent: #ff6a00;
-  --accent-strong: #ff3d00;
-  --accent-soft: #fff4e5;
-  --simi-rojo-brasa: #ff6a00;
+  --surface-muted: #fff1df;
+  --text: #111827;
+  --text-muted: rgba(17, 24, 39, 0.62);
+  --line: rgba(17, 24, 39, 0.11);
+  --accent: #ff5a1f;
+  --accent-strong: #f43f1a;
+  --accent-soft: #fff0e4;
+  --simi-rojo-brasa: #ff5a1f;
   --simi-aji-amarillo: #ffc107;
   --simi-naranja-delivery: #ff6b00;
-  --simi-carbon-parrilla: #0f172a;
-  --simi-crema-carta: #fff4e5;
-  --simi-crema-suave: #fdedd5;
-  --simi-tinta-menu: #0f172a;
+  --simi-carbon-parrilla: #111827;
+  --simi-crema-carta: #fff8ef;
+  --simi-crema-suave: #fff1df;
+  --simi-tinta-menu: #111827;
   --simi-acero-cocina: #64748b;
 }
 
 html[data-theme="dark"] {
-  --background: #080d16;
-  --surface: #101827;
-  --surface-muted: #172235;
+  --background: #0b111c;
+  --surface: #111827;
+  --surface-muted: #1f2937;
   --text: #f5f5f7;
   --text-muted: rgba(235, 235, 245, 0.62);
   --line: rgba(255, 255, 255, 0.12);
-  --accent: #ff8a1f;
-  --accent-strong: #ff6a00;
-  --accent-soft: rgba(255, 106, 0, 0.14);
-  --simi-rojo-brasa: #ff8a1f;
+  --accent: #ff6a00;
+  --accent-strong: #ff8a1f;
+  --accent-soft: rgba(255, 106, 0, 0.16);
+  --simi-rojo-brasa: #ff6a00;
   --simi-aji-amarillo: #ffd24a;
   --simi-naranja-delivery: #ff9f0a;
   --simi-carbon-parrilla: #f5f5f7;
@@ -70,16 +70,16 @@ html[data-theme="dark"] {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #080d16;
-    --surface: #101827;
-    --surface-muted: #172235;
+    --background: #0b111c;
+    --surface: #111827;
+    --surface-muted: #1f2937;
     --text: #f5f5f7;
     --text-muted: rgba(235, 235, 245, 0.62);
     --line: rgba(255, 255, 255, 0.12);
-    --accent: #ff8a1f;
-    --accent-strong: #ff6a00;
-    --accent-soft: rgba(255, 106, 0, 0.14);
-    --simi-rojo-brasa: #ff8a1f;
+    --accent: #ff6a00;
+    --accent-strong: #ff8a1f;
+    --accent-soft: rgba(255, 106, 0, 0.16);
+    --simi-rojo-brasa: #ff6a00;
     --simi-aji-amarillo: #ffd24a;
     --simi-naranja-delivery: #ff9f0a;
     --simi-carbon-parrilla: #f5f5f7;
@@ -109,7 +109,9 @@ body {
   max-width: 100%;
   overflow-x: hidden;
   margin: 0;
-  background: var(--background);
+  background:
+    radial-gradient(circle at 16% 0%, rgba(255, 106, 0, 0.08), transparent 28rem),
+    linear-gradient(180deg, var(--background) 0%, color-mix(in srgb, var(--background) 88%, #ffffff) 100%);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
   font-weight: 400;
@@ -157,4 +159,16 @@ a {
 
 .focus-ring:focus-visible {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.shadow-panel {
+  box-shadow: 0 10px 24px rgba(17, 24, 39, 0.08);
+}
+
+.shadow-soft {
+  box-shadow: 0 20px 60px rgba(17, 24, 39, 0.12);
+}
+
+.simi-gradient {
+  background: linear-gradient(135deg, #ff3d1f 0%, #ff6a00 54%, #ffb000 100%);
 }
