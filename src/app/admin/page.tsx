@@ -2,6 +2,7 @@ import { ClientTable } from "@/components/admin/ClientTable";
 import { ManualOrderDrawer } from "@/components/admin/ManualOrderDrawer";
 import { LinkButton } from "@/components/shared/Button";
 import { hasModuleAccess, requireAdmin } from "@/lib/auth";
+import { getAdminDemoRequests } from "@/lib/commercial-data";
 import { getAdminManualOrderCatalog } from "@/lib/menu-data";
 import { formatPrice, getPublicMenuUrl } from "@/lib/utils";
 import type { Client } from "@/types/menu";
@@ -165,12 +166,41 @@ export default async function AdminPage() {
     );
   }
 
-  const { data, error } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
+  const [{ data, error }, demos] = await Promise.all([
+    supabase.from("clients").select("*").order("created_at", { ascending: false }),
+    getAdminDemoRequests()
+  ]);
+  const demoMetrics = {
+    new: demos.requests.filter((request) => request.status === "NUEVA").length,
+    scheduled: demos.requests.filter((request) => request.status === "DEMO_AGENDADA").length,
+    followUp: demos.requests.filter((request) => request.status === "SEGUIMIENTO").length,
+    converted: demos.requests.filter((request) => request.status === "CONVERTIDO").length
+  };
 
   return (
     <div className="grid gap-6">
+      <section className="grid gap-4 rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-soft lg:grid-cols-[1fr_auto] lg:items-end">
+        <div>
+          <p className="text-sm text-[var(--text-muted)]">Superadmin</p>
+          <h2 className="mt-2 text-3xl font-medium">Centro comercial SIMI</h2>
+          <p className="mt-2 text-sm text-[var(--text-muted)]">Gestiona negocios, prospectos y solicitudes de demo desde una vista central.</p>
+          {demos.missingCommercialTables ? <p className="mt-3 text-sm text-amber-700 dark:text-amber-300">Aplica la migracion 015 para activar el CRM de demos.</p> : null}
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <LinkButton href="/admin/demos">Ver demos</LinkButton>
+          <LinkButton href="/admin/clients/new" variant="secondary">Nuevo cliente</LinkButton>
+        </div>
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <SuperMetric label="Solicitudes nuevas" value={demoMetrics.new} />
+        <SuperMetric label="Demos agendadas" value={demoMetrics.scheduled} />
+        <SuperMetric label="Seguimiento" value={demoMetrics.followUp} />
+        <SuperMetric label="Convertidos" value={demoMetrics.converted} />
+      </section>
+
       <div>
-        <h2 className="text-2xl font-medium">Negocios</h2>
+        <h3 className="text-xl font-medium">Negocios</h3>
         <p className="mt-1 text-sm text-[var(--text-muted)]">Gestiona restaurantes, enlaces publicos y QR permanentes.</p>
       </div>
       {error ? (
@@ -178,6 +208,15 @@ export default async function AdminPage() {
       ) : (
         <ClientTable clients={(data || []) as Client[]} />
       )}
+    </div>
+  );
+}
+
+function SuperMetric({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
+      <p className="text-sm text-[var(--text-muted)]">{label}</p>
+      <p className="mt-2 text-3xl font-medium">{value}</p>
     </div>
   );
 }

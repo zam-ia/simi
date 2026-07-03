@@ -1,7 +1,17 @@
+export type BusinessType = "fast_food" | "restaurant" | "polleria" | "coffee_shop" | "bakery" | "pastry_shop" | "ice_cream_shop" | "catering" | "other_gastronomic";
+export type ClientCommercialStatus = "PROSPECTO" | "DEMO_AGENDADA" | "EN_CONFIGURACION" | "ACTIVO" | "PAUSADO" | "SUSPENDIDO" | "CANCELADO";
+export type DemoRequestStatus = "NUEVA" | "CONTACTADO" | "DEMO_AGENDADA" | "DEMO_REALIZADA" | "SEGUIMIENTO" | "CONVERTIDO" | "NO_INTERESADO" | "DESCARTADO";
+export type DemoMeetingChannel = "Zoom" | "Meet" | "Presencial" | "WhatsApp";
+
 export type Client = {
   id: string;
   name: string;
   slug: string;
+  business_type?: BusinessType;
+  module_config?: Record<string, unknown>;
+  order_flow_config?: Record<string, unknown>;
+  commercial_status?: ClientCommercialStatus;
+  plan_name?: string | null;
   logo_url: string | null;
   hero_banner_image_url?: string | null;
   address: string | null;
@@ -18,6 +28,28 @@ export type Client = {
   promo_banner_item_id?: string | null;
   promo_banner_is_active?: boolean | null;
   is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DemoRequest = {
+  id: string;
+  business_name: string;
+  business_type: BusinessType;
+  city: string;
+  contact_name: string;
+  whatsapp: string;
+  social_url: string | null;
+  comment: string | null;
+  status: DemoRequestStatus;
+  meeting_date: string | null;
+  meeting_time: string | null;
+  meeting_channel: DemoMeetingChannel | null;
+  meeting_link: string | null;
+  follow_up_note: string | null;
+  plan_interest: string | null;
+  owner_email: string | null;
+  converted_client_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -392,6 +424,7 @@ export type PublicMenuData = {
 export type ClientFormValues = {
   name: string;
   slug: string;
+  business_type: BusinessType;
   logo_url: string;
   hero_banner_image_url: string;
   address: string;

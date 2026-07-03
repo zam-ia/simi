@@ -16,7 +16,7 @@ export type AdminShellItem = {
   isExact?: boolean;
 };
 
-export type AdminShellIconName = "home" | "menu" | "kitchen" | "orders" | "delivery" | "promotions" | "reservations" | "payments" | "settings" | "users";
+export type AdminShellIconName = "home" | "demos" | "menu" | "kitchen" | "orders" | "delivery" | "promotions" | "reservations" | "payments" | "settings" | "users";
 
 type AdminShellProps = {
   children: ReactNode;
@@ -172,6 +172,15 @@ function AdminShellIcon({ name, className }: { name: AdminShellIconName; classNa
         <path d="M3 10.5 12 3l9 7.5" />
         <path d="M5 9.5V21h14V9.5" />
         <path d="M9.5 21v-6h5v6" />
+      </>
+    ),
+    demos: (
+      <>
+        <path d="M4 5.5h16v10H7l-3 3v-13Z" />
+        <path d="M8 9h8" />
+        <path d="M8 12h5" />
+        <path d="M17 18.5h3" />
+        <path d="M18.5 17v3" />
       </>
     ),
     menu: (

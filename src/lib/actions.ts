@@ -2,12 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { businessTypeLabels, demoMeetingChannels, demoStatusLabels } from "@/constants/commercial";
 import { hasModuleAccess, requireAdmin, requireClientAccess, requireModuleAccess, requireSuperAdmin } from "@/lib/auth";
 import { deliveryStatusOptions } from "@/constants/order-status";
 import { businessRoles, configurableModules, normalizeBusinessRole, resolveModulePermissions, type ModulePermissions } from "@/lib/permissions";
 import { recordOperationalActivity } from "@/lib/services/activity-service";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { normalizeWhatsapp } from "@/lib/utils";
+import { generateSlug, normalizeWhatsapp } from "@/lib/utils";
 import { validateCategoryInput, validateClientInput, validateMenuItemInput } from "@/lib/validations";
 
 function encodedError(message: string) {
@@ -23,6 +24,17 @@ function isMissingVisualSettingsError(error: unknown) {
 
 function missingVisualSettingsMessage() {
   return "Supabase todavia no reconoce los campos visuales del cliente. Aplica las migraciones 010 y 011, luego vuelve a guardar.";
+}
+
+function isMissingCommercialSettingsError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const code = "code" in error ? String(error.code) : "";
+  const message = "message" in error ? String(error.message) : "";
+  return code === "PGRST204" && (message.includes("business_type") || message.includes("commercial_status") || message.includes("plan_name") || message.includes("module_config") || message.includes("order_flow_config"));
+}
+
+function missingCommercialSettingsMessage() {
+  return "Supabase todavia no reconoce los campos comerciales del cliente. Aplica la migracion 015_commercial_layer.sql y luego vuelve a guardar.";
 }
 
 function isMissingCategoryImageError(error: unknown) {
@@ -86,6 +98,7 @@ export async function createClientAction(formData: FormData) {
   if (existing) redirect(`/admin/clients/new${encodedError("Este slug ya está en uso.")}`);
 
   const { data, error } = await supabase.from("clients").insert(validation.data).select("id").single();
+  if (error && isMissingCommercialSettingsError(error)) redirect(`/admin/clients/new${encodedError(missingCommercialSettingsMessage())}`);
   if (error && isMissingVisualSettingsError(error)) redirect(`/admin/clients/new${encodedError(missingVisualSettingsMessage())}`);
 
   if (error || !data) redirect(`/admin/clients/new${encodedError("No se pudo crear el cliente.")}`);
@@ -107,6 +120,7 @@ export async function updateClientAction(clientId: string, formData: FormData) {
 
   const { data: currentClient } = await supabase.from("clients").select("slug").eq("id", clientId).maybeSingle();
   const { error } = await supabase.from("clients").update(validation.data).eq("id", clientId);
+  if (error && isMissingCommercialSettingsError(error)) redirect(`/admin/clients/${clientId}${encodedError(missingCommercialSettingsMessage())}`);
   if (error && isMissingVisualSettingsError(error)) redirect(`/admin/clients/${clientId}${encodedError(missingVisualSettingsMessage())}`);
 
   if (error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo guardar la información.")}`);
@@ -675,6 +689,135 @@ export async function createManualOrderAction(formData: FormData) {
   revalidatePath("/admin/delivery");
   revalidatePath(`/pedido/${insertedOrder.id}`);
   redirect(`${redirectBase}?saved=manual-order`);
+}
+
+export async function updateDemoRequestStatusAction(requestId: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireSuperAdmin(context);
+  const status = normalizeFormText(formData.get("status"));
+  const followUpNote = normalizeFormText(formData.get("follow_up_note"));
+  const planInterest = normalizeFormText(formData.get("plan_interest"));
+
+  if (!(status in demoStatusLabels)) {
+    redirect(`/admin/demos${encodedError("Selecciona un estado comercial valido.")}`);
+  }
+
+  const { error } = await context.supabase
+    .from("demo_requests")
+    .update({
+      status,
+      follow_up_note: followUpNote || null,
+      plan_interest: planInterest || null
+    })
+    .eq("id", requestId);
+
+  if (error) redirect(`/admin/demos${encodedError("No se pudo actualizar la solicitud. Aplica la migracion 015 si falta.")}`);
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/demos");
+  redirect("/admin/demos?saved=status");
+}
+
+export async function scheduleDemoRequestAction(requestId: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireSuperAdmin(context);
+  const meetingDate = normalizeFormText(formData.get("meeting_date"));
+  const meetingTime = normalizeFormText(formData.get("meeting_time"));
+  const meetingChannel = normalizeFormText(formData.get("meeting_channel"));
+  const meetingLink = normalizeFormText(formData.get("meeting_link"));
+  const ownerEmail = normalizeFormText(formData.get("owner_email"));
+
+  if (!meetingDate || !meetingTime) {
+    redirect(`/admin/demos${encodedError("Agenda fecha y hora para la demo.")}`);
+  }
+
+  if (meetingChannel && !demoMeetingChannels.includes(meetingChannel as never)) {
+    redirect(`/admin/demos${encodedError("Selecciona un canal de reunion valido.")}`);
+  }
+
+  const { error } = await context.supabase
+    .from("demo_requests")
+    .update({
+      status: "DEMO_AGENDADA",
+      meeting_date: meetingDate,
+      meeting_time: meetingTime,
+      meeting_channel: meetingChannel || null,
+      meeting_link: meetingLink || null,
+      owner_email: ownerEmail || context.user.email || null
+    })
+    .eq("id", requestId);
+
+  if (error) redirect(`/admin/demos${encodedError("No se pudo agendar la demo. Aplica la migracion 015 si falta.")}`);
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/demos");
+  redirect("/admin/demos?saved=schedule");
+}
+
+export async function convertDemoRequestToClientAction(requestId: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireSuperAdmin(context);
+  const ownerEmail = normalizeFormText(formData.get("owner_email"));
+  const planName = normalizeFormText(formData.get("plan_name"));
+
+  const { data: request, error: requestError } = await context.supabase
+    .from("demo_requests")
+    .select("*")
+    .eq("id", requestId)
+    .maybeSingle();
+
+  if (requestError || !request) redirect(`/admin/demos${encodedError("No se encontro la solicitud.")}`);
+  if (request.converted_client_id) redirect(`/admin/demos${encodedError("Esta solicitud ya fue convertida.")}`);
+
+  const businessType = request.business_type && request.business_type in businessTypeLabels ? request.business_type : "restaurant";
+  const baseSlug = generateSlug(request.business_name) || `negocio-${Date.now()}`;
+  let slug = baseSlug;
+  let insertedClient = null;
+  let insertError = null;
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const result = await context.supabase
+      .from("clients")
+      .insert({
+        name: request.business_name,
+        slug,
+        business_type: businessType,
+        commercial_status: "EN_CONFIGURACION",
+        plan_name: planName || null,
+        whatsapp_number: request.whatsapp,
+        primary_color: "#FF6A00",
+        is_active: false,
+        admin_email: ownerEmail || request.owner_email || null
+      })
+      .select("id")
+      .single();
+
+    insertedClient = result.data;
+    insertError = result.error;
+    if (!insertError) break;
+    slug = `${baseSlug}-${attempt + 2}`;
+  }
+
+  if (!insertedClient || insertError) {
+    if (isMissingCommercialSettingsError(insertError)) {
+      redirect(`/admin/demos${encodedError(missingCommercialSettingsMessage())}`);
+    }
+    redirect(`/admin/demos${encodedError("No se pudo crear el cliente desde la solicitud.")}`);
+  }
+
+  await context.supabase
+    .from("demo_requests")
+    .update({
+      status: "CONVERTIDO",
+      converted_client_id: insertedClient.id,
+      owner_email: ownerEmail || request.owner_email || null
+    })
+    .eq("id", requestId);
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/demos");
+  revalidatePath(`/admin/clients/${insertedClient.id}`);
+  redirect(`/admin/clients/${insertedClient.id}?saved=converted`);
 }
 
 export async function updateNotificationWhatsappAction(clientId: string, formData: FormData) {

@@ -1,4 +1,6 @@
 import { generateSlug, isValidHexColor, normalizeWhatsapp } from "@/lib/utils";
+import { businessTypeLabels } from "@/constants/commercial";
+import type { BusinessType } from "@/types/menu";
 
 export type ValidationResult<T> = {
   data?: T;
@@ -8,6 +10,7 @@ export type ValidationResult<T> = {
 export type ClientInput = {
   name: string;
   slug: string;
+  business_type: BusinessType;
   logo_url: string | null;
   hero_banner_image_url: string | null;
   address: string | null;
@@ -28,6 +31,7 @@ export type ClientInput = {
 export function validateClientInput(formData: FormData): ValidationResult<ClientInput> {
   const name = String(formData.get("name") || "").trim();
   const slug = generateSlug(String(formData.get("slug") || name));
+  const businessType = String(formData.get("business_type") || "restaurant") as BusinessType;
   const whatsappNumber = String(formData.get("whatsapp_number") || "").trim();
   const notificationWhatsappNumber = String(formData.get("notification_whatsapp_number") || "").trim();
   const primaryColor = String(formData.get("primary_color") || "#0071E3").trim();
@@ -36,6 +40,7 @@ export function validateClientInput(formData: FormData): ValidationResult<Client
 
   if (!name) return { error: "El nombre del negocio es obligatorio." };
   if (!slug) return { error: "El slug es obligatorio." };
+  if (!(businessType in businessTypeLabels)) return { error: "Selecciona un rubro valido para el negocio." };
   if (!whatsappNumber) return { error: "El WhatsApp es obligatorio." };
   if (normalizeWhatsapp(whatsappNumber).length < 11) return { error: "El WhatsApp debe incluir un número válido de Perú." };
   if (notificationWhatsappNumber && normalizeWhatsapp(notificationWhatsappNumber).length < 11) return { error: "El WhatsApp de notificaciones debe incluir un número válido de Perú." };
@@ -46,6 +51,7 @@ export function validateClientInput(formData: FormData): ValidationResult<Client
     data: {
       name,
       slug,
+      business_type: businessType,
       logo_url: String(formData.get("logo_url") || "").trim() || null,
       hero_banner_image_url: String(formData.get("hero_banner_image_url") || "").trim() || null,
       address: String(formData.get("address") || "").trim() || null,

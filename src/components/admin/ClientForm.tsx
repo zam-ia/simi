@@ -2,6 +2,7 @@ import { BrandColorPicker } from "@/components/admin/BrandColorPicker";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { Button, LinkButton } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
+import { businessTypeOptions } from "@/constants/commercial";
 import { formatPrice } from "@/lib/utils";
 import type { Client, MenuItem } from "@/types/menu";
 
@@ -28,6 +29,21 @@ export function ClientForm({ client, action, error, promoItems = [] }: ClientFor
         <div className="grid gap-4 md:grid-cols-2">
           <Input label="Nombre del negocio" name="name" required defaultValue={client?.name} placeholder="Pollería El Sabor" />
           <Input label="Slug del enlace" name="slug" required defaultValue={client?.slug} placeholder="polleria-el-sabor" hint="Este enlace se imprime en el QR. Evita cambiarlo después." />
+          <label className="grid gap-2 text-sm">
+            <span className="font-medium text-[var(--text)]">Rubro del negocio</span>
+            <select
+              name="business_type"
+              defaultValue={client?.business_type || "restaurant"}
+              className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3"
+            >
+              {businessTypeOptions.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <span className="text-xs leading-5 text-[var(--text-muted)]">Ajusta etiquetas como carta, agenda o produccion segun el negocio.</span>
+          </label>
           <Input label="Dirección" name="address" defaultValue={client?.address || ""} placeholder="Av. Principal 123, Lima" />
           <Input label="WhatsApp público" name="whatsapp_number" required defaultValue={client?.whatsapp_number || "+51 987 088 359"} placeholder="+51 987 088 359" hint="Aparece en la carta para contacto general." />
           <Input label="WhatsApp de notificaciones" name="notification_whatsapp_number" defaultValue={client?.notification_whatsapp_number || ""} placeholder="+51 999 888 777" hint="Aquí llegarán los pedidos por WhatsApp. Si lo dejas vacío, se usa el WhatsApp público." />
