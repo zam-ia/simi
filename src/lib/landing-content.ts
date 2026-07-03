@@ -314,7 +314,16 @@ export function buildLandingContent(
   const fillMissingBusinessTypes = options.fillMissingBusinessTypes ?? true;
   const merged = defaultLandingSections.map((fallback) => {
     const section = sections.find((item) => item.section_key === fallback.section_key);
-    if (section) return { ...fallback, ...section, metadata: { ...fallback.metadata, ...(section.metadata || {}) } };
+    if (section) {
+      return {
+        ...fallback,
+        ...section,
+        image_light_url: section.image_light_url || fallback.image_light_url,
+        image_dark_url: section.image_dark_url || fallback.image_dark_url,
+        alt_text: section.alt_text || fallback.alt_text,
+        metadata: { ...fallback.metadata, ...(section.metadata || {}) }
+      };
+    }
     return fillMissingSections ? fallback : { ...fallback, is_visible: false };
   }).sort((a, b) => a.sort_order - b.sort_order);
 
