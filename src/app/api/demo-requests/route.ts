@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   try {
     const payload = (await request.json()) as DemoRequestPayload;
     const businessName = cleanText(payload.businessName);
-    const contactName = cleanText(payload.contactName);
+    const contactName = cleanText(payload.contactName) || businessName;
     const whatsapp = cleanText(payload.whatsapp);
     const city = cleanText(payload.city) || "Huancayo";
     const businessType = payload.businessType && payload.businessType in businessTypeLabels ? payload.businessType : "restaurant";
@@ -31,10 +31,6 @@ export async function POST(request: Request) {
 
     if (!businessName || businessName.length < 2) {
       return NextResponse.json({ error: "Ingresa el nombre del negocio." }, { status: 400 });
-    }
-
-    if (!contactName || contactName.length < 2) {
-      return NextResponse.json({ error: "Ingresa el nombre de contacto." }, { status: 400 });
     }
 
     if (normalizeWhatsapp(whatsapp).length < 11) {

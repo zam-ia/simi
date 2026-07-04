@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { businessTypeOptions } from "@/constants/commercial";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
+import { buildWhatsappUrl } from "@/lib/utils";
 import type { LandingContent, LandingSection } from "@/lib/landing-content";
 
 const steps = [
@@ -21,10 +22,50 @@ type SimiLandingProps = {
 
 const featureVisuals = ["qr", "sync", "orders", "calendar", "dashboard"] as const;
 const featureKeys = ["qr_link", "menu_update", "orders", "agenda", "dashboard"] as const;
+const landingWhatsappUrl = buildWhatsappUrl("51987088359", "Hola, quiero conocer SIMI para mi negocio.");
+
+const pricingPlans = [
+  {
+    name: "Basico",
+    price: "S/ 49",
+    note: "al mes",
+    description: "Para negocios que quieren dejar de reenviar cartas y precios por WhatsApp.",
+    features: ["Carta digital con QR", "Hasta 30 productos", "Fotos y precios", "1 actualizacion mensual por WhatsApp"],
+    cta: "Empezar con Basico",
+    featured: false
+  },
+  {
+    name: "Pro",
+    price: "S/ 99",
+    note: "al mes",
+    description: "La opcion recomendada para pollerias, restaurantes y negocios con pedidos activos.",
+    features: ["Productos ilimitados", "Pedidos por WhatsApp", "Panel para editar tu carta", "Soporte prioritario y cambios ilimitados"],
+    cta: "Quiero el plan Pro",
+    featured: true
+  },
+  {
+    name: "Premium",
+    price: "S/ 179",
+    note: "al mes",
+    description: "Para negocios que quieren mas personalizacion, reportes y crecimiento.",
+    features: ["Todo lo de Pro", "Multi-sede", "Reportes basicos", "Diseno personalizado con tu marca"],
+    cta: "Hablar sobre Premium",
+    featured: false
+  }
+];
+
+const faqItems = [
+  ["Necesito saber de tecnologia para usarlo?", "No. Tu nos pasas tu menu y precios, nosotros lo montamos. Luego puedes pedir cambios por WhatsApp o hacerlos desde el panel."],
+  ["Cuanto tiempo toma tenerlo listo?", "Normalmente entre 24 y 48 horas desde que recibimos tu menu, precios, logo y fotos principales."],
+  ["Que pasa si ya tengo Instagram o Facebook?", "SIMI no reemplaza tus redes. Las complementa: es el link que pones en tu bio o WhatsApp para que el cliente vea el menu completo y actualizado."],
+  ["Puedo cancelar cuando quiera?", "Si. No hay contrato de permanencia ni letra chica."],
+  ["Que pasa si cambio precios o platos seguido?", "Puedes editarlo desde tu panel o pedir el cambio por WhatsApp segun tu plan. La idea es evitar reimprimir o reenviar cartas cada semana."]
+];
 
 export function SimiLanding({ content, previewMode = false, forcedTheme }: SimiLandingProps) {
   const [message, setMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
+  const [showOptionalDetails, setShowOptionalDetails] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { sectionMap } = content;
   const hero = sectionMap.hero;
@@ -35,7 +76,26 @@ export function SimiLanding({ content, previewMode = false, forcedTheme }: SimiL
     .map((key, index) => ({ section: sectionMap[key], visual: featureVisuals[index] }))
     .filter((item) => item.section?.is_visible);
 
+  useEffect(() => {
+    const pricing = document.getElementById("precios");
+    if (!pricing) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          trackLandingEvent("pricing_section_view");
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.35 }
+    );
+
+    observer.observe(pricing);
+    return () => observer.disconnect();
+  }, []);
+
   function submitDemo(formData: FormData) {
+    trackLandingEvent("demo_form_submit");
     startTransition(async () => {
       setMessage("");
       setIsSuccess(false);
@@ -98,13 +158,16 @@ export function SimiLanding({ content, previewMode = false, forcedTheme }: SimiL
             {hero.description}
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
-            {hero.primary_cta_label && hero.primary_cta_url ? <a href={hero.primary_cta_url} className="focus-ring rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--simi-aji-amarillo)] px-6 py-3 text-sm font-medium text-white shadow-panel">{hero.primary_cta_label}</a> : null}
-            {hero.secondary_cta_label && hero.secondary_cta_url ? <Link href={hero.secondary_cta_url} className="focus-ring rounded-full border border-[var(--line)] bg-[var(--surface)] px-6 py-3 text-sm font-medium shadow-panel">{hero.secondary_cta_label}</Link> : null}
+            {hero.primary_cta_label && hero.primary_cta_url ? <a href={hero.primary_cta_url} onClick={() => trackLandingEvent("hero_primary_click")} className="focus-ring rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--simi-aji-amarillo)] px-6 py-3 text-sm font-medium text-white shadow-panel">{hero.primary_cta_label}</a> : null}
+            {hero.secondary_cta_label && hero.secondary_cta_url ? <Link href={hero.secondary_cta_url} onClick={() => trackLandingEvent("hero_example_click")} className="focus-ring rounded-full border border-[var(--accent)] bg-[var(--surface)] px-6 py-3 text-sm font-medium text-[var(--accent-strong)] shadow-panel">{hero.secondary_cta_label}</Link> : null}
           </div>
+          <p className="mt-3 inline-flex rounded-full bg-[var(--surface)] px-4 py-2 text-xs font-medium text-[var(--text-muted)] shadow-panel">Sin contrato - cancela cuando quieras</p>
         </div>
 
         <HeroProductMockup section={hero} forcedTheme={forcedTheme} />
       </section>
+
+      <SocialProofSection />
 
       <section className="mx-auto grid max-w-7xl gap-5 px-4 py-6 lg:px-8">
         {featureBlocks.map(({ section, visual }, index) => (
@@ -128,7 +191,7 @@ export function SimiLanding({ content, previewMode = false, forcedTheme }: SimiL
       </section> : null}
 
       {sectionMap.how_it_works.is_visible ? <section className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
-        <SectionHeading eyebrow={sectionMap.how_it_works.subtitle || "Como funciona"} title={sectionMap.how_it_works.title} text={sectionMap.how_it_works.description || ""} />
+        <SectionHeading eyebrow={sectionMap.how_it_works.subtitle || "Como funciona"} title={sectionMap.how_it_works.title} text={`${sectionMap.how_it_works.description || ""} Cada pedido que se pierde en un chat de WhatsApp desordenado es una venta que no vuelve.`} />
         <div className="mt-5 grid gap-3 lg:grid-cols-4">
           {steps.map(([number, title, text], index) => (
             <article key={number} className="rounded-[22px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
@@ -156,6 +219,9 @@ export function SimiLanding({ content, previewMode = false, forcedTheme }: SimiL
         </div>
       </section> : null}
 
+      <PricingSection />
+      <FaqSection />
+
       {demoForm.is_visible ? <section id="demo" className="mx-auto grid max-w-7xl gap-6 px-4 py-10 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
         <div className="rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-6 shadow-soft">
           <p className="text-sm font-medium text-[var(--accent-strong)]">{demoForm.subtitle}</p>
@@ -167,23 +233,30 @@ export function SimiLanding({ content, previewMode = false, forcedTheme }: SimiL
 
         <form action={submitDemo} className="grid gap-4 rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-soft md:grid-cols-2">
           <Field label="Nombre del negocio" name="business_name" required />
+          <Field label="WhatsApp" name="whatsapp" placeholder="+51 999 999 999" required />
           <label className="grid gap-2 text-sm">
             <span className="font-medium">Rubro</span>
             <select name="business_type" className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3 text-[var(--text)]">
               {businessTypeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
           </label>
-          <Field label="Ciudad" name="city" defaultValue="Huancayo" required />
-          <Field label="Nombre de contacto" name="contact_name" required />
-          <Field label="WhatsApp" name="whatsapp" placeholder="+51 999 999 999" required />
-          <Field label="Instagram o Facebook" name="social_url" placeholder="@tunegocio o enlace" />
-          <label className="grid gap-2 text-sm md:col-span-2">
-            <span className="font-medium">Comentario opcional</span>
-            <textarea name="comment" rows={4} className="focus-ring rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-[var(--text)]" placeholder="Cuentanos que vendes o que necesitas mejorar." />
-          </label>
+          <button type="button" onClick={() => setShowOptionalDetails((current) => !current)} className="text-left text-sm font-medium text-[var(--accent-strong)] md:col-span-2">
+            {showOptionalDetails ? "Ocultar detalles opcionales" : "+ agregar mas detalles"}
+          </button>
+          {showOptionalDetails ? (
+            <div className="grid gap-4 md:col-span-2 md:grid-cols-2">
+              <Field label="Ciudad" name="city" defaultValue="Huancayo" />
+              <Field label="Nombre de contacto" name="contact_name" />
+              <Field label="Instagram o Facebook" name="social_url" placeholder="@tunegocio o enlace" />
+              <label className="grid gap-2 text-sm md:col-span-2">
+                <span className="font-medium">Comentario opcional</span>
+                <textarea name="comment" rows={4} className="focus-ring rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-[var(--text)]" placeholder="Cuentanos que vendes o que necesitas mejorar." />
+              </label>
+            </div>
+          ) : null}
           {message ? <p className={`rounded-[var(--radius-card)] p-3 text-sm md:col-span-2 ${isSuccess ? "bg-green-50 text-green-800 dark:bg-green-950/35 dark:text-green-100" : "bg-red-50 text-red-800 dark:bg-red-950/35 dark:text-red-100"}`}>{message}</p> : null}
           <button type="submit" disabled={isPending} className="focus-ring min-h-12 rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-medium text-white shadow-panel disabled:opacity-60 md:col-span-2">
-            {isPending ? "Enviando..." : demoForm.primary_cta_label || "Solicitar demo personalizada"}
+            {isPending ? "Enviando..." : "Quiero mi carta digital"}
           </button>
           <p className="text-center text-xs leading-5 text-[var(--text-muted)] md:col-span-2">{String(demoForm.metadata.legalText || "Te contactaremos por WhatsApp para agendar una demo personalizada.")}</p>
         </form>
@@ -193,7 +266,12 @@ export function SimiLanding({ content, previewMode = false, forcedTheme }: SimiL
         <div className="rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-6 text-center shadow-soft md:p-8">
           <h2 className="text-3xl font-medium">{finalCta.title}</h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">{finalCta.description}</p>
-          {finalCta.primary_cta_label && finalCta.primary_cta_url ? <a href={finalCta.primary_cta_url} className="focus-ring mt-6 inline-flex min-h-12 items-center rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-medium text-white shadow-panel">{finalCta.primary_cta_label}</a> : null}
+          <div className="mx-auto mt-5 grid max-w-xl gap-2 text-left text-sm text-[var(--text)] sm:grid-cols-3">
+            {["Cero reimpresiones de carta", "Tu cliente decide mas rapido", "Sin contrato, cancela cuando quieras"].map((item) => (
+              <span key={item} className="rounded-[18px] bg-[var(--accent-soft)] px-3 py-2 text-[var(--accent-strong)]">✓ {item}</span>
+            ))}
+          </div>
+          {finalCta.primary_cta_label && finalCta.primary_cta_url ? <a href={finalCta.primary_cta_url} onClick={() => trackLandingEvent("final_cta_click")} className="focus-ring mt-6 inline-flex min-h-12 items-center rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-medium text-white shadow-panel">{finalCta.primary_cta_label}</a> : null}
         </div>
       </section> : null}
 
@@ -204,11 +282,100 @@ export function SimiLanding({ content, previewMode = false, forcedTheme }: SimiL
         </div>
       </footer> : null}
 
-      {!previewMode ? <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--line)] bg-[var(--surface)]/92 p-3 backdrop-blur-xl sm:hidden">
-        <a href={hero.primary_cta_url || "#demo"} className="focus-ring flex min-h-12 items-center justify-center rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-medium text-white shadow-panel">{hero.primary_cta_label || "Solicitar demo"}</a>
-      </div> : null}
+      {!previewMode ? <FloatingLandingActions hero={hero} /> : null}
     </main>
   );
+}
+
+function SocialProofSection() {
+  return (
+    <section className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
+      <div className="grid gap-5 rounded-[30px] border border-white/70 bg-[var(--surface)] p-5 shadow-soft lg:grid-cols-[0.75fr_1.25fr] lg:items-center lg:p-6">
+        <div className="overflow-hidden rounded-[24px] bg-[var(--accent-soft)]">
+          <img src="/simi/mockups/simi_mockup_01_carta_digital_movil.png" alt="Carta real inspirada en Pollo Loco usando SIMI" className="h-full min-h-[260px] w-full object-contain p-4" />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-[var(--accent-strong)]">Ya confian en SIMI</p>
+          <h2 className="mt-2 text-3xl font-medium leading-tight">Pollo Loco fue el primer negocio que confio en esta forma de vender.</h2>
+          <blockquote className="mt-4 rounded-[22px] bg-[var(--surface-muted)] p-4 text-lg font-medium leading-8">
+            "Ahora el cliente ve el menu, escoge y nosotros solo confirmamos."
+          </blockquote>
+          <p className="mt-3 text-sm text-[var(--text-muted)]">Pollo Loco, Huancayo</p>
+          <Link href="/menu/pollo-loco" onClick={() => trackLandingEvent("social_proof_example_click")} className="focus-ring mt-5 inline-flex min-h-11 items-center rounded-full border border-[var(--accent)] bg-[var(--surface)] px-5 text-sm font-medium text-[var(--accent-strong)] shadow-panel">
+            Ver la carta real de Pollo Loco
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PricingSection() {
+  return (
+    <section id="precios" className="mx-auto max-w-7xl px-4 py-10 lg:px-8">
+      <SectionHeading eyebrow="Planes simples" title="Precios claros para empezar sin riesgo." text="El plan Pro es el recomendado para restaurantes, pollerias y negocios que reciben pedidos por WhatsApp." />
+      <div className="mt-6 grid gap-4 lg:grid-cols-3">
+        {pricingPlans.map((plan) => (
+          <article key={plan.name} className={`relative grid gap-4 rounded-[28px] border bg-[var(--surface)] p-5 shadow-panel ${plan.featured ? "border-[var(--accent)] shadow-soft" : "border-white/70"}`}>
+            {plan.featured ? <span className="absolute right-5 top-5 rounded-full bg-[var(--accent)] px-3 py-1 text-xs font-medium text-white">Mas elegido</span> : null}
+            <div>
+              <h3 className="text-xl font-medium">{plan.name}</h3>
+              <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">{plan.description}</p>
+            </div>
+            <div>
+              <span className="text-4xl font-medium">{plan.price}</span>
+              <span className="ml-2 text-sm text-[var(--text-muted)]">{plan.note}</span>
+            </div>
+            <ul className="grid gap-2 text-sm text-[var(--text)]">
+              {plan.features.map((feature) => <li key={feature}>✓ {feature}</li>)}
+            </ul>
+            <a href="#demo" onClick={() => trackLandingEvent(`pricing_${plan.name.toLowerCase()}_click`)} className={`focus-ring mt-auto inline-flex min-h-11 items-center justify-center rounded-full px-4 text-sm font-medium shadow-panel ${plan.featured ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-muted)] text-[var(--text)]"}`}>
+              {plan.cta}
+            </a>
+          </article>
+        ))}
+      </div>
+      <p className="mt-4 text-center text-sm text-[var(--text-muted)]">Precios en soles. Sin permanencia, sin letra chica.</p>
+    </section>
+  );
+}
+
+function FaqSection() {
+  return (
+    <section className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
+      <SectionHeading eyebrow="Preguntas frecuentes" title="Respuestas rapidas antes de pedir una demo." text="Pensado para duenos de negocio que quieren algo practico, no otro sistema dificil de aprender." />
+      <div className="mt-5 grid gap-3">
+        {faqItems.map(([question, answer]) => (
+          <details key={question} className="group rounded-[22px] border border-white/70 bg-[var(--surface)] p-4 shadow-panel">
+            <summary className="cursor-pointer list-none text-base font-medium">{question}</summary>
+            <p className="mt-3 text-sm leading-6 text-[var(--text-muted)]">{answer}</p>
+          </details>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function FloatingLandingActions({ hero }: { hero: LandingSection }) {
+  return (
+    <>
+      <a href={landingWhatsappUrl} target="_blank" rel="noreferrer" onClick={() => trackLandingEvent("floating_whatsapp_click")} className="focus-ring fixed bottom-24 right-4 z-40 hidden min-h-12 items-center rounded-full bg-[#25D366] px-5 text-sm font-medium text-white shadow-soft sm:inline-flex">
+        Escribir por WhatsApp
+      </a>
+      <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-[1fr_auto] gap-2 border-t border-[var(--line)] bg-[var(--surface)]/92 p-3 backdrop-blur-xl sm:hidden">
+        <a href={hero.primary_cta_url || "#demo"} onClick={() => trackLandingEvent("mobile_demo_click")} className="focus-ring flex min-h-12 items-center justify-center rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-medium text-white shadow-panel">{hero.primary_cta_label || "Solicitar demo"}</a>
+        <a href={landingWhatsappUrl} target="_blank" rel="noreferrer" onClick={() => trackLandingEvent("mobile_whatsapp_click")} className="focus-ring flex min-h-12 items-center justify-center rounded-full bg-[#25D366] px-4 py-3 text-sm font-medium text-white shadow-panel">WhatsApp</a>
+      </div>
+    </>
+  );
+}
+
+function trackLandingEvent(eventName: string) {
+  if (typeof window === "undefined") return;
+  const target = window as Window & { dataLayer?: Array<Record<string, unknown>> };
+  target.dataLayer = target.dataLayer || [];
+  target.dataLayer.push({ event: eventName, source: "simi_landing" });
+  window.dispatchEvent(new CustomEvent("simi:landing-event", { detail: { eventName } }));
 }
 
 function HeroProductMockup({ section, forcedTheme }: { section: LandingSection; forcedTheme?: "light" | "dark" }) {
