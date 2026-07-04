@@ -62,6 +62,13 @@ const faqItems = [
   ["Que pasa si cambio precios o platos seguido?", "Puedes editarlo desde tu panel o pedir el cambio por WhatsApp segun tu plan. La idea es evitar reimprimir o reenviar cartas cada semana."]
 ];
 
+const heroBadgeFallback = "La carta de tu negocio, siempre lista y bajo tu control.";
+
+function getHeroBadge(hero: LandingSection) {
+  const badge = String(hero.metadata.badge || heroBadgeFallback);
+  return badge.includes("+") ? heroBadgeFallback : badge;
+}
+
 export function SimiLanding({ content, previewMode = false, forcedTheme }: SimiLandingProps) {
   const [message, setMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
@@ -75,6 +82,7 @@ export function SimiLanding({ content, previewMode = false, forcedTheme }: SimiL
   const featureBlocks = featureKeys
     .map((key, index) => ({ section: sectionMap[key], visual: featureVisuals[index] }))
     .filter((item) => item.section?.is_visible);
+  const heroBadge = getHeroBadge(hero);
 
   useEffect(() => {
     const pricing = document.getElementById("precios");
@@ -136,12 +144,12 @@ export function SimiLanding({ content, previewMode = false, forcedTheme }: SimiL
             </span>
             <span className="min-w-0">
               <span className="block text-sm font-medium">SIMI</span>
-              <span className="block truncate text-xs text-[var(--text-muted)]">{String(hero.metadata.badge || "Tu carta cambia. Tu QR no.")}</span>
+              <span className="block truncate text-xs text-[var(--text-muted)]">{heroBadge}</span>
             </span>
           </Link>
           <div className="flex shrink-0 items-center gap-2">
             <ThemeToggle compact />
-            <a href="#demo" className="focus-ring rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white shadow-panel">Solicitar demo</a>
+            <a href="#demo" className="focus-ring rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white shadow-panel active:scale-[0.97]">Agendar demo</a>
             <Link href="/login" className="focus-ring hidden rounded-full bg-[var(--surface-muted)] px-4 py-2 text-sm font-medium sm:inline-flex">Ingresar</Link>
           </div>
         </div>
@@ -149,7 +157,7 @@ export function SimiLanding({ content, previewMode = false, forcedTheme }: SimiL
 
       <section className="mx-auto grid max-w-7xl gap-8 px-4 pb-8 pt-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center lg:px-8 lg:py-16">
         <div>
-          <p className="inline-flex rounded-full bg-[var(--accent-soft)] px-4 py-2 text-sm font-medium text-[var(--accent-strong)]">{String(hero.metadata.badge || "QR permanente + carta viva + pedidos ordenados")}</p>
+          <p className="inline-flex rounded-full bg-[var(--accent-soft)] px-4 py-2 text-sm font-medium text-[var(--accent-strong)]">{heroBadge}</p>
           <h1 className="mt-5 max-w-4xl text-4xl font-medium leading-[1.04] tracking-normal md:text-6xl">{hero.title}</h1>
           <p className="mt-4 max-w-2xl text-xl font-medium leading-8 text-[var(--text)] md:text-2xl md:leading-9">
             {hero.subtitle}
@@ -178,7 +186,7 @@ export function SimiLanding({ content, previewMode = false, forcedTheme }: SimiL
       {sectionMap.experience.is_visible ? <section className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
         <div className="grid gap-5 rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-soft lg:grid-cols-2 lg:p-6">
           <div>
-            <p className="text-sm font-medium text-[var(--accent-strong)]">{sectionMap.experience.subtitle}</p>
+            {sectionMap.experience.subtitle ? <p className="text-sm font-medium text-[var(--accent-strong)]">{sectionMap.experience.subtitle}</p> : null}
             <h2 className="mt-2 text-3xl font-medium">{sectionMap.experience.title}</h2>
             <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--text-muted)]">{sectionMap.experience.description}</p>
             {sectionMap.experience.primary_cta_label && sectionMap.experience.primary_cta_url ? <Link href={sectionMap.experience.primary_cta_url} className="focus-ring mt-6 inline-flex min-h-11 items-center rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-medium text-white">{sectionMap.experience.primary_cta_label}</Link> : null}
@@ -191,7 +199,7 @@ export function SimiLanding({ content, previewMode = false, forcedTheme }: SimiL
       </section> : null}
 
       {sectionMap.how_it_works.is_visible ? <section className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
-        <SectionHeading eyebrow={sectionMap.how_it_works.subtitle || "Como funciona"} title={sectionMap.how_it_works.title} text={`${sectionMap.how_it_works.description || ""} Cada pedido que se pierde en un chat de WhatsApp desordenado es una venta que no vuelve.`} />
+        <SectionHeading eyebrow={sectionMap.how_it_works.subtitle || "Como funciona"} title={sectionMap.how_it_works.title} text={sectionMap.how_it_works.description || "En 24 a 48 horas puedes tener tu carta lista, con QR y link para compartir."} />
         <div className="mt-5 grid gap-3 lg:grid-cols-4">
           {steps.map(([number, title, text], index) => (
             <article key={number} className="rounded-[22px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
@@ -224,7 +232,7 @@ export function SimiLanding({ content, previewMode = false, forcedTheme }: SimiL
 
       {demoForm.is_visible ? <section id="demo" className="mx-auto grid max-w-7xl gap-6 px-4 py-10 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
         <div className="rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-6 shadow-soft">
-          <p className="text-sm font-medium text-[var(--accent-strong)]">{demoForm.subtitle}</p>
+          {demoForm.subtitle ? <p className="text-sm font-medium text-[var(--accent-strong)]">{demoForm.subtitle}</p> : null}
           <h2 className="mt-2 text-3xl font-medium">{demoForm.title}</h2>
           <p className="mt-3 text-sm leading-6 text-[var(--text-muted)]">
             {demoForm.description}
@@ -241,7 +249,7 @@ export function SimiLanding({ content, previewMode = false, forcedTheme }: SimiL
             </select>
           </label>
           <button type="button" onClick={() => setShowOptionalDetails((current) => !current)} className="text-left text-sm font-medium text-[var(--accent-strong)] md:col-span-2">
-            {showOptionalDetails ? "Ocultar detalles opcionales" : "+ agregar mas detalles"}
+            {showOptionalDetails ? "Ocultar detalles opcionales" : "+ Agregar mas detalles (opcional)"}
           </button>
           {showOptionalDetails ? (
             <div className="grid gap-4 md:col-span-2 md:grid-cols-2">
@@ -268,7 +276,7 @@ export function SimiLanding({ content, previewMode = false, forcedTheme }: SimiL
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">{finalCta.description}</p>
           <div className="mx-auto mt-5 grid max-w-xl gap-2 text-left text-sm text-[var(--text)] sm:grid-cols-3">
             {["Cero reimpresiones de carta", "Tu cliente decide mas rapido", "Sin contrato, cancela cuando quieras"].map((item) => (
-              <span key={item} className="rounded-[18px] bg-[var(--accent-soft)] px-3 py-2 text-[var(--accent-strong)]">✓ {item}</span>
+              <span key={item} className="rounded-[18px] bg-[var(--accent-soft)] px-3 py-2 text-[var(--accent-strong)]">OK {item}</span>
             ))}
           </div>
           {finalCta.primary_cta_label && finalCta.primary_cta_url ? <a href={finalCta.primary_cta_url} onClick={() => trackLandingEvent("final_cta_click")} className="focus-ring mt-6 inline-flex min-h-12 items-center rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-medium text-white shadow-panel">{finalCta.primary_cta_label}</a> : null}
@@ -295,7 +303,7 @@ function SocialProofSection() {
           <img src="/simi/mockups/simi_mockup_01_carta_digital_movil.png" alt="Carta real inspirada en Pollo Loco usando SIMI" className="h-full min-h-[260px] w-full object-contain p-4" />
         </div>
         <div>
-          <p className="text-sm font-medium text-[var(--accent-strong)]">Ya confian en SIMI</p>
+          <p className="text-sm font-medium text-[var(--accent-strong)]">Hecho con negocios reales</p>
           <h2 className="mt-2 text-3xl font-medium leading-tight">Pollo Loco fue el primer negocio que confio en esta forma de vender.</h2>
           <blockquote className="mt-4 rounded-[22px] bg-[var(--surface-muted)] p-4 text-lg font-medium leading-8">
             "Ahora el cliente ve el menu, escoge y nosotros solo confirmamos."
@@ -327,7 +335,7 @@ function PricingSection() {
               <span className="ml-2 text-sm text-[var(--text-muted)]">{plan.note}</span>
             </div>
             <ul className="grid gap-2 text-sm text-[var(--text)]">
-              {plan.features.map((feature) => <li key={feature}>✓ {feature}</li>)}
+              {plan.features.map((feature) => <li key={feature}>OK {feature}</li>)}
             </ul>
             <a href="#demo" onClick={() => trackLandingEvent(`pricing_${plan.name.toLowerCase()}_click`)} className={`focus-ring mt-auto inline-flex min-h-11 items-center justify-center rounded-full px-4 text-sm font-medium shadow-panel ${plan.featured ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-muted)] text-[var(--text)]"}`}>
               {plan.cta}
@@ -343,7 +351,7 @@ function PricingSection() {
 function FaqSection() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
-      <SectionHeading eyebrow="Preguntas frecuentes" title="Respuestas rapidas antes de pedir una demo." text="Pensado para duenos de negocio que quieren algo practico, no otro sistema dificil de aprender." />
+      <SectionHeading title="Preguntas frecuentes" />
       <div className="mt-5 grid gap-3">
         {faqItems.map(([question, answer]) => (
           <details key={question} className="group rounded-[22px] border border-white/70 bg-[var(--surface)] p-4 shadow-panel">
@@ -363,7 +371,7 @@ function FloatingLandingActions({ hero }: { hero: LandingSection }) {
         Escribir por WhatsApp
       </a>
       <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-[1fr_auto] gap-2 border-t border-[var(--line)] bg-[var(--surface)]/92 p-3 backdrop-blur-xl sm:hidden">
-        <a href={hero.primary_cta_url || "#demo"} onClick={() => trackLandingEvent("mobile_demo_click")} className="focus-ring flex min-h-12 items-center justify-center rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-medium text-white shadow-panel">{hero.primary_cta_label || "Solicitar demo"}</a>
+        <a href={hero.primary_cta_url || "#demo"} onClick={() => trackLandingEvent("mobile_demo_click")} className="focus-ring flex min-h-12 items-center justify-center rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-medium text-white shadow-panel">{hero.primary_cta_label || "Ver mi demo"}</a>
         <a href={landingWhatsappUrl} target="_blank" rel="noreferrer" onClick={() => trackLandingEvent("mobile_whatsapp_click")} className="focus-ring flex min-h-12 items-center justify-center rounded-full bg-[#25D366] px-4 py-3 text-sm font-medium text-white shadow-panel">WhatsApp</a>
       </div>
     </>
@@ -404,11 +412,12 @@ function HeroProductMockup({ section, forcedTheme }: { section: LandingSection; 
 }
 
 function FeatureBlock({ section, visual, reverse, forcedTheme }: { section: LandingSection; visual: (typeof featureVisuals)[number]; reverse: boolean; forcedTheme?: "light" | "dark" }) {
+  const isPrimaryFeature = visual === "sync" || visual === "orders";
+  const isCompactFeature = visual === "calendar";
   return (
-    <article className="grid gap-5 rounded-[30px] border border-white/70 bg-[var(--surface)] p-4 shadow-soft lg:grid-cols-2 lg:items-center lg:p-6">
+    <article className={`grid gap-5 rounded-[30px] border border-white/70 bg-[var(--surface)] shadow-soft lg:items-center ${isPrimaryFeature ? "p-5 lg:grid-cols-[0.8fr_1.2fr] lg:p-8" : isCompactFeature ? "p-4 lg:grid-cols-[1.1fr_0.9fr] lg:p-5" : "p-4 lg:grid-cols-2 lg:p-6"}`}>
       <div className={reverse ? "lg:order-2" : ""}>
-        <p className="text-sm font-medium text-[var(--accent-strong)]">{section.subtitle}</p>
-        <h2 className="mt-2 text-3xl font-medium leading-tight">{section.title}</h2>
+        <h2 className="text-3xl font-medium leading-tight">{section.title}</h2>
         <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--text-muted)] md:text-base">{section.description}</p>
       </div>
       <ProductVisual section={section} type={visual} forcedTheme={forcedTheme} />
@@ -673,12 +682,12 @@ function useLandingTheme(forcedTheme?: "light" | "dark") {
   return theme;
 }
 
-function SectionHeading({ eyebrow, title, text }: { eyebrow: string; title: string; text: string }) {
+function SectionHeading({ eyebrow, title, text }: { eyebrow?: string; title: string; text?: string }) {
   return (
     <div className="max-w-3xl">
-      <p className="text-sm font-medium text-[var(--accent-strong)]">{eyebrow}</p>
-      <h2 className="mt-2 text-3xl font-medium leading-tight">{title}</h2>
-      <p className="mt-3 text-sm leading-6 text-[var(--text-muted)] md:text-base">{text}</p>
+      {eyebrow ? <p className="text-sm font-medium text-[var(--accent-strong)]">{eyebrow}</p> : null}
+      <h2 className={eyebrow ? "mt-2 text-3xl font-medium leading-tight" : "text-3xl font-medium leading-tight"}>{title}</h2>
+      {text ? <p className="mt-3 text-sm leading-6 text-[var(--text-muted)] md:text-base">{text}</p> : null}
     </div>
   );
 }

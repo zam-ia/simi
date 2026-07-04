@@ -77,7 +77,7 @@ export const defaultLandingSections: LandingSection[] = [
     title: "Tu carta cambia. Tu QR no.",
     subtitle: "Deja de reenviar tu carta cada vez que cambias precios, platos o promociones.",
     description: "Con SIMI tienes una carta digital con QR permanente y un link para redes donde tus clientes ven el menu actualizado y hacen pedidos.",
-    primary_cta_label: "Solicitar demo",
+    primary_cta_label: "Ver mi demo",
     primary_cta_url: "#demo",
     secondary_cta_label: "Ver ejemplo",
     secondary_cta_url: "/menu/pollo-loco",
@@ -87,7 +87,7 @@ export const defaultLandingSections: LandingSection[] = [
     sort_order: 10,
     is_visible: true,
     status: "published",
-    metadata: { badge: "QR permanente + carta viva + pedidos ordenados" }
+    metadata: { badge: "La carta de tu negocio, siempre lista y bajo tu control." }
   },
   {
     section_key: "qr_link",
@@ -176,9 +176,9 @@ export const defaultLandingSections: LandingSection[] = [
   },
   {
     section_key: "experience",
-    title: "Asi lo ve tu cliente. Asi lo ves tu.",
-    subtitle: "Experiencia real",
-    description: "Explora como se veria una carta digital moderna y como se gestiona desde el panel del negocio.",
+    title: "Tu cliente compra mas facil y tu equipo trabaja con mas orden.",
+    subtitle: "",
+    description: "El comensal encuentra la carta desde el celular. Tu negocio recibe pedidos, reservas y cambios desde un panel claro.",
     primary_cta_label: "Ver ejemplo",
     primary_cta_url: "/menu/pollo-loco",
     secondary_cta_label: null,
@@ -193,9 +193,9 @@ export const defaultLandingSections: LandingSection[] = [
   },
   {
     section_key: "how_it_works",
-    title: "Cuatro pasos. Sin complicar al cliente.",
+    title: "De tu carta en papel a tu carta digital en 48 horas.",
     subtitle: "Como funciona",
-    description: "Cada paso tiene una accion clara y una vista simple para el negocio.",
+    description: "Nos pasas tu carta, armamos el link y te entregamos el QR para mesas, redes y WhatsApp.",
     primary_cta_label: null,
     primary_cta_url: null,
     secondary_cta_label: null,
@@ -228,9 +228,9 @@ export const defaultLandingSections: LandingSection[] = [
   {
     section_key: "demo_form",
     title: "Quieres ver como quedaria en tu negocio?",
-    subtitle: "Demo personalizada",
-    description: "Dejanos tus datos y te mostraremos una demo personalizada por WhatsApp, Zoom, Meet o presencial.",
-    primary_cta_label: "Solicitar demo personalizada",
+    subtitle: "",
+    description: "Escribenos el nombre de tu negocio y tu WhatsApp. Con eso basta para prepararte una primera vista.",
+    primary_cta_label: "Quiero ver mi demo",
     primary_cta_url: "#demo",
     secondary_cta_label: null,
     secondary_cta_url: null,
@@ -247,7 +247,7 @@ export const defaultLandingSections: LandingSection[] = [
   },
   {
     section_key: "final_cta",
-    title: "Que el cliente vea el menu. Que tu equipo vea el control.",
+    title: "Tu menu listo para vender todos los dias.",
     subtitle: "",
     description: "Empieza con una demo corta y revisa como se veria SIMI aplicado a tu negocio.",
     primary_cta_label: "Quiero ver como se veria en mi negocio",

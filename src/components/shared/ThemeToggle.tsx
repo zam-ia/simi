@@ -27,7 +27,7 @@ export function ThemeToggle({ compact = false }: ThemeToggleProps) {
     <button
       type="button"
       onClick={toggleTheme}
-      className="focus-ring group inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 text-sm font-medium text-[var(--text)] shadow-panel transition-all duration-200 ease-out hover:bg-[var(--surface-muted)]"
+      className={`focus-ring group inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] text-sm font-medium text-[var(--text)] shadow-panel transition-all duration-200 ease-out hover:bg-[var(--surface-muted)] active:scale-[0.97] ${compact ? "w-10 px-0" : "px-3"}`}
       aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
       title={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
     >
