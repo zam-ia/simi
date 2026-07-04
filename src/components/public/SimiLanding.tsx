@@ -276,7 +276,10 @@ export function SimiLanding({ content, previewMode = false, forcedTheme }: SimiL
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-[var(--text-muted)]">{finalCta.description}</p>
           <div className="mx-auto mt-5 grid max-w-xl gap-2 text-left text-sm text-[var(--text)] sm:grid-cols-3">
             {["Cero reimpresiones de carta", "Tu cliente decide mas rapido", "Sin contrato, cancela cuando quieras"].map((item) => (
-              <span key={item} className="rounded-[18px] bg-[var(--accent-soft)] px-3 py-2 text-[var(--accent-strong)]">OK {item}</span>
+              <span key={item} className="inline-flex items-start gap-2 rounded-[18px] bg-[var(--accent-soft)] px-3 py-2 text-[var(--accent-strong)]">
+                <CheckIcon className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{item}</span>
+              </span>
             ))}
           </div>
           {finalCta.primary_cta_label && finalCta.primary_cta_url ? <a href={finalCta.primary_cta_url} onClick={() => trackLandingEvent("final_cta_click")} className="focus-ring mt-6 inline-flex min-h-12 items-center rounded-full bg-[var(--accent)] px-6 py-3 text-sm font-medium text-white shadow-panel">{finalCta.primary_cta_label}</a> : null}
@@ -335,7 +338,12 @@ function PricingSection() {
               <span className="ml-2 text-sm text-[var(--text-muted)]">{plan.note}</span>
             </div>
             <ul className="grid gap-2 text-sm text-[var(--text)]">
-              {plan.features.map((feature) => <li key={feature}>OK {feature}</li>)}
+              {plan.features.map((feature) => (
+                <li key={feature} className="flex items-start gap-2">
+                  <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent-strong)]" />
+                  <span>{feature}</span>
+                </li>
+              ))}
             </ul>
             <a href="#demo" onClick={() => trackLandingEvent(`pricing_${plan.name.toLowerCase()}_click`)} className={`focus-ring mt-auto inline-flex min-h-11 items-center justify-center rounded-full px-4 text-sm font-medium shadow-panel ${plan.featured ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-muted)] text-[var(--text)]"}`}>
               {plan.cta}
@@ -443,7 +451,9 @@ function ProductVisual({ section, type, forcedTheme }: { section: LandingSection
     return (
       <div className="grid gap-4 rounded-[26px] border border-[var(--line)] bg-[var(--background)] p-4 md:grid-cols-[1fr_auto_1fr]">
         <EditPanelMini />
-        <span className="hidden h-10 w-10 place-items-center self-center rounded-full bg-[var(--accent)] text-white md:grid">OK</span>
+        <span className="hidden h-10 w-10 place-items-center self-center rounded-full bg-[var(--accent)] text-white md:grid" aria-hidden="true">
+          <CheckIcon className="h-5 w-5" />
+        </span>
         <PhoneMockup compact />
       </div>
     );
@@ -689,6 +699,14 @@ function SectionHeading({ eyebrow, title, text }: { eyebrow?: string; title: str
       <h2 className={eyebrow ? "mt-2 text-3xl font-medium leading-tight" : "text-3xl font-medium leading-tight"}>{title}</h2>
       {text ? <p className="mt-3 text-sm leading-6 text-[var(--text-muted)] md:text-base">{text}</p> : null}
     </div>
+  );
+}
+
+function CheckIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className={className} aria-hidden="true">
+      <path d="m4.5 10.4 3.2 3.2 7.8-8.2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 
