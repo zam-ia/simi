@@ -5,6 +5,7 @@ import { getPublicMenuBySlug } from "@/lib/menu-data";
 import { stripDemoPrefix } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
+const defaultSocialPreview = "/simi/previews/simi-share-preview.png";
 
 type ReservationPageProps = {
   params: Promise<{ slug: string }>;
@@ -15,9 +16,26 @@ export async function generateMetadata({ params }: ReservationPageProps): Promis
   const cleanSlug = stripDemoPrefix(resolvedParams.slug);
   const menu = cleanSlug !== resolvedParams.slug ? (await getPublicMenuBySlug(cleanSlug)) || (await getPublicMenuBySlug(resolvedParams.slug)) : await getPublicMenuBySlug(resolvedParams.slug);
   if (!menu) return { title: "Reserva no disponible" };
+  const title = `Reservar en ${menu.client.name}`;
+  const description = `Solicita una reserva en ${menu.client.name}`;
+  const previewImage = menu.client.hero_banner_image_url || menu.client.promo_banner_image_url || menu.client.logo_url || defaultSocialPreview;
+
   return {
-    title: `Reservar en ${menu.client.name}`,
-    description: `Solicita una reserva en ${menu.client.name}`
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      siteName: "SIMI",
+      type: "website",
+      images: [{ url: previewImage, alt: title }]
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [previewImage]
+    }
   };
 }
 

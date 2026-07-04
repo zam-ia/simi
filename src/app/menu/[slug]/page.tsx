@@ -6,6 +6,8 @@ import { getPublicMenuUrl, stripDemoPrefix } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
+const defaultSocialPreview = "/simi/previews/simi-share-preview.png";
+
 type MenuPageProps = {
   params: Promise<{ slug: string }>;
   searchParams?: Promise<{ mesa?: string }>;
@@ -18,12 +20,13 @@ export async function generateMetadata({ params }: MenuPageProps): Promise<Metad
 
   if (!menu) {
     return {
-      title: "Menú no disponible"
+      title: "Menu no disponible"
     };
   }
 
-  const title = `Menú de ${menu.client.name}`;
+  const title = `Menu de ${menu.client.name}`;
   const description = `Mira la carta digital de ${menu.client.name}`;
+  const previewImage = menu.client.hero_banner_image_url || menu.client.promo_banner_image_url || menu.client.logo_url || defaultSocialPreview;
 
   return {
     title,
@@ -32,7 +35,15 @@ export async function generateMetadata({ params }: MenuPageProps): Promise<Metad
       title,
       description,
       url: getPublicMenuUrl(menu.client.slug),
-      images: menu.client.logo_url ? [menu.client.logo_url] : undefined
+      siteName: "SIMI",
+      type: "website",
+      images: [{ url: previewImage, alt: title }]
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [previewImage]
     }
   };
 }

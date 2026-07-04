@@ -16,19 +16,34 @@ type VisibleAlert = {
 
 type AdminRealtimeAlertsProps = {
   clientId?: string;
+  userKey?: string;
 };
 
 function getAudioContextConstructor() {
   return (window as typeof window & { webkitAudioContext?: typeof AudioContext }).AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
 }
 
-export function AdminRealtimeAlerts({ clientId }: AdminRealtimeAlertsProps) {
+type BrowserNotificationPermission = NotificationPermission | "unsupported";
+type AlertPermissionStatus = "checking" | "pending" | "enabled" | "dismissed";
+
+const alertPermissionStoragePrefix = "simi-alert-permissions-v1";
+const alertIconUrl = "/simi/previews/preview_app_icon.png";
+
+function getBrowserNotificationPermission(): BrowserNotificationPermission {
+  if (typeof window === "undefined" || !("Notification" in window)) return "unsupported";
+  return Notification.permission;
+}
+
+export function AdminRealtimeAlerts({ clientId, userKey }: AdminRealtimeAlertsProps) {
   const router = useRouter();
   const [soundEnabled, setSoundEnabled] = useState(false);
+  const [permissionStatus, setPermissionStatus] = useState<AlertPermissionStatus>("checking");
+  const [browserPermission, setBrowserPermission] = useState<BrowserNotificationPermission>("unsupported");
   const [alert, setAlert] = useState<VisibleAlert | null>(null);
   const [notifications, setNotifications] = useState<VisibleAlert[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const permissionStorageKey = `${alertPermissionStoragePrefix}:${userKey || clientId || "global"}`;
 
   function enableSound() {
     try {
@@ -38,8 +53,10 @@ export function AdminRealtimeAlerts({ clientId }: AdminRealtimeAlertsProps) {
       audioContextRef.current = audioContext;
       void audioContext.resume();
       setSoundEnabled(true);
+      return true;
     } catch (error) {
       console.warn("No se pudo activar el sonido de notificaciones.", error);
+      return false;
     }
   }
 
@@ -69,13 +86,122 @@ export function AdminRealtimeAlerts({ clientId }: AdminRealtimeAlertsProps) {
     }
   }
 
+  function showBrowserNotification(nextAlert: VisibleAlert) {
+    if (getBrowserNotificationPermission() !== "granted") return;
+    if (document.visibilityState === "visible" && document.hasFocus()) return;
+
+    try {
+      const browserAlert = new Notification(nextAlert.title, {
+        body: nextAlert.message,
+        icon: alertIconUrl,
+        badge: alertIconUrl,
+        tag: nextAlert.id || `${nextAlert.module}-${nextAlert.title}`
+      });
+      browserAlert.onclick = () => {
+        window.focus();
+        setIsOpen(true);
+        browserAlert.close();
+      };
+    } catch (error) {
+      console.warn("No se pudo mostrar la notificacion del navegador.", error);
+    }
+  }
+
   function showAlert(nextAlert: VisibleAlert) {
     setAlert(nextAlert);
     setNotifications((current) => [nextAlert, ...current.filter((item) => item.id !== nextAlert.id)].slice(0, 6));
+    showBrowserNotification(nextAlert);
     playNotificationSound();
     router.refresh();
     window.setTimeout(() => setAlert(null), 9000);
   }
+
+  async function enableAlertPermissions() {
+    let nextBrowserPermission = getBrowserNotificationPermission();
+    if (nextBrowserPermission === "default") {
+      try {
+        nextBrowserPermission = await Notification.requestPermission();
+      } catch (error) {
+        console.warn("No se pudo solicitar permiso de notificaciones.", error);
+      }
+    }
+
+    setBrowserPermission(nextBrowserPermission);
+    enableSound();
+
+    try {
+      window.localStorage.setItem(permissionStorageKey, "enabled");
+    } catch {
+      // Si el navegador bloquea localStorage, simplemente no repetimos dentro de esta sesion.
+    }
+
+    setPermissionStatus("enabled");
+
+    if (nextBrowserPermission === "granted") {
+      try {
+        new Notification("Alertas SIMI activadas", {
+          body: "Te avisaremos cuando entren pedidos, reservas o alertas importantes.",
+          icon: alertIconUrl,
+          badge: alertIconUrl,
+          tag: "simi-alerts-enabled"
+        });
+      } catch {
+        // La notificacion de prueba no es critica para operar el panel.
+      }
+    }
+  }
+
+  function dismissAlertPermissions() {
+    try {
+      window.localStorage.setItem(permissionStorageKey, "dismissed");
+    } catch {
+      // No bloquea el flujo si localStorage no esta disponible.
+    }
+    setPermissionStatus("dismissed");
+  }
+
+  useEffect(() => {
+    const nextBrowserPermission = getBrowserNotificationPermission();
+    setBrowserPermission(nextBrowserPermission);
+
+    let storedPreference: string | null = null;
+    try {
+      storedPreference = window.localStorage.getItem(permissionStorageKey);
+    } catch {
+      storedPreference = null;
+    }
+
+    if (storedPreference === "enabled") {
+      setSoundEnabled(true);
+      setPermissionStatus("enabled");
+      return;
+    }
+
+    if (storedPreference === "dismissed" || nextBrowserPermission === "denied") {
+      setPermissionStatus("dismissed");
+      return;
+    }
+
+    setPermissionStatus("pending");
+  }, [permissionStorageKey]);
+
+  useEffect(() => {
+    if (!soundEnabled) return;
+
+    function unlockSoundOnInteraction() {
+      enableSound();
+      window.removeEventListener("pointerdown", unlockSoundOnInteraction);
+      window.removeEventListener("keydown", unlockSoundOnInteraction);
+    }
+
+    window.addEventListener("pointerdown", unlockSoundOnInteraction, { once: true });
+    window.addEventListener("keydown", unlockSoundOnInteraction, { once: true });
+
+    return () => {
+      window.removeEventListener("pointerdown", unlockSoundOnInteraction);
+      window.removeEventListener("keydown", unlockSoundOnInteraction);
+    };
+  }, [soundEnabled]);
 
   function notifyFallback(module: "orders" | "reservations") {
     showAlert(
@@ -141,13 +267,32 @@ export function AdminRealtimeAlerts({ clientId }: AdminRealtimeAlertsProps) {
 
   return (
     <>
-      {!soundEnabled ? (
-        <div className="fixed bottom-4 right-4 z-[60] max-w-xs rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-3 shadow-soft">
-          <p className="text-sm font-medium text-[var(--text)]">Alertas del negocio</p>
-          <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">Activa el sonido una vez para escuchar nuevos pedidos y reservas.</p>
-          <Button type="button" className="mt-3 w-full" onClick={enableSound}>
-            Activar sonido
-          </Button>
+      {permissionStatus === "pending" ? (
+        <div className="fixed bottom-4 right-4 z-[70] w-[min(380px,calc(100vw-32px))] rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-soft">
+          <div className="flex items-start gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[16px] bg-[var(--accent-soft)] text-[var(--accent-strong)]">
+              <BellIcon className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-[var(--text)]">Activar alertas de SIMI</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">
+                Te pediremos permiso una sola vez en este dispositivo para mostrar avisos y reproducir sonido cuando entren pedidos o reservas.
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 grid gap-2 rounded-[18px] bg-[var(--surface-muted)] p-3 text-xs text-[var(--text-muted)]">
+            <span>Notificaciones del navegador: {browserPermission === "granted" ? "activadas" : browserPermission === "denied" ? "bloqueadas" : browserPermission === "unsupported" ? "no disponible en este navegador" : "pendientes"}</span>
+            <span>Sonido de alertas: se activa con este permiso.</span>
+            <span>Actualizacion en tiempo real: ya esta activa mientras el panel este abierto.</span>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto]">
+            <Button type="button" onClick={enableAlertPermissions}>
+              Activar alertas
+            </Button>
+            <Button type="button" variant="secondary" onClick={dismissAlertPermissions}>
+              Ahora no
+            </Button>
+          </div>
         </div>
       ) : null}
 

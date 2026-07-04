@@ -39,7 +39,7 @@ export function AdminShell({ children, title, subtitle, userEmail, items, primar
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      <AdminRealtimeAlerts clientId={alertClientId} />
+      <AdminRealtimeAlerts clientId={alertClientId} userKey={userEmail} />
       {isMobileOpen ? <button type="button" aria-label="Cerrar menu" className="fixed inset-0 z-40 bg-black/28 backdrop-blur-sm lg:hidden" onClick={() => setIsMobileOpen(false)} /> : null}
 
       <aside
