@@ -47,16 +47,26 @@ export function LoginForm({ initialMessage = "" }: LoginFormProps) {
   }
 
   return (
-    <form action={handleSubmit} className="grid gap-4 rounded-[28px] border border-[var(--line)] bg-[var(--surface)]/92 p-6 shadow-soft backdrop-blur-xl">
+    <form action={handleSubmit} className="grid gap-5 rounded-[32px] border border-[var(--login-line)] bg-[var(--login-panel)] p-6 shadow-[0_28px_80px_rgba(15,23,42,0.16)] backdrop-blur-2xl sm:p-8">
+      <div className="text-center">
+        <img src="/simi/brand_app_icons/simi-app-icon.png" alt="SIMI" className="mx-auto h-14 w-14 rounded-[18px] shadow-[0_16px_42px_rgba(15,23,42,0.18)]" />
+        <span className="mt-4 inline-flex rounded-full border border-[color-mix(in_srgb,var(--login-gold)_42%,transparent)] bg-[color-mix(in_srgb,var(--login-gold)_12%,transparent)] px-3 py-1 text-xs font-medium text-[var(--login-gold)]">
+          Cliente activo
+        </span>
+        <h2 className="mt-4 text-3xl font-medium text-[var(--login-text)]">Ingresar al panel</h2>
+        <p className="mt-2 text-sm leading-6 text-[var(--login-muted)]">Ingresa con el correo autorizado de tu negocio.</p>
+      </div>
+
       <Input label="Correo" name="email" type="email" autoComplete="email" required />
       <Input label="Contrasena" name="password" type="password" autoComplete="current-password" required />
-      {message ? <p className="rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--surface-muted)] p-3 text-sm text-[var(--text)]">{message}</p> : null}
-      <Button type="submit" disabled={isPending} className="min-h-12">
-        {isPending ? "Ingresando..." : "Ingresar"}
+      {message ? <p className="rounded-[var(--radius-card)] border border-[var(--login-line)] bg-[color-mix(in_srgb,var(--login-blue)_8%,var(--login-panel-solid))] p-3 text-sm text-[var(--login-text)]">{message}</p> : null}
+      <Button type="submit" disabled={isPending} className="min-h-12 w-full bg-[linear-gradient(135deg,var(--login-blue),color-mix(in_srgb,var(--login-blue)_72%,var(--login-gold)))] shadow-[0_16px_42px_color-mix(in_srgb,var(--login-blue)_26%,transparent)] hover:opacity-95">
+        {isPending ? "Ingresando..." : "Ingresar a mi panel"}
       </Button>
-      <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-[var(--text-muted)]">
-        <span>Olvide mi contrasena</span>
-        <Link href="/#demo" className="font-medium text-[var(--accent)]">Solicitar demo</Link>
+      <div className="grid gap-3 text-center text-sm text-[var(--login-muted)]">
+        <button type="button" className="justify-self-center font-medium text-[var(--login-blue)]">Olvide mi contrasena</button>
+        <p className="text-xs leading-5">Solo clientes activos y usuarios autorizados pueden acceder.</p>
+        <Link href="/#demo" className="font-medium text-[var(--login-blue)]">Aun no tienes SIMI? Solicita una demo</Link>
       </div>
     </form>
   );
