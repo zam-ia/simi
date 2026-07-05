@@ -12,7 +12,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <div className="relative">
           <Link href="/" className="flex items-center gap-3">
             <span className="grid h-12 w-12 place-items-center overflow-hidden rounded-[16px] bg-white shadow-panel">
-              <img src="/simi/brand_app_icons/SIMI_icono.svg" alt="SIMI" className="h-full w-full object-cover" />
+              <img src="/simi/brand_app_icons/simi-app-icon.png" alt="SIMI" className="h-full w-full object-cover" />
             </span>
             <span>
               <span className="block text-lg font-medium">SIMI</span>
@@ -35,7 +35,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <section className="grid place-items-center px-4 py-10">
         <div className="w-full max-w-md">
           <div className="mb-6 text-center lg:hidden">
-            <img src="/simi/brand_app_icons/SIMI_icono.svg" alt="SIMI" className="mx-auto h-20 w-20 rounded-[22px] shadow-panel" />
+            <img src="/simi/brand_app_icons/simi-app-icon.png" alt="SIMI" className="mx-auto h-20 w-20 rounded-[22px] shadow-panel" />
             <h1 className="mt-3 text-3xl font-medium">SIMI</h1>
             <p className="mt-2 text-sm text-[var(--text-muted)]">Sistema inteligente para negocios gastronomicos.</p>
           </div>

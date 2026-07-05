@@ -52,7 +52,7 @@ export function AdminShell({ children, title, subtitle, userEmail, items, primar
         <div className="flex items-center justify-between gap-3 px-2">
           <Link href="/admin" className="flex min-w-0 items-center gap-3" onClick={() => setIsMobileOpen(false)}>
             <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-[16px] bg-white shadow-panel">
-              <img src="/simi/brand_app_icons/SIMI_icono.svg" alt="SIMI" className="h-full w-full object-cover" />
+              <img src="/simi/brand_app_icons/simi-app-icon.png" alt="SIMI" className="h-full w-full object-cover" />
             </span>
             <span className={cn("min-w-0 transition-opacity duration-200", isCollapsed ? "lg:hidden" : "")}>
               <span className="block text-sm font-medium text-white">SIMI</span>

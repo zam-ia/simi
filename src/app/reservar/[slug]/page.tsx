@@ -5,7 +5,7 @@ import { getPublicMenuBySlug } from "@/lib/menu-data";
 import { stripDemoPrefix } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
-const defaultSocialPreview = "/simi/previews/simi-share-preview.png";
+const defaultSocialPreview = "/simi/brand_app_icons/simi-og-image.png";
 
 type ReservationPageProps = {
   params: Promise<{ slug: string }>;

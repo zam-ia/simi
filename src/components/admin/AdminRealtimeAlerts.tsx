@@ -27,7 +27,7 @@ type BrowserNotificationPermission = NotificationPermission | "unsupported";
 type AlertPermissionStatus = "checking" | "pending" | "enabled" | "dismissed";
 
 const alertPermissionStoragePrefix = "simi-alert-permissions-v1";
-const alertIconUrl = "/simi/previews/preview_app_icon.png";
+const alertIconUrl = "/simi/brand_app_icons/simi-app-icon.png";
 
 function getBrowserNotificationPermission(): BrowserNotificationPermission {
   if (typeof window === "undefined" || !("Notification" in window)) return "unsupported";

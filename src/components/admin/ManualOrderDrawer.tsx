@@ -122,7 +122,7 @@ export function ManualOrderDrawer({ clients, categories, items, tables, delivery
               <div className="relative flex items-start justify-between gap-4">
                 <div className="flex items-start gap-4">
                   <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-[16px] bg-white shadow-panel">
-                    <img src="/simi/brand_app_icons/SIMI_icono.svg" alt="SIMI" className="h-full w-full object-cover" />
+                    <img src="/simi/brand_app_icons/simi-app-icon.png" alt="SIMI" className="h-full w-full object-cover" />
                   </span>
                   <div>
                     <p className="text-sm text-white/70">Venta manual</p>

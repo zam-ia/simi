@@ -65,7 +65,7 @@ export function ReservationExperience({ client, tables }: ReservationExperienceP
             Atras
           </a>
           <div className="flex items-center gap-2">
-            <img src="/simi/brand_app_icons/SIMI_icono.svg" alt="SIMI" className="h-10 w-10 rounded-[14px]" />
+            <img src="/simi/brand_app_icons/simi-app-icon.png" alt="SIMI" className="h-10 w-10 rounded-[14px]" />
             <span className="text-xl font-medium">SIMI</span>
           </div>
           <span className="h-10 w-14" />

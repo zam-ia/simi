@@ -2,16 +2,19 @@ import type { Metadata, Viewport } from "next";
 import { ThemeScript } from "@/components/shared/ThemeScript";
 import "./globals.css";
 
-const defaultSocialPreview = "/simi/previews/simi-share-preview.png";
+const defaultSocialPreview = "/simi/brand_app_icons/simi-og-image.png";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://simi-peru.vercel.app"),
   title: "SIMI",
   description: "Sistema operativo para restaurantes, cartas digitales, pedidos y reservas.",
   icons: {
-    icon: "/simi/brand_app_icons/SIMI_icono.svg",
-    shortcut: "/simi/brand_app_icons/SIMI_icono.svg",
-    apple: "/simi/brand_app_icons/SIMI_icono.svg"
+    icon: [
+      { url: "/simi/brand_app_icons/simi-favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/simi/brand_app_icons/simi-favicon-192.png", sizes: "192x192", type: "image/png" }
+    ],
+    shortcut: "/simi/brand_app_icons/simi-favicon-32.png",
+    apple: "/simi/brand_app_icons/simi-apple-touch-icon.png"
   },
   openGraph: {
     title: "SIMI",

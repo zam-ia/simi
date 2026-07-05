@@ -17,7 +17,7 @@ export function MenuHeader({ client }: MenuHeaderProps) {
       <div className="min-h-[270px] bg-cover bg-center px-4 pt-4 sm:px-5 lg:min-h-[340px] lg:px-8 lg:pt-6" style={{ background }}>
         <div className="mx-auto flex max-w-[1320px] items-center justify-between gap-3">
           <div className="flex items-center gap-2 rounded-full bg-white/92 px-3 py-2 text-[#111827] shadow-panel backdrop-blur">
-            <img src="/simi/brand_app_icons/SIMI_icono.svg" alt="SIMI" className="h-8 w-8 rounded-[10px]" />
+            <img src="/simi/brand_app_icons/simi-app-icon.png" alt="SIMI" className="h-8 w-8 rounded-[10px]" />
             <span className="text-sm font-medium">SIMI</span>
           </div>
           <ThemeToggle compact />
