@@ -47,10 +47,10 @@ export function LoginForm({ initialMessage = "" }: LoginFormProps) {
   }
 
   return (
-    <form action={handleSubmit} className="grid gap-4 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-6 shadow-soft">
+    <form action={handleSubmit} className="grid gap-4 rounded-[28px] border border-[var(--line)] bg-[var(--surface)]/92 p-6 shadow-soft backdrop-blur-xl">
       <Input label="Correo" name="email" type="email" autoComplete="email" required />
       <Input label="Contrasena" name="password" type="password" autoComplete="current-password" required />
-      {message ? <p className="rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-3 text-sm text-[var(--text-muted)]">{message}</p> : null}
+      {message ? <p className="rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--surface-muted)] p-3 text-sm text-[var(--text)]">{message}</p> : null}
       <Button type="submit" disabled={isPending} className="min-h-12">
         {isPending ? "Ingresando..." : "Ingresar"}
       </Button>
