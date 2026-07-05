@@ -49,7 +49,7 @@ export default async function AdminDemosPage({ searchParams }: { searchParams: P
       ) : (
         <section className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-8 text-center shadow-panel">
           <h3 className="text-xl font-medium">Aun no hay solicitudes de demo</h3>
-          <p className="mt-2 text-sm text-[var(--text-muted)]">Cuando un negocio complete la landing, aparecera aqui para seguimiento comercial.</p>
+          <p className="mt-2 text-sm text-[var(--text-muted)]">Cuando un negocio complete una solicitud, aparecera aqui para seguimiento comercial.</p>
         </section>
       )}
     </div>

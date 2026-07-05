@@ -1,6 +1,6 @@
 import type { AdminContext } from "@/lib/auth";
 
-export type AdminModule = "dashboard" | "clients" | "demos" | "landing" | "menu" | "orders" | "kitchen" | "delivery" | "promotions" | "reservations" | "payments" | "settings" | "users";
+export type AdminModule = "dashboard" | "clients" | "demos" | "menu" | "orders" | "kitchen" | "delivery" | "promotions" | "reservations" | "payments" | "settings" | "users";
 
 export type BusinessRole = "business_owner" | "business_admin" | "cashier" | "kitchen" | "delivery" | "viewer";
 
@@ -21,11 +21,6 @@ export const adminModules: Record<AdminModule, { label: string; description: str
     label: "Demos",
     description: "Solicitudes, agenda y seguimiento comercial.",
     href: "/admin/demos"
-  },
-  landing: {
-    label: "Landing",
-    description: "Editor comercial de la pagina publica de SIMI.",
-    href: "/admin/landing"
   },
   menu: {
     label: "Carta",
@@ -157,7 +152,7 @@ export function resolveModulePermissions(role: BusinessRole, overrides?: ModuleP
 
 export function canAccessModule(context: Pick<AdminContext, "role" | "businessRole" | "modulePermissions">, module: AdminModule) {
   if (context.role === "super_admin") return true;
-  if (module === "clients" || module === "demos" || module === "landing") return false;
+  if (module === "clients" || module === "demos") return false;
   const permissions = resolveModulePermissions(context.businessRole || "business_admin", context.modulePermissions);
   return Boolean(permissions[module]);
 }
@@ -165,7 +160,6 @@ export function canAccessModule(context: Pick<AdminContext, "role" | "businessRo
 export function moduleFromPath(pathname: string): AdminModule {
   if (pathname.startsWith("/admin/clients")) return "menu";
   if (pathname.startsWith("/admin/demos")) return "demos";
-  if (pathname.startsWith("/admin/landing")) return "landing";
   if (pathname.startsWith("/admin/orders")) return "orders";
   if (pathname.startsWith("/admin/kitchen")) return "kitchen";
   if (pathname.startsWith("/admin/delivery")) return "delivery";
