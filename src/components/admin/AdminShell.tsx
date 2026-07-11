@@ -39,7 +39,6 @@ export function AdminShell({ children, title, subtitle, userEmail, items, primar
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      <AdminRealtimeAlerts clientId={alertClientId} userKey={userEmail} />
       {isMobileOpen ? <button type="button" aria-label="Cerrar menu" className="fixed inset-0 z-40 bg-black/28 backdrop-blur-sm lg:hidden" onClick={() => setIsMobileOpen(false)} /> : null}
 
       <aside
@@ -132,7 +131,9 @@ export function AdminShell({ children, title, subtitle, userEmail, items, primar
               <p className="truncate text-xs text-[var(--text-muted)]">{activeLabel}</p>
               <h1 className="truncate text-lg font-medium text-[var(--text)]">{title}</h1>
             </div>
-            <div className="hidden sm:block">
+            <div className="flex shrink-0 items-center gap-3">
+              <AdminRealtimeAlerts clientId={alertClientId} userKey={userEmail} />
+              <span className="hidden h-8 w-px bg-[var(--line)] sm:block" aria-hidden="true" />
               <ThemeToggle compact />
             </div>
           </div>

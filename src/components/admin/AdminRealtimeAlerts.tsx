@@ -296,10 +296,10 @@ export function AdminRealtimeAlerts({ clientId, userKey }: AdminRealtimeAlertsPr
         </div>
       ) : null}
 
-      <div className="fixed right-4 top-24 z-[65]">
+      <div className="relative z-[65]">
         <button
           type="button"
-          className="focus-ring relative grid h-11 w-11 place-items-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-[var(--text)] shadow-soft"
+          className="focus-ring relative grid h-10 w-10 place-items-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-[var(--text)] shadow-panel transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[var(--surface-muted)] active:scale-[0.97]"
           onClick={() => setIsOpen((current) => !current)}
           aria-label="Ver alertas"
           title="Alertas"
@@ -308,7 +308,7 @@ export function AdminRealtimeAlerts({ clientId, userKey }: AdminRealtimeAlertsPr
           {notifications.length ? <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-[10px] font-medium text-white">{notifications.length}</span> : null}
         </button>
         {isOpen ? (
-          <div className="mt-2 w-[min(360px,calc(100vw-32px))] rounded-[22px] border border-[var(--line)] bg-[var(--surface)] p-3 shadow-soft">
+          <div className="absolute right-0 top-12 w-[min(360px,calc(100vw-32px))] rounded-[22px] border border-[var(--line)] bg-[var(--surface)] p-3 shadow-soft">
             <div className="flex items-center justify-between gap-3 px-1 pb-2">
               <p className="text-sm font-medium">Alertas SIMI</p>
               <span className="text-xs text-[var(--text-muted)]">Tiempo real</span>

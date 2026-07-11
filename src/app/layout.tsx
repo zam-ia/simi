@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { ClientMonitoring } from "@/components/shared/ClientMonitoring";
 import { ThemeScript } from "@/components/shared/ThemeScript";
 import "./globals.css";
 
@@ -43,6 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es">
       <body>
         <ThemeScript />
+        <ClientMonitoring />
         {children}
       </body>
     </html>
