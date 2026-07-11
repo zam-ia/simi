@@ -371,6 +371,10 @@ export type CustomerOrder = {
   order_status: OrderStatus;
   payment_status: PaymentStatus;
   whatsapp_sent: boolean;
+  idempotency_key?: string | null;
+  whatsapp_opt_in?: boolean;
+  whatsapp_opt_in_at?: string | null;
+  whatsapp_opt_in_source?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -406,10 +410,29 @@ export type OrderStatusEvent = {
   created_at: string;
 };
 
+export type NotificationOutboxStatus = "pending" | "processing" | "sent" | "delivered" | "read" | "retry" | "failed" | "dead";
+
+export type WhatsAppNotification = {
+  id: string;
+  client_id: string;
+  order_id: string | null;
+  recipient_type: "customer" | "business" | "courier";
+  recipient_phone: string;
+  template_name: string;
+  status: NotificationOutboxStatus;
+  attempts: number;
+  last_error: string | null;
+  created_at: string;
+  sent_at: string | null;
+  delivered_at: string | null;
+  read_at: string | null;
+};
+
 export type OrderWithDetails = CustomerOrder & {
   items: CustomerOrderItem[];
   payment_proofs: PaymentProof[];
   status_events?: OrderStatusEvent[];
+  whatsapp_notifications?: WhatsAppNotification[];
 };
 
 export type PublicMenuData = {

@@ -201,6 +201,22 @@ a {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
+.field {
+  min-height: 44px;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-input);
+  background: var(--surface);
+  padding: 0 12px;
+  color: var(--text);
+  outline: none;
+}
+
+.field:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
 .shadow-panel {
   box-shadow: 0 10px 24px rgba(17, 24, 39, 0.08);
 }

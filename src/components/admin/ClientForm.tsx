@@ -58,9 +58,15 @@ export function ClientForm({ client, action, error, promoItems = [] }: ClientFor
       <section className="grid gap-4 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
         <div>
           <h2 className="text-lg font-medium">Identidad visual</h2>
-          <p className="mt-1 text-sm text-[var(--text-muted)]">Puedes usar uno o dos colores del negocio. En pollerías suele funcionar rojo, amarillo y negro.</p>
+          <p className="mt-1 text-sm text-[var(--text-muted)]">Elige una propuesta según el rubro o ajusta libremente los colores. La vista rápida muestra cómo se sentirán en la carta.</p>
         </div>
-        <BrandColorPicker initialPrimary={client?.primary_color || "#C62828"} initialSecondary={client?.secondary_color || "#FFC107"} initialUseSecondary={hasSecondaryColor} />
+        <BrandColorPicker
+          initialPrimary={client?.primary_color || "#2463EB"}
+          initialSecondary={client?.secondary_color || "#F06449"}
+          initialUseSecondary={hasSecondaryColor}
+          businessType={client?.business_type || "restaurant"}
+          businessName={client?.name || "Tu negocio"}
+        />
         <div className="grid min-w-0 gap-4 xl:grid-cols-2">
           <ImageUploader
             name="logo_url"

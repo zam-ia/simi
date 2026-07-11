@@ -138,21 +138,18 @@ export function ImageUploader({ name, label, defaultValue = "", storagePath, hin
         )}
 
         <div className="grid min-w-0 gap-2">
-          <input
-            className="focus-ring min-w-0 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-xs"
-            value={url}
-            onChange={(event) => updateUrl(event.target.value)}
-            placeholder="URL de imagen"
-          />
-
           <div className="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center">
-            <input
-              className="min-w-0 flex-1 text-xs text-[var(--text-muted)] file:mr-3 file:rounded-full file:border-0 file:bg-[var(--surface)] file:px-3 file:py-2 file:text-xs file:font-medium file:text-[var(--text)]"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              disabled={isUploading}
-              onChange={(event) => handleFileSelection(event.target.files?.[0])}
-            />
+            <label className="focus-ring inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 text-xs font-medium text-[var(--text)] transition hover:shadow-panel">
+              <UploadIcon className="h-4 w-4" />
+              {url ? "Cambiar imagen" : "Seleccionar imagen"}
+              <input
+                className="sr-only"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                disabled={isUploading}
+                onChange={(event) => handleFileSelection(event.target.files?.[0])}
+              />
+            </label>
             {url ? (
               <Button type="button" variant="secondary" className="min-h-9 px-4" onClick={() => updateUrl("")}>
                 Quitar
@@ -160,8 +157,8 @@ export function ImageUploader({ name, label, defaultValue = "", storagePath, hin
             ) : null}
           </div>
 
-          <span className="text-xs text-[var(--text-muted)]">Tambien puedes pegar una URL si la imagen ya esta alojada.</span>
           {uploadedFileName ? <span className="truncate text-xs text-[var(--text-muted)]">Archivo: {uploadedFileName}</span> : null}
+          {!uploadedFileName && url ? <span className="text-xs text-[var(--text-muted)]">Imagen actual lista para usar.</span> : null}
         </div>
       </div>
 
@@ -276,4 +273,12 @@ function loadImage(src: string) {
     image.onerror = () => reject(new Error("No se pudo cargar la imagen."));
     image.src = src;
   });
+}
+
+function UploadIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 }

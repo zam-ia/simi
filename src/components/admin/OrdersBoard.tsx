@@ -396,6 +396,8 @@ function OrderInlineDetail({ item }: { item: EnrichedOrder }) {
         </div>
       </section>
 
+      <WhatsAppDeliverySummary order={order} />
+
       <section className="grid gap-3 rounded-[20px] border border-[var(--line)] p-4">
         <h4 className="text-sm font-medium">Productos</h4>
         <div className="grid gap-2">
@@ -620,6 +622,8 @@ function OrderDetailPanel({ item, surface, onClose }: { item: EnrichedOrder; sur
               ) : null}
             </section>
 
+            {surface === "orders" ? <WhatsAppDeliverySummary order={order} /> : null}
+
             <section className="grid gap-3 rounded-[var(--radius-panel)] border border-[var(--line)] p-4">
               <h3 className="text-sm font-medium">Productos</h3>
               <div className="grid gap-2">
@@ -762,6 +766,68 @@ function InfoTile({ label, value }: { label: string; value: string }) {
     <div className="rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-3">
       <p className="text-[11px] font-medium text-[var(--text-muted)]">{label}</p>
       <p className="mt-1 line-clamp-2 text-sm font-medium">{value}</p>
+    </div>
+  );
+}
+
+function WhatsAppDeliverySummary({ order }: { order: OrderWithDetails }) {
+  const notifications = order.whatsapp_notifications || [];
+  const customer = notifications.find((notification) => notification.recipient_type === "customer");
+  const business = notifications.find((notification) => notification.recipient_type === "business");
+
+  return (
+    <section className="grid gap-3 rounded-[20px] border border-[var(--line)] p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h4 className="text-sm font-medium">WhatsApp automático</h4>
+          <p className="mt-1 text-xs text-[var(--text-muted)]">Respaldo del aviso al cliente y al negocio.</p>
+        </div>
+        <span className="rounded-full bg-[#25D366]/12 px-3 py-1 text-xs font-medium text-[#128C4A] dark:text-[#6EE7A2]">Cloud API</span>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <WhatsAppDeliveryRow label="Cliente" notification={customer} emptyLabel={order.whatsapp_opt_in ? "Pendiente de configurar" : "No solicitado"} />
+        <WhatsAppDeliveryRow label="Negocio" notification={business} emptyLabel="Pendiente de configurar" />
+      </div>
+    </section>
+  );
+}
+
+function WhatsAppDeliveryRow({
+  label,
+  notification,
+  emptyLabel
+}: {
+  label: string;
+  notification?: NonNullable<OrderWithDetails["whatsapp_notifications"]>[number];
+  emptyLabel: string;
+}) {
+  const status = notification?.status;
+  const statusLabels = {
+    pending: "En cola",
+    processing: "Enviando",
+    sent: "Enviado",
+    delivered: "Entregado",
+    read: "Leído",
+    retry: "Reintentando",
+    failed: "Falló",
+    dead: "Revisión necesaria"
+  } as const;
+  const statusClass = status && ["failed", "dead"].includes(status)
+    ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-200"
+    : status === "retry"
+      ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-200"
+      : status && ["sent", "delivered", "read"].includes(status)
+        ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-200"
+        : "bg-[var(--surface-muted)] text-[var(--text-muted)]";
+
+  return (
+    <div className="grid gap-2 rounded-[14px] bg-[var(--surface-muted)] p-3 text-sm">
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-medium">{label}</span>
+        <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium", statusClass)}>{status ? statusLabels[status] : emptyLabel}</span>
+      </div>
+      {notification?.last_error ? <p className="line-clamp-2 text-xs text-red-600 dark:text-red-300">{notification.last_error}</p> : null}
+      {notification ? <p className="text-xs text-[var(--text-muted)]">Intentos: {notification.attempts}</p> : null}
     </div>
   );
 }

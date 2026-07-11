@@ -20,7 +20,8 @@ import type {
   Promotion,
   Reservation,
   ReservationEvent,
-  ReservationSettings
+  ReservationSettings,
+  WhatsAppNotification
 } from "@/types/menu";
 
 function normalizeItem(item: MenuItem): MenuItem {
@@ -164,15 +165,17 @@ export async function getAdminClientOrders(clientId?: string) {
 
   if (orderIds.length === 0) return [];
 
-  const [{ data: items }, { data: proofs }, { data: events }] = await Promise.all([
+  const [{ data: items }, { data: proofs }, { data: events }, outboxResult] = await Promise.all([
     supabase.from("order_items").select("*").in("order_id", orderIds),
     supabase.from("payment_proofs").select("*").in("order_id", orderIds).order("created_at", { ascending: false }),
-    supabase.from("order_status_events").select("*").in("order_id", orderIds).order("created_at", { ascending: false })
+    supabase.from("order_status_events").select("*").in("order_id", orderIds).order("created_at", { ascending: false }),
+    supabase.from("notification_outbox").select("id,client_id,order_id,recipient_type,recipient_phone,template_name,status,attempts,last_error,created_at,sent_at,delivered_at,read_at").in("order_id", orderIds).order("created_at", { ascending: false })
   ]);
 
   const orderItems = (items || []) as CustomerOrderItem[];
   const paymentProofs = (proofs || []) as PaymentProof[];
   const statusEvents = (events || []) as OrderStatusEvent[];
+  const whatsappNotifications = outboxResult.error && isMissingTableError(outboxResult.error) ? [] : (outboxResult.data || []) as WhatsAppNotification[];
 
   return orderRows.map((order) => ({
     ...order,
@@ -181,7 +184,8 @@ export async function getAdminClientOrders(clientId?: string) {
     total: Number(order.total),
     items: orderItems.filter((item) => item.order_id === order.id).map((item) => ({ ...item, unit_price: Number(item.unit_price), subtotal: Number(item.subtotal) })),
     payment_proofs: paymentProofs.filter((proof) => proof.order_id === order.id),
-    status_events: statusEvents.filter((event) => event.order_id === order.id)
+    status_events: statusEvents.filter((event) => event.order_id === order.id),
+    whatsapp_notifications: whatsappNotifications.filter((notification) => notification.order_id === order.id)
   }));
 }
 

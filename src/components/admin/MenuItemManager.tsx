@@ -1,8 +1,9 @@
 import { DeleteButton } from "@/components/admin/DeleteButton";
 import { ImageUploader } from "@/components/admin/ImageUploader";
+import { MenuItemCreateForm } from "@/components/admin/MenuItemCreateForm";
 import { Button } from "@/components/shared/Button";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { createMenuItemAction, deleteMenuItemAction, updateMenuItemAction } from "@/lib/actions";
+import { deleteMenuItemAction, updateMenuItemAction } from "@/lib/actions";
 import { formatPrice } from "@/lib/utils";
 import type { CategoryWithItems, MenuCategory } from "@/types/menu";
 import type { ReactNode } from "react";
@@ -36,7 +37,6 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 
 export function MenuItemManager({ clientId, categories }: MenuItemManagerProps) {
   const flatCategories = categories.map(({ items: _items, ...category }) => category);
-  const createAction = createMenuItemAction.bind(null, clientId);
 
   return (
     <section className="grid gap-5 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
@@ -49,44 +49,7 @@ export function MenuItemManager({ clientId, categories }: MenuItemManagerProps) 
         <EmptyState title="Este negocio aun no tiene categorias." description="Primero crea una categoria para poder agregar productos." />
       ) : (
         <div className="grid gap-5">
-          <form action={createAction} className="grid gap-3 rounded-[var(--radius-panel)] border border-dashed border-[var(--line)] bg-[var(--surface-muted)] p-4">
-            <h3 className="text-base font-medium">Agregar producto</h3>
-            <div className="grid gap-3 md:grid-cols-[1.2fr_1fr_120px_auto] md:items-end">
-              <Field label="Nombre">
-                <input className="focus-ring min-h-10 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" name="name" required />
-              </Field>
-              <Field label="Categoria">
-                <CategorySelect categories={flatCategories} />
-              </Field>
-              <Field label="Precio">
-                <input className="focus-ring min-h-10 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" name="price" type="number" step="0.01" min="0" required />
-              </Field>
-              <Button type="submit">Agregar</Button>
-            </div>
-            <details className="border-t border-[var(--line)] pt-3">
-              <summary className="cursor-pointer text-sm font-medium">Mas opciones</summary>
-              <div className="mt-3 grid gap-3 md:grid-cols-2">
-                <Field label="Descripcion">
-                  <textarea className="focus-ring min-h-20 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3 py-2" name="description" />
-                </Field>
-                <Field label="Orden">
-                  <input className="focus-ring min-h-10 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" name="display_order" type="number" defaultValue={1} />
-                </Field>
-                <div className="md:col-span-2">
-                  <ImageUploader
-                    name="image_url"
-                    label="Imagen del producto"
-                    storagePath={`clients/${clientId}/items`}
-                    hint="Ideal: JPG o WebP cuadrado. Tamano recomendado: 900 x 900 px. Usa fondo claro y el plato centrado. Maximo 2 MB."
-                  />
-                </div>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" name="is_available" defaultChecked />
-                  Disponible
-                </label>
-              </div>
-            </details>
-          </form>
+          <MenuItemCreateForm clientId={clientId} categories={flatCategories} />
 
           {categories.map((category) => (
             <div key={category.id} className="grid gap-3">

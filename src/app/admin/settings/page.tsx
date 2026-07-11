@@ -39,7 +39,7 @@ export default async function AdminSettingsPage({ searchParams }: { searchParams
         <p className="text-sm text-[var(--text-muted)]">Configuracion del negocio</p>
         <h2 className="mt-2 text-2xl font-medium">{client.name}</h2>
         <p className="mt-2 text-sm text-[var(--text-muted)]">
-          Define a que WhatsApp llegaran los pedidos cuando el cliente toque el boton de enviar por WhatsApp.
+          Define el WhatsApp que recibirá automáticamente una copia de cada pedido nuevo. El botón manual seguirá disponible como respaldo.
         </p>
       </section>
 
@@ -52,7 +52,7 @@ export default async function AdminSettingsPage({ searchParams }: { searchParams
           name="notification_whatsapp_number"
           defaultValue={client.notification_whatsapp_number || ""}
           placeholder="+51 999 888 777"
-          hint={`Si lo dejas vacio, SIMI usara el WhatsApp publico: ${client.whatsapp_number}.`}
+          hint={`Si lo dejas vacío, SIMI usará el WhatsApp público: ${client.whatsapp_number}.`}
         />
 
         <div className="flex flex-wrap justify-end gap-3">

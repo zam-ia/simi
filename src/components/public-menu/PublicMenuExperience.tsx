@@ -57,6 +57,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
   const [selectedTableId, setSelectedTableId] = useState(initialTable?.id || "");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [whatsappOptIn, setWhatsappOptIn] = useState(false);
   const [pickupTime, setPickupTime] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [deliveryReference, setDeliveryReference] = useState("");
@@ -72,6 +73,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [lastAdded, setLastAdded] = useState<string | null>(null);
+  const idempotencyKeyRef = useRef("");
 
   const flatItems = useMemo(() => categories.flatMap((category) => category.items), [categories]);
   const promoItem = useMemo(() => flatItems.find((item) => item.id === client.promo_banner_item_id) || null, [client.promo_banner_item_id, flatItems]);
@@ -114,14 +116,8 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
       .slice(0, 4);
   }, [flatItems]);
   const quickFilters = useMemo(
-    () => [
-      { label: "Promos", query: "combo" },
-      { label: "Chaufas", query: "chaufa" },
-      { label: "Pollo", query: "pollo" },
-      { label: "Chifa", query: "chaufa" },
-      { label: "Broaster", query: "broaster" }
-    ],
-    []
+    () => categories.filter((category) => category.items.length > 0).slice(0, 5).map((category) => ({ label: category.name, query: category.name })),
+    [categories]
   );
   const searchSuggestions = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -222,12 +218,28 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
 
   async function createOrder() {
     setMessage("");
+    const normalizedPhone = customerPhone.replace(/\D/g, "");
+
+    if (orderType !== "dine_in" && !/^(51)?9\d{8}$/.test(normalizedPhone)) {
+      setMessage("Ingresa un WhatsApp válido de Perú para confirmar el pedido.");
+      return;
+    }
+
+    if (whatsappOptIn && !/^(51)?9\d{8}$/.test(normalizedPhone)) {
+      setMessage("Ingresa un WhatsApp válido para recibir actualizaciones automáticas.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
+      if (!idempotencyKeyRef.current) idempotencyKeyRef.current = crypto.randomUUID();
       const response = await fetch("/api/public/orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKeyRef.current
+        },
         body: JSON.stringify({
           clientId: client.id,
           orderType,
@@ -235,6 +247,8 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
           tableLabel: orderType === "dine_in" ? selectedTable?.label || initialTableNumber || "" : null,
           customerName,
           customerPhone,
+          whatsappOptIn,
+          whatsappOptInSource: "public_checkout",
           pickupTime,
           deliveryAddress,
           deliveryReference,
@@ -250,6 +264,13 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
       setCreatedOrder(data.order);
       setWhatsappUrl(data.whatsappUrl);
       setStatusUrl(data.statusUrl || `/pedido/${data.order.id}`);
+      if (data.notifications?.customer === "queued") {
+        setMessage("Pedido registrado. La confirmación por WhatsApp quedó en cola.");
+      } else if (data.notificationMode === "manual_fallback") {
+        setMessage("Pedido registrado. Puedes usar el botón de WhatsApp como respaldo mientras se activa el envío automático.");
+      } else {
+        setMessage("Pedido registrado correctamente.");
+      }
       setStep("payment");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No se pudo crear el pedido.");
@@ -516,12 +537,30 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
               <input className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Carlos" />
             </label>
 
-            {orderType !== "dine_in" ? (
-              <label className="grid gap-2 text-sm">
-                <span className="font-medium">Teléfono</span>
-                <input className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" value={customerPhone} onChange={(event) => setCustomerPhone(event.target.value)} placeholder="+51 999 999 999" />
-              </label>
-            ) : null}
+            <label className="grid gap-2 text-sm">
+              <span className="font-medium">WhatsApp {orderType === "dine_in" ? <span className="font-normal text-[var(--text-muted)]">(opcional)</span> : null}</span>
+              <input
+                className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3"
+                value={customerPhone}
+                onChange={(event) => setCustomerPhone(event.target.value)}
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="999 999 999"
+              />
+            </label>
+
+            <label className="flex items-start gap-3 rounded-[18px] border border-[var(--line)] bg-[var(--surface-muted)] p-3 text-sm">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
+                checked={whatsappOptIn}
+                onChange={(event) => setWhatsappOptIn(event.target.checked)}
+              />
+              <span>
+                <span className="block font-medium">Recibir confirmación por WhatsApp</span>
+                <span className="mt-1 block text-xs leading-5 text-[var(--text-muted)]">Acepto recibir la confirmación y los cambios importantes de este pedido. No se usarán para publicidad.</span>
+              </span>
+            </label>
 
             {orderType === "pickup" ? (
               <label className="grid gap-2 text-sm">

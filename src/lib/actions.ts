@@ -227,6 +227,25 @@ export async function createMenuItemAction(clientId: string, formData: FormData)
   redirect(`/admin/clients/${clientId}?saved=item`);
 }
 
+export async function createMenuItemInlineAction(clientId: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "menu");
+  requireClientAccess(context, clientId);
+  const { supabase } = context;
+  formData.set("client_id", clientId);
+  const validation = validateMenuItemInput(formData);
+
+  if (validation.error || !validation.data) {
+    return { ok: false as const, error: validation.error || "Datos inválidos." };
+  }
+
+  const { data, error } = await supabase.from("menu_items").insert(validation.data).select("id").single();
+  if (error || !data) return { ok: false as const, error: "No se pudo guardar el producto." };
+
+  await revalidateClientSurfaces(supabase, clientId);
+  return { ok: true as const, itemId: data.id, message: "Producto agregado. La carta y la galería ya están actualizadas." };
+}
+
 export async function updateMenuItemAction(clientId: string, itemId: string, formData: FormData) {
   const context = await requireAdmin();
   requireModuleAccess(context, "menu");
