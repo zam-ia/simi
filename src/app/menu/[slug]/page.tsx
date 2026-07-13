@@ -26,21 +26,31 @@ export async function generateMetadata({ params }: MenuPageProps): Promise<Metad
 
   const title = `Menu de ${menu.client.name}`;
   const description = `Mira la carta digital de ${menu.client.name}`;
-  const previewImage = menu.client.hero_banner_image_url || menu.client.promo_banner_image_url || menu.client.logo_url || defaultSocialPreview;
+  const hasBusinessLogo = Boolean(menu.client.logo_url?.trim());
+  const previewImage = menu.client.logo_url?.trim() || defaultSocialPreview;
+  const canonicalUrl = getPublicMenuUrl(menu.client.slug);
 
   return {
     title,
     description,
+    alternates: {
+      canonical: canonicalUrl
+    },
     openGraph: {
       title,
       description,
-      url: getPublicMenuUrl(menu.client.slug),
+      url: canonicalUrl,
       siteName: "SIMI",
       type: "website",
-      images: [{ url: previewImage, alt: title }]
+      images: [{
+        url: previewImage,
+        width: hasBusinessLogo ? 900 : 1200,
+        height: hasBusinessLogo ? 900 : 630,
+        alt: hasBusinessLogo ? `Logo de ${menu.client.name}` : "SIMI - Carta digital, pedidos y reservas"
+      }]
     },
     twitter: {
-      card: "summary_large_image",
+      card: hasBusinessLogo ? "summary" : "summary_large_image",
       title,
       description,
       images: [previewImage]
