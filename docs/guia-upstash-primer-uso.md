@@ -18,7 +18,7 @@ Al terminar:
 3. Pulsa **Create Database** o **+ Create Database**.
 4. En **Database Name** escribe `simi-rate-limit-production`.
 5. Elige una base **Regional**.
-6. En **Primary Region** elige `N. Virginia / us-east-1` mientras Vercel siga usando su region predeterminada de Estados Unidos. Si mas adelante SIMI cambia de region, se revisa esta eleccion.
+6. En **Primary Region** elige `South America / Sao Paulo / sa-east-1` si aparece disponible, porque es la opcion mas cercana para los usuarios de Peru y el borde de Vercel. Si tu plan no la ofrece, usa `N. Virginia / us-east-1`.
 7. Para comenzar, selecciona el plan gratuito o de pago por uso disponible. No actives complementos costosos todavia.
 8. Mantén las opciones de seguridad predeterminadas y crea la base.
 
