@@ -17,7 +17,7 @@ export function CategoryManager({ clientId, categories }: CategoryManagerProps) 
     <section className="grid gap-4 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
       <div>
         <h2 className="text-lg font-medium">Categorias</h2>
-        <p className="mt-1 text-sm text-[var(--text-muted)]">Organiza el menu en tarjetas. La imagen se usa en "Explora por antojo" cuando Supabase tenga la migracion 012.</p>
+        <p className="mt-1 text-sm text-[var(--text-muted)]">Organiza el catalogo en tarjetas. Cada imagen funciona como acceso visual en la carta publica.</p>
       </div>
 
       {categories.length === 0 ? (
@@ -69,7 +69,7 @@ export function CategoryManager({ clientId, categories }: CategoryManagerProps) 
                         label="Imagen de categoria"
                         defaultValue={category.image_url}
                         storagePath={`clients/${clientId}/categories`}
-                        hint="Opcional. Se vera en Explora por antojo. Ideal cuadrada o con el plato centrado."
+                        hint="Opcional. Se vera en Explora las categorias. Ideal cuadrada y con el producto o servicio centrado."
                       />
                       <Button type="submit" variant="secondary">
                         Guardar categoria

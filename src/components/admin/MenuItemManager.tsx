@@ -1,12 +1,14 @@
+"use client";
+
 import { DeleteButton } from "@/components/admin/DeleteButton";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { MenuItemCreateForm } from "@/components/admin/MenuItemCreateForm";
 import { Button } from "@/components/shared/Button";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { deleteMenuItemAction, updateMenuItemAction } from "@/lib/actions";
+import { deleteMenuItemAction, updateMenuItemInlineAction } from "@/lib/actions";
 import { formatPrice } from "@/lib/utils";
-import type { CategoryWithItems, MenuCategory } from "@/types/menu";
-import type { ReactNode } from "react";
+import type { CategoryWithItems, MenuCategory, MenuItem } from "@/types/menu";
+import { useEffect, useState, useTransition, type FormEvent, type ReactNode } from "react";
 
 type MenuItemManagerProps = {
   clientId: string;
@@ -36,7 +38,54 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 }
 
 export function MenuItemManager({ clientId, categories }: MenuItemManagerProps) {
-  const flatCategories = categories.map(({ items: _items, ...category }) => category);
+  const [visibleCategories, setVisibleCategories] = useState(categories);
+  const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
+  const [feedbackByItem, setFeedbackByItem] = useState<Record<string, { tone: "success" | "error"; message: string }>>({});
+  const [isPending, startTransition] = useTransition();
+  const flatCategories = visibleCategories.map(({ items: _items, ...category }) => category);
+
+  useEffect(() => {
+    setVisibleCategories(categories);
+  }, [categories]);
+
+  function sortItems(items: MenuItem[]) {
+    return [...items].sort((first, second) => first.display_order - second.display_order || first.name.localeCompare(second.name, "es"));
+  }
+
+  function addCreatedItem(item: MenuItem) {
+    setVisibleCategories((current) => current.map((category) => (
+      category.id === item.category_id ? { ...category, items: sortItems([...category.items, item]) } : category
+    )));
+  }
+
+  function updateItem(event: FormEvent<HTMLFormElement>, itemId: string) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    setUpdatingItemId(itemId);
+    setFeedbackByItem((current) => {
+      const next = { ...current };
+      delete next[itemId];
+      return next;
+    });
+
+    startTransition(() => {
+      void updateMenuItemInlineAction(clientId, itemId, formData).then((result) => {
+        if (!result.ok) {
+          setFeedbackByItem((current) => ({ ...current, [itemId]: { tone: "error", message: result.error } }));
+          setUpdatingItemId(null);
+          return;
+        }
+
+        setVisibleCategories((current) => current.map((category) => {
+          const remainingItems = category.items.filter((item) => item.id !== itemId);
+          if (category.id !== result.item.category_id) return { ...category, items: remainingItems };
+          return { ...category, items: sortItems([...remainingItems, result.item]) };
+        }));
+        setFeedbackByItem((current) => ({ ...current, [itemId]: { tone: "success", message: result.message } }));
+        setUpdatingItemId(null);
+      });
+    });
+  }
 
   return (
     <section className="grid gap-5 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
@@ -45,13 +94,13 @@ export function MenuItemManager({ clientId, categories }: MenuItemManagerProps) 
         <p className="mt-1 text-sm text-[var(--text-muted)]">Vista tipo galeria para revisar mas articulos sin bajar tanto.</p>
       </div>
 
-      {categories.length === 0 ? (
+      {visibleCategories.length === 0 ? (
         <EmptyState title="Este negocio aun no tiene categorias." description="Primero crea una categoria para poder agregar productos." />
       ) : (
         <div className="grid gap-5">
-          <MenuItemCreateForm clientId={clientId} categories={flatCategories} />
+          <MenuItemCreateForm clientId={clientId} categories={flatCategories} onCreated={addCreatedItem} />
 
-          {categories.map((category) => (
+          {visibleCategories.map((category) => (
             <div key={category.id} className="grid gap-3">
               <div className="flex items-end justify-between gap-3">
                 <h3 className="text-base font-medium">{category.name}</h3>
@@ -63,7 +112,6 @@ export function MenuItemManager({ clientId, categories }: MenuItemManagerProps) 
               ) : (
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {category.items.map((item) => {
-                    const updateAction = updateMenuItemAction.bind(null, clientId, item.id);
                     const deleteAction = deleteMenuItemAction.bind(null, clientId, item.id);
 
                     return (
@@ -89,7 +137,7 @@ export function MenuItemManager({ clientId, categories }: MenuItemManagerProps) 
 
                           <details className="mt-auto border-t border-[var(--line)] pt-3">
                             <summary className="cursor-pointer text-sm font-medium">Editar producto</summary>
-                            <form action={updateAction} className="mt-3 grid gap-3">
+                            <form onSubmit={(event) => updateItem(event, item.id)} className="mt-3 grid gap-3">
                               <Field label="Producto">
                                 <input className="focus-ring min-h-10 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" name="name" defaultValue={item.name} required />
                               </Field>
@@ -112,17 +160,22 @@ export function MenuItemManager({ clientId, categories }: MenuItemManagerProps) 
                                 label={`Imagen de ${item.name}`}
                                 defaultValue={item.image_url}
                                 storagePath={`clients/${clientId}/items`}
-                                hint="Ideal: JPG o WebP cuadrado. Tamano recomendado: 900 x 900 px. Usa fondo claro y el plato centrado. Maximo 2 MB."
+                                hint="Ideal: JPG o WebP cuadrado. Tamano recomendado: 900 x 900 px, con el producto o servicio centrado. Maximo 2 MB."
                               />
                               <div className="flex flex-wrap items-center justify-between gap-3">
                                 <label className="flex items-center gap-2 text-sm">
                                   <input type="checkbox" name="is_available" defaultChecked={item.is_available} />
                                   Disponible
                                 </label>
-                                <Button type="submit" variant="secondary">
-                                  Guardar
+                                <Button type="submit" variant="secondary" disabled={isPending && updatingItemId === item.id}>
+                                  {isPending && updatingItemId === item.id ? "Guardando..." : "Guardar"}
                                 </Button>
                               </div>
+                              {feedbackByItem[item.id] ? (
+                                <p className={`rounded-[var(--radius-input)] px-3 py-2 text-xs ${feedbackByItem[item.id].tone === "success" ? "bg-green-50 text-green-700 dark:bg-green-950/35 dark:text-green-200" : "bg-red-50 text-red-700 dark:bg-red-950/35 dark:text-red-200"}`}>
+                                  {feedbackByItem[item.id].message}
+                                </p>
+                              ) : null}
                             </form>
                             <form action={deleteAction} className="mt-3 flex justify-end">
                               <DeleteButton message="Eliminar este producto?" />

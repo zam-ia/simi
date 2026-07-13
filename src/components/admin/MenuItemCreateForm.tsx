@@ -1,19 +1,18 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { Button } from "@/components/shared/Button";
 import { createMenuItemInlineAction } from "@/lib/actions";
-import type { MenuCategory } from "@/types/menu";
+import type { MenuCategory, MenuItem } from "@/types/menu";
 
 type MenuItemCreateFormProps = {
   clientId: string;
   categories: MenuCategory[];
+  onCreated: (item: MenuItem) => void;
 };
 
-export function MenuItemCreateForm({ clientId, categories }: MenuItemCreateFormProps) {
-  const router = useRouter();
+export function MenuItemCreateForm({ clientId, categories, onCreated }: MenuItemCreateFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [isPending, startTransition] = useTransition();
   const [formVersion, setFormVersion] = useState(0);
@@ -35,7 +34,7 @@ export function MenuItemCreateForm({ clientId, categories }: MenuItemCreateFormP
         formRef.current?.reset();
         setFormVersion((current) => current + 1);
         setFeedback({ tone: "success", message: result.message });
-        router.refresh();
+        onCreated(result.item);
       });
     });
   }

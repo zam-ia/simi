@@ -1,10 +1,14 @@
+"use client";
+
 import { BrandColorPicker } from "@/components/admin/BrandColorPicker";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { Button, LinkButton } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { businessTypeOptions } from "@/constants/commercial";
+import { updateClientInlineAction } from "@/lib/actions";
 import { formatPrice } from "@/lib/utils";
-import type { Client, MenuItem } from "@/types/menu";
+import type { BusinessType, Client, MenuItem } from "@/types/menu";
+import { useState, useTransition, type FormEvent } from "react";
 
 type ClientFormProps = {
   client?: Client;
@@ -16,10 +20,32 @@ type ClientFormProps = {
 export function ClientForm({ client, action, error, promoItems = [] }: ClientFormProps) {
   const storageBase = client ? `clients/${client.id}` : "clients/pending";
   const hasSecondaryColor = Boolean(client?.secondary_color);
+  const [businessType, setBusinessType] = useState<BusinessType>(client?.business_type || "restaurant");
+  const [businessName, setBusinessName] = useState(client?.name || "");
+  const [feedback, setFeedback] = useState<{ tone: "success" | "error"; message: string } | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  function submitExistingClient(event: FormEvent<HTMLFormElement>) {
+    if (!client) return;
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    setFeedback(null);
+
+    startTransition(() => {
+      void updateClientInlineAction(client.id, formData).then((result) => {
+        setFeedback(result.ok ? { tone: "success", message: result.message } : { tone: "error", message: result.error });
+      });
+    });
+  }
 
   return (
-    <form action={action} className="grid gap-5">
+    <form action={client ? undefined : action} onSubmit={client ? submitExistingClient : undefined} className="grid gap-5">
       {error ? <div className="rounded-[var(--radius-card)] bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/35 dark:text-red-200">{error}</div> : null}
+      {feedback ? (
+        <div aria-live="polite" className={`rounded-[var(--radius-card)] p-3 text-sm ${feedback.tone === "success" ? "bg-green-50 text-green-700 dark:bg-green-950/35 dark:text-green-200" : "bg-red-50 text-red-700 dark:bg-red-950/35 dark:text-red-200"}`}>
+          {feedback.message}
+        </div>
+      ) : null}
 
       <section className="grid gap-4 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
         <div>
@@ -27,13 +53,14 @@ export function ClientForm({ client, action, error, promoItems = [] }: ClientFor
           <p className="mt-1 text-sm text-[var(--text-muted)]">Lo básico para identificar la carta y recibir pedidos.</p>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
-          <Input label="Nombre del negocio" name="name" required defaultValue={client?.name} placeholder="Pollería El Sabor" />
-          <Input label="Slug del enlace" name="slug" required defaultValue={client?.slug} placeholder="polleria-el-sabor" hint="Este enlace se imprime en el QR. Evita cambiarlo después." />
+          <Input label="Nombre del negocio" name="name" required value={businessName} onChange={(event) => setBusinessName(event.target.value)} placeholder="Mi negocio" />
+          <Input label="Slug del enlace" name="slug" required defaultValue={client?.slug} placeholder="mi-negocio" hint="Este enlace se imprime en el QR. Evita cambiarlo después." />
           <label className="grid gap-2 text-sm">
             <span className="font-medium text-[var(--text)]">Rubro del negocio</span>
             <select
               name="business_type"
-              defaultValue={client?.business_type || "restaurant"}
+              value={businessType}
+              onChange={(event) => setBusinessType(event.target.value as BusinessType)}
               className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3"
             >
               {businessTypeOptions.map(([value, label]) => (
@@ -64,8 +91,8 @@ export function ClientForm({ client, action, error, promoItems = [] }: ClientFor
           initialPrimary={client?.primary_color || "#2463EB"}
           initialSecondary={client?.secondary_color || "#F06449"}
           initialUseSecondary={hasSecondaryColor}
-          businessType={client?.business_type || "restaurant"}
-          businessName={client?.name || "Tu negocio"}
+          businessType={businessType}
+          businessName={businessName || "Tu negocio"}
         />
         <div className="grid min-w-0 gap-4 xl:grid-cols-2">
           <ImageUploader
@@ -89,7 +116,7 @@ export function ClientForm({ client, action, error, promoItems = [] }: ClientFor
           defaultValue={client?.hero_banner_image_url}
           storagePath={`${storageBase}/hero`}
           preview="wide"
-          hint="Imagen para la parte superior del menu, estilo portada de app. Ideal: comida o ambiente del negocio, horizontal 1400 x 700 px. Maximo 2 MB."
+          hint="Imagen para la parte superior de la carta, estilo portada de app. Ideal: producto, servicio o ambiente del negocio, horizontal 1400 x 700 px. Maximo 2 MB."
         />
       </section>
 
@@ -103,8 +130,8 @@ export function ClientForm({ client, action, error, promoItems = [] }: ClientFor
           <span>Mostrar banner promocional</span>
         </label>
         <div className="grid gap-4 md:grid-cols-2">
-          <Input label="Título del banner" name="promo_banner_title" defaultValue={client?.promo_banner_title || ""} placeholder="Combo familiar de la semana" />
-          <Input label="Texto corto" name="promo_banner_description" defaultValue={client?.promo_banner_description || ""} placeholder="Pollo entero + papas + gaseosa" />
+          <Input label="Título del banner" name="promo_banner_title" defaultValue={client?.promo_banner_title || ""} placeholder="Producto destacado de la semana" />
+          <Input label="Texto corto" name="promo_banner_description" defaultValue={client?.promo_banner_description || ""} placeholder="Disponible por tiempo limitado" />
         </div>
         <label className="grid gap-2 text-sm">
           <span className="font-medium text-[var(--text)]">Producto para el boton "Lo quiero"</span>
@@ -134,7 +161,7 @@ export function ClientForm({ client, action, error, promoItems = [] }: ClientFor
           <LinkButton href="/admin" variant="secondary">
             Volver
           </LinkButton>
-          <Button type="submit">{client ? "Guardar cambios" : "Crear cliente"}</Button>
+          <Button type="submit" disabled={isPending}>{isPending ? "Guardando..." : client ? "Guardar cambios" : "Crear cliente"}</Button>
         </div>
       </div>
     </form>

@@ -105,20 +105,14 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
   const fastestDelivery = deliveryZones.find((zone) => zone.estimated_time)?.estimated_time || "20-35 min";
   const lowestDeliveryFee = deliveryZones.length ? Math.min(...deliveryZones.map((zone) => Number(zone.delivery_fee || 0))) : 0;
   const recommendedItems = useMemo(() => {
-    const priorityWords = ["combo", "pollo", "chaufa", "broaster", "familiar", "oferta"];
     return flatItems
       .filter((item) => item.is_available)
       .sort((first, second) => {
-        const firstScore = priorityWords.filter((word) => `${first.name} ${first.description || ""}`.toLowerCase().includes(word)).length;
-        const secondScore = priorityWords.filter((word) => `${second.name} ${second.description || ""}`.toLowerCase().includes(word)).length;
-        return secondScore - firstScore || Number(first.price) - Number(second.price);
+        const imagePriority = Number(Boolean(second.image_url)) - Number(Boolean(first.image_url));
+        return imagePriority || first.display_order - second.display_order || first.name.localeCompare(second.name, "es");
       })
       .slice(0, 4);
   }, [flatItems]);
-  const quickFilters = useMemo(
-    () => categories.filter((category) => category.items.length > 0).slice(0, 5).map((category) => ({ label: category.name, query: category.name })),
-    [categories]
-  );
   const searchSuggestions = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     if (query.length < 2) return [];
@@ -194,11 +188,6 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
   function focusSearch() {
     scrollToId("menu-content");
     window.setTimeout(() => searchInputRef.current?.focus(), 120);
-  }
-
-  function applyQuickFilter(query: string) {
-    setSearchQuery(query);
-    scrollToId("menu-results");
   }
 
   function goToCategory(categoryId: string) {
@@ -354,31 +343,19 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
                       ))}
                     </div>
                   ) : (
-                    <div className="rounded-[16px] bg-[var(--surface-muted)] px-3 py-3 text-sm text-[var(--text-muted)]">No encontramos platos con esa palabra.</div>
+                    <div className="rounded-[16px] bg-[var(--surface-muted)] px-3 py-3 text-sm text-[var(--text-muted)]">No encontramos productos con esa palabra.</div>
                   )}
                 </div>
               ) : null}
-            </div>
-            <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {quickFilters.map((filter) => (
-                <button
-                  key={filter.label}
-                  type="button"
-                  className="shrink-0 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-xs font-medium text-[var(--text)] shadow-panel transition hover:bg-[var(--accent-soft)] hover:text-[var(--accent-strong)]"
-                  onClick={() => applyQuickFilter(filter.query)}
-                >
-                  {filter.label}
-                </button>
-              ))}
             </div>
           </section> : null}
 
           {step === "menu" ? <QuickTrustInfo client={client} deliveryZones={deliveryZones} paymentMethods={paymentMethods} fastestDelivery={fastestDelivery} /> : null}
 
           {step === "menu" && featuredCategories.length > 0 ? (
-            <section className="grid min-w-0 max-w-full grid-cols-1 gap-3">
+            <section id="category-navigation" className="grid min-w-0 max-w-full grid-cols-1 gap-3 scroll-mt-24">
               <div className="flex items-center justify-between gap-3 px-1">
-                <h2 className="text-lg font-medium">Explora por antojo</h2>
+                <h2 className="text-lg font-medium">Explora las categorias</h2>
                 {searchQuery ? <button type="button" className="text-sm font-medium text-[var(--accent)]" onClick={() => setSearchQuery("")}>Limpiar</button> : null}
               </div>
               <div className="flex min-w-0 max-w-full gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -405,8 +382,8 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
           <section id="recommended" className="grid min-w-0 max-w-full grid-cols-1 gap-3">
             <div className="flex items-center justify-between gap-3 px-1">
               <div>
-                <h2 className="text-lg font-medium">Mas pedidos para decidir rapido</h2>
-                <p className="mt-1 text-sm text-[var(--text-muted)]">Opciones fuertes para quien quiere resolver en pocos taps.</p>
+                <h2 className="text-lg font-medium">Productos destacados</h2>
+                <p className="mt-1 text-sm text-[var(--text-muted)]">Una seleccion disponible para encontrar opciones rapidamente.</p>
               </div>
             </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -683,7 +660,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
               </div>
             </div>
           ) : (
-            <div className="rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-4 text-sm leading-5 text-[var(--text-muted)]">Agrega platos desde la carta o consulta directamente por WhatsApp.</div>
+            <div className="rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-4 text-sm leading-5 text-[var(--text-muted)]">Agrega productos desde la carta o consulta directamente por WhatsApp.</div>
           )}
 
           {cart.length > 0 ? (
@@ -727,7 +704,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
         <nav className="fixed inset-x-0 bottom-0 z-40 grid h-[68px] grid-cols-5 border-t border-[var(--line)] bg-[var(--surface)]/96 px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(0,0,0,0.06)] backdrop-blur-xl lg:hidden" aria-label="Navegacion de carta">
           <MobileNavButton label="Inicio" icon="home" onClick={() => scrollToId("menu-content")} />
           <MobileNavButton label="Buscar" icon="search" onClick={focusSearch} />
-          <MobileNavButton label="Promos" icon="tag" onClick={() => scrollToId("promotions")} />
+          <MobileNavButton label="Categorias" icon="tag" onClick={() => scrollToId("category-navigation")} />
           <MobileNavButton label="Pedido" icon="cart" onClick={() => (cart.length > 0 ? openCheckout() : scrollToId("recommended"))} badge={itemCount || undefined} />
           <MobileNavButton label="Info" icon="info" onClick={() => scrollToId("quick-info")} />
         </nav>
@@ -860,12 +837,13 @@ function SearchIcon({ className }: { className?: string }) {
 }
 
 function getCategoryIcon(name: string) {
-  const value = name.toLowerCase();
-  if (value.includes("pollo") || value.includes("brasa")) return "PL";
-  if (value.includes("combo") || value.includes("promo")) return "%";
-  if (value.includes("bebida") || value.includes("gaseosa")) return "B";
-  if (value.includes("postre") || value.includes("dulce")) return "*";
-  if (value.includes("entrada") || value.includes("piqueo")) return "+";
-  if (value.includes("menu")) return "M";
-  return "D";
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word.charAt(0).toUpperCase())
+    .join("");
+
+  return initials || "C";
 }

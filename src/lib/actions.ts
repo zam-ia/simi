@@ -133,6 +133,36 @@ export async function updateClientAction(clientId: string, formData: FormData) {
   redirect(`/admin/clients/${clientId}?saved=client`);
 }
 
+export async function updateClientInlineAction(clientId: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "menu");
+  requireClientAccess(context, clientId);
+  const { supabase } = context;
+  const validation = validateClientInput(formData);
+
+  if (validation.error || !validation.data) {
+    return { ok: false as const, error: validation.error || "Datos invalidos." };
+  }
+
+  const { data: existing } = await supabase.from("clients").select("id").eq("slug", validation.data.slug).neq("id", clientId).maybeSingle();
+  if (existing) return { ok: false as const, error: "Este slug ya esta en uso." };
+
+  const { data: currentClient } = await supabase.from("clients").select("slug").eq("id", clientId).maybeSingle();
+  const { error } = await supabase.from("clients").update(validation.data).eq("id", clientId);
+
+  if (error && isMissingCommercialSettingsError(error)) return { ok: false as const, error: missingCommercialSettingsMessage() };
+  if (error && isMissingVisualSettingsError(error)) return { ok: false as const, error: missingVisualSettingsMessage() };
+  if (error) return { ok: false as const, error: "No se pudo guardar la informacion." };
+
+  await revalidateClientSurfaces(supabase, clientId, validation.data.slug);
+  if (currentClient?.slug && currentClient.slug !== validation.data.slug) {
+    revalidatePath(`/menu/${currentClient.slug}`);
+    revalidatePath(`/reservar/${currentClient.slug}`);
+  }
+
+  return { ok: true as const, message: "Cambios guardados. La carta publica ya fue actualizada." };
+}
+
 export async function deleteClientAction(clientId: string) {
   const context = await requireAdmin();
   requireSuperAdmin(context);
@@ -239,11 +269,49 @@ export async function createMenuItemInlineAction(clientId: string, formData: For
     return { ok: false as const, error: validation.error || "Datos inválidos." };
   }
 
-  const { data, error } = await supabase.from("menu_items").insert(validation.data).select("id").single();
+  const { data, error } = await supabase
+    .from("menu_items")
+    .insert(validation.data)
+    .select("id,client_id,category_id,name,description,price,image_url,is_available,display_order,created_at,updated_at")
+    .single();
   if (error || !data) return { ok: false as const, error: "No se pudo guardar el producto." };
 
   await revalidateClientSurfaces(supabase, clientId);
-  return { ok: true as const, itemId: data.id, message: "Producto agregado. La carta y la galería ya están actualizadas." };
+  return {
+    ok: true as const,
+    item: { ...data, price: Number(data.price) },
+    message: "Producto agregado. La carta y la galeria ya estan actualizadas."
+  };
+}
+
+export async function updateMenuItemInlineAction(clientId: string, itemId: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "menu");
+  requireClientAccess(context, clientId);
+  const { supabase } = context;
+  formData.set("client_id", clientId);
+  const validation = validateMenuItemInput(formData);
+
+  if (validation.error || !validation.data) {
+    return { ok: false as const, error: validation.error || "Datos invalidos." };
+  }
+
+  const { data, error } = await supabase
+    .from("menu_items")
+    .update(validation.data)
+    .eq("id", itemId)
+    .eq("client_id", clientId)
+    .select("id,client_id,category_id,name,description,price,image_url,is_available,display_order,created_at,updated_at")
+    .single();
+
+  if (error || !data) return { ok: false as const, error: "No se pudo actualizar el producto." };
+
+  await revalidateClientSurfaces(supabase, clientId);
+  return {
+    ok: true as const,
+    item: { ...data, price: Number(data.price) },
+    message: "Producto actualizado sin recargar la pagina."
+  };
 }
 
 export async function updateMenuItemAction(clientId: string, itemId: string, formData: FormData) {

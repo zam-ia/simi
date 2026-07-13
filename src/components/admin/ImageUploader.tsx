@@ -24,7 +24,6 @@ export function ImageUploader({ name, label, defaultValue = "", storagePath, hin
   const [url, setUrl] = useState(defaultValue || "");
   const [message, setMessage] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadedFileName, setUploadedFileName] = useState("");
   const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
   const [zoom, setZoom] = useState(1);
   const [offsetX, setOffsetX] = useState(0);
@@ -77,7 +76,6 @@ export function ImageUploader({ name, label, defaultValue = "", storagePath, hin
 
   async function uploadFile(file: File) {
     setIsUploading(true);
-    setUploadedFileName(file.name);
     setMessage("Subiendo imagen...");
 
     try {
@@ -130,18 +128,20 @@ export function ImageUploader({ name, label, defaultValue = "", storagePath, hin
 
       <input type="hidden" name={name} value={url} />
 
-      <div className="grid min-w-0 gap-3 rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--surface-muted)] p-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
+      <div className="grid min-w-0 gap-3 overflow-hidden rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--surface-muted)] p-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
         {url ? (
           <img alt={label} src={url} className={`${previewClass} shrink-0 rounded-[var(--radius-input)] object-cover`} />
         ) : (
-          <div className={`${previewClass} shrink-0 rounded-[var(--radius-input)] bg-[var(--surface)]`} />
+          <div className={`${previewClass} grid shrink-0 place-items-center rounded-[var(--radius-input)] bg-[var(--surface)] text-[var(--text-muted)]`}>
+            <UploadIcon className="h-5 w-5" />
+          </div>
         )}
 
         <div className="grid min-w-0 gap-2">
-          <div className="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center">
-            <label className="focus-ring inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 text-xs font-medium text-[var(--text)] transition hover:shadow-panel">
+          <div className="flex min-w-0 items-center gap-2">
+            <label className="focus-ring grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-[var(--text)] transition hover:shadow-panel" title={url ? "Cambiar imagen" : "Cargar imagen"} aria-label={url ? "Cambiar imagen" : "Cargar imagen"}>
               <UploadIcon className="h-4 w-4" />
-              {url ? "Cambiar imagen" : "Seleccionar imagen"}
+              <span className="sr-only">{url ? "Cambiar imagen" : "Cargar imagen"}</span>
               <input
                 className="sr-only"
                 type="file"
@@ -151,14 +151,12 @@ export function ImageUploader({ name, label, defaultValue = "", storagePath, hin
               />
             </label>
             {url ? (
-              <Button type="button" variant="secondary" className="min-h-9 px-4" onClick={() => updateUrl("")}>
-                Quitar
-              </Button>
+              <button type="button" className="focus-ring grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-[var(--text-muted)] transition hover:text-red-600 hover:shadow-panel" onClick={() => updateUrl("")} title="Quitar imagen" aria-label="Quitar imagen">
+                <CloseIcon className="h-4 w-4" />
+              </button>
             ) : null}
+            <span className="min-w-0 truncate text-xs text-[var(--text-muted)]">{url ? "Imagen lista" : "Cargar imagen"}</span>
           </div>
-
-          {uploadedFileName ? <span className="truncate text-xs text-[var(--text-muted)]">Archivo: {uploadedFileName}</span> : null}
-          {!uploadedFileName && url ? <span className="text-xs text-[var(--text-muted)]">Imagen actual lista para usar.</span> : null}
         </div>
       </div>
 
@@ -279,6 +277,14 @@ function UploadIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="m7 7 10 10M17 7 7 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 }

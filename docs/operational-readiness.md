@@ -22,6 +22,7 @@ SIMI ya debe operar con foco en tres usuarios:
 - Health check en `/api/health` con medicion de respuesta de Supabase.
 - Captura de errores frontend con breadcrumbs basicos de clics.
 - Tabla `monitoring_events` para registrar errores de cliente, API, health, seguridad y colas.
+- Idempotencia en pedidos y outbox transaccional durable para notificaciones.
 - Campana de alertas en el header del administrador, separada del toggle claro/oscuro.
 
 ## Alta de negocios
@@ -63,19 +64,21 @@ La base actual puede soportar el MVP si:
 - Supabase mantiene indices y RLS bien aplicados.
 - Se monitorea `/api/health` desde fuera cada 1 a 5 minutos.
 
-## Fase 2 tecnica
+## Siguiente capa tecnica
 
-Cuando SIMI salga de Vercel/Supabase o empiece a operar marketplace multi-lado, agregar:
+Antes de una campana grande o de operar como marketplace multi-lado, agregar:
 
-- Redis para rate limiting distribuido.
-- Cola de trabajos para WhatsApp, pagos, notificaciones push y reintentos.
-- Dead-letter queue para trabajos fallidos.
+- Redis para sustituir el limite en memoria por rate limiting distribuido. Redis no debe ser requisito para crear pedidos.
+- QStash o un scheduler para despertar workers; PostgreSQL mantiene la outbox como fuente de verdad.
 - Dashboard de colas en tiempo real.
-- Sentry u OpenTelemetry para tracing completo.
+- Dead-letter y alertas por edad de mensajes para la outbox existente.
+- Sentry u OpenTelemetry para tracing completo y errores con contexto.
 - Uptime monitor externo con alertas por WhatsApp/Telegram/Slack.
-- Logs centralizados con retencion de 2 anos.
+- Telemetria tecnica de 30 a 90 dias y auditoria de negocio archivada por 2 anos.
 - App o PWA para repartidor con geolocalizacion y estados.
 - Load testing antes de campanas grandes.
+
+La seleccion de proveedores, costos y reglas de tolerancia a fallos se encuentra en `docs/infraestructura-produccion-costos.md`.
 
 ## Reglas de producto para Huancayo
 
