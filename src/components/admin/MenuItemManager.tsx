@@ -48,6 +48,21 @@ export function MenuItemManager({ clientId, categories }: MenuItemManagerProps) 
     setVisibleCategories(categories);
   }, [categories]);
 
+  useEffect(() => {
+    function syncCategories(event: Event) {
+      const nextCategories = (event as CustomEvent<MenuCategory[]>).detail;
+      if (!Array.isArray(nextCategories)) return;
+
+      setVisibleCategories((current) => nextCategories.map((category) => {
+        const existingCategory = current.find((currentCategory) => currentCategory.id === category.id);
+        return { ...category, items: existingCategory?.items || [] };
+      }));
+    }
+
+    window.addEventListener("simi:categories-updated", syncCategories);
+    return () => window.removeEventListener("simi:categories-updated", syncCategories);
+  }, []);
+
   function sortItems(items: MenuItem[]) {
     return [...items].sort((first, second) => first.display_order - second.display_order || first.name.localeCompare(second.name, "es"));
   }

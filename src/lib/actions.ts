@@ -193,6 +193,40 @@ export async function createCategoryAction(clientId: string, formData: FormData)
   redirect(`/admin/clients/${clientId}?saved=category`);
 }
 
+export async function createCategoryInlineAction(clientId: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "menu");
+  requireClientAccess(context, clientId);
+  const { supabase } = context;
+  formData.set("client_id", clientId);
+  const validation = validateCategoryInput(formData);
+
+  if (validation.error || !validation.data) {
+    return { ok: false as const, error: validation.error || "Datos invalidos." };
+  }
+
+  let result = await supabase
+    .from("menu_categories")
+    .insert(validation.data)
+    .select("id,client_id,name,image_url,display_order,is_active,created_at,updated_at")
+    .single();
+
+  if (result.error && isMissingCategoryImageError(result.error)) {
+    if (validation.data.image_url) return { ok: false as const, error: missingCategoryImageMessage() };
+    const { image_url: _imageUrl, ...fallbackData } = validation.data;
+    result = await supabase
+      .from("menu_categories")
+      .insert(fallbackData)
+      .select("id,client_id,name,image_url,display_order,is_active,created_at,updated_at")
+      .single();
+  }
+
+  if (result.error || !result.data) return { ok: false as const, error: "No se pudo guardar la categoria." };
+
+  await revalidateClientSurfaces(supabase, clientId);
+  return { ok: true as const, category: result.data, message: "Categoria agregada sin recargar la pagina." };
+}
+
 export async function updateCategoryAction(clientId: string, categoryId: string, formData: FormData) {
   const context = await requireAdmin();
   requireModuleAccess(context, "menu");
@@ -212,6 +246,44 @@ export async function updateCategoryAction(clientId: string, categoryId: string,
 
   await revalidateClientSurfaces(supabase, clientId);
   redirect(`/admin/clients/${clientId}?saved=category`);
+}
+
+export async function updateCategoryInlineAction(clientId: string, categoryId: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "menu");
+  requireClientAccess(context, clientId);
+  const { supabase } = context;
+  formData.set("client_id", clientId);
+  const validation = validateCategoryInput(formData);
+
+  if (validation.error || !validation.data) {
+    return { ok: false as const, error: validation.error || "Datos invalidos." };
+  }
+
+  let result = await supabase
+    .from("menu_categories")
+    .update(validation.data)
+    .eq("id", categoryId)
+    .eq("client_id", clientId)
+    .select("id,client_id,name,image_url,display_order,is_active,created_at,updated_at")
+    .single();
+
+  if (result.error && isMissingCategoryImageError(result.error)) {
+    if (validation.data.image_url) return { ok: false as const, error: missingCategoryImageMessage() };
+    const { image_url: _imageUrl, ...fallbackData } = validation.data;
+    result = await supabase
+      .from("menu_categories")
+      .update(fallbackData)
+      .eq("id", categoryId)
+      .eq("client_id", clientId)
+      .select("id,client_id,name,image_url,display_order,is_active,created_at,updated_at")
+      .single();
+  }
+
+  if (result.error || !result.data) return { ok: false as const, error: "No se pudo actualizar la categoria." };
+
+  await revalidateClientSurfaces(supabase, clientId);
+  return { ok: true as const, category: result.data, message: "Categoria actualizada sin recargar la pagina." };
 }
 
 export async function deleteCategoryAction(clientId: string, categoryId: string) {
@@ -239,6 +311,56 @@ export async function deleteCategoryAction(clientId: string, categoryId: string)
   if (error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo eliminar la categoría.")}`);
   await revalidateClientSurfaces(supabase, clientId);
   redirect(`/admin/clients/${clientId}?saved=category`);
+}
+
+export async function deleteCategoryInlineAction(clientId: string, categoryId: string) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "menu");
+  requireClientAccess(context, clientId);
+  const { supabase } = context;
+  const { error: itemsError } = await supabase.from("menu_items").delete().eq("client_id", clientId).eq("category_id", categoryId);
+
+  if (itemsError && isOrderHistoryReferenceError(itemsError)) {
+    const { data, error } = await supabase
+      .from("menu_categories")
+      .update({ is_active: false })
+      .eq("id", categoryId)
+      .eq("client_id", clientId)
+      .select("id,client_id,name,image_url,display_order,is_active,created_at,updated_at")
+      .single();
+    if (error || !data) return { ok: false as const, error: "No se pudo ocultar la categoria." };
+    await revalidateClientSurfaces(supabase, clientId);
+    return { ok: true as const, archived: true as const, category: data, message: "La categoria tiene historial y se oculto correctamente." };
+  }
+
+  if (itemsError) return { ok: false as const, error: "No se pudieron eliminar los productos de la categoria." };
+
+  const { data: deletedCategory, error } = await supabase
+    .from("menu_categories")
+    .delete()
+    .eq("id", categoryId)
+    .eq("client_id", clientId)
+    .select("id")
+    .maybeSingle();
+
+  if (error && isOrderHistoryReferenceError(error)) {
+    const { data, error: archiveError } = await supabase
+      .from("menu_categories")
+      .update({ is_active: false })
+      .eq("id", categoryId)
+      .eq("client_id", clientId)
+      .select("id,client_id,name,image_url,display_order,is_active,created_at,updated_at")
+      .single();
+    if (archiveError || !data) return { ok: false as const, error: "No se pudo ocultar la categoria." };
+    await revalidateClientSurfaces(supabase, clientId);
+    return { ok: true as const, archived: true as const, category: data, message: "La categoria tiene historial y se oculto correctamente." };
+  }
+
+  if (error) return { ok: false as const, error: "No se pudo eliminar la categoria." };
+  if (!deletedCategory) return { ok: false as const, error: "No se encontro la categoria para eliminar." };
+
+  await revalidateClientSurfaces(supabase, clientId);
+  return { ok: true as const, archived: false as const, message: "Categoria eliminada sin recargar la pagina." };
 }
 
 export async function createMenuItemAction(clientId: string, formData: FormData) {
