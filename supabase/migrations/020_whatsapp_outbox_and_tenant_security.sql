@@ -679,6 +679,9 @@ DROP POLICY IF EXISTS "Authenticated can insert clients" ON public.clients;
 DROP POLICY IF EXISTS "Authenticated can update clients" ON public.clients;
 DROP POLICY IF EXISTS "Authenticated can delete clients" ON public.clients;
 DROP POLICY IF EXISTS "Business users read own clients" ON public.clients;
+DROP POLICY IF EXISTS "Platform admins insert clients" ON public.clients;
+DROP POLICY IF EXISTS "Business managers update own clients" ON public.clients;
+DROP POLICY IF EXISTS "Platform admins delete clients" ON public.clients;
 CREATE POLICY "Business users read own clients" ON public.clients
 FOR SELECT TO authenticated USING (public.user_has_client_access(id));
 CREATE POLICY "Platform admins insert clients" ON public.clients
