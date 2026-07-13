@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/shared/Button";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { sanitizeFileName, validateImageFile } from "@/lib/storage";
 
 type ImageUploaderProps = {
@@ -13,6 +12,7 @@ type ImageUploaderProps = {
   hint?: string;
   preview?: "square" | "wide";
   activateCheckboxName?: string;
+  submitAfterUpload?: boolean;
 };
 
 type PendingImage = {
@@ -20,10 +20,13 @@ type PendingImage = {
   dataUrl: string;
 };
 
-export function ImageUploader({ name, label, defaultValue = "", storagePath, hint, preview = "square", activateCheckboxName }: ImageUploaderProps) {
+export function ImageUploader({ name, label, defaultValue = "", storagePath, hint, preview = "square", activateCheckboxName, submitAfterUpload = false }: ImageUploaderProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const hiddenInputRef = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState(defaultValue || "");
   const [message, setMessage] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [isCropping, setIsCropping] = useState(false);
   const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
   const [zoom, setZoom] = useState(1);
   const [offsetX, setOffsetX] = useState(0);
@@ -74,29 +77,54 @@ export function ImageUploader({ name, label, defaultValue = "", storagePath, hin
     reader.readAsDataURL(file);
   }
 
+  function submitParentForm(nextUrl: string) {
+    if (!submitAfterUpload) return;
+
+    const form = containerRef.current?.closest("form");
+    if (!form) {
+      setMessage("La imagen se cargo, pero no se encontro el formulario para guardar el producto.");
+      return;
+    }
+
+    if (hiddenInputRef.current) hiddenInputRef.current.value = nextUrl;
+
+    window.setTimeout(() => {
+      if (!form.reportValidity()) {
+        setMessage("Imagen cargada. Completa los campos obligatorios para guardar el producto.");
+        return;
+      }
+
+      setMessage("Imagen cargada. Guardando el producto...");
+      form.requestSubmit();
+    }, 0);
+  }
+
   async function uploadFile(file: File) {
     setIsUploading(true);
     setMessage("Subiendo imagen...");
 
     try {
-      const supabase = createSupabaseBrowserClient();
-      const filePath = `${storagePath}/${Date.now()}-${sanitizeFileName(file.name)}`;
-      const { error } = await supabase.storage.from("menu-images").upload(filePath, file, {
-        upsert: true,
-        cacheControl: "60",
-        contentType: file.type
-      });
+      const payload = new FormData();
+      payload.set("file", file, sanitizeFileName(file.name));
+      payload.set("storagePath", storagePath);
+      const response = await fetch("/api/admin/uploads", { method: "POST", body: payload });
+      const result = (await response.json().catch(() => null)) as { url?: string; error?: string } | null;
 
-      if (error) throw error;
+      if (!response.ok || !result?.url) {
+        throw new Error(result?.error || "No se pudo subir la imagen.");
+      }
 
-      const { data } = supabase.storage.from("menu-images").getPublicUrl(filePath);
-      setUrl(data.publicUrl);
-      activateRelatedCheckbox(data.publicUrl);
+      setUrl(result.url);
+      if (hiddenInputRef.current) hiddenInputRef.current.value = result.url;
+      activateRelatedCheckbox(result.url);
       setPendingImage(null);
-      setMessage("Imagen cargada correctamente. Guarda los cambios para verla en el menu publico.");
+      setMessage(submitAfterUpload ? "Imagen cargada. Guardando el producto..." : "Imagen cargada correctamente. Guarda los cambios para publicarla.");
+      submitParentForm(result.url);
+      return true;
     } catch (error) {
       console.error(error);
-      setMessage("No se pudo subir la imagen. Revisa Supabase Storage.");
+      setMessage(error instanceof Error ? error.message : "No se pudo subir la imagen. Intenta nuevamente.");
+      return false;
     } finally {
       setIsUploading(false);
     }
@@ -106,19 +134,22 @@ export function ImageUploader({ name, label, defaultValue = "", storagePath, hin
     if (!pendingImage) return;
 
     try {
+      setIsCropping(true);
       setMessage("Preparando recorte...");
       const croppedFile = await cropImageFile(pendingImage.file, pendingImage.dataUrl, cropRatio, zoom, offsetX, offsetY);
       await uploadFile(croppedFile);
     } catch (error) {
       console.error(error);
-      setMessage("No se pudo recortar la imagen. Intenta con otra imagen.");
+      setMessage(error instanceof Error ? error.message : "No se pudo recortar la imagen. Intenta con otra imagen.");
+    } finally {
+      setIsCropping(false);
     }
   }
 
   const isSuccess = message.includes("correctamente") || message.includes("lista");
 
   return (
-    <div className="grid min-w-0 gap-2 text-sm">
+    <div ref={containerRef} className="grid min-w-0 gap-2 text-sm">
       <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
         <span className="font-medium text-[var(--text)]">{label}</span>
         <p className="text-xs leading-4 text-[var(--text-muted)] sm:text-right">
@@ -126,7 +157,7 @@ export function ImageUploader({ name, label, defaultValue = "", storagePath, hin
         </p>
       </div>
 
-      <input type="hidden" name={name} value={url} />
+      <input ref={hiddenInputRef} type="hidden" name={name} value={url} />
 
       <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--surface-muted)] px-3 py-2.5">
         {url ? (
@@ -169,7 +200,7 @@ export function ImageUploader({ name, label, defaultValue = "", storagePath, hin
           <div className="grid max-h-[92vh] w-full max-w-2xl gap-4 overflow-y-auto rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-soft">
             <div>
               <h3 className="text-lg font-medium text-[var(--text)]">Ajustar imagen</h3>
-              <p className="mt-1 text-sm text-[var(--text-muted)]">Acerca, aleja y mueve la imagen antes de subirla.</p>
+              <p className="mt-1 text-sm text-[var(--text-muted)]">Acerca, aleja y mueve la imagen antes de {submitAfterUpload ? "guardarla en el producto" : "subirla"}.</p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px] md:items-start">
@@ -196,15 +227,19 @@ export function ImageUploader({ name, label, defaultValue = "", storagePath, hin
               </div>
             </div>
 
+            <p role="status" aria-live="polite" className={`rounded-[var(--radius-input)] px-3 py-2 text-sm ${message.includes("No se pudo") || message.includes("error") ? "bg-red-50 text-red-700 dark:bg-red-950/35 dark:text-red-200" : "bg-[var(--surface-muted)] text-[var(--text-muted)]"}`}>
+              {message || "La imagen esta lista para procesarse."}
+            </p>
+
             <div className="grid gap-2 sm:grid-cols-3">
-              <Button type="button" variant="secondary" onClick={() => setPendingImage(null)} disabled={isUploading}>
+              <Button type="button" variant="secondary" onClick={() => setPendingImage(null)} disabled={isUploading || isCropping}>
                 Cancelar
               </Button>
-              <Button type="button" variant="secondary" onClick={() => uploadFile(pendingImage.file)} disabled={isUploading}>
-                Subir original
+              <Button type="button" variant="secondary" onClick={() => uploadFile(pendingImage.file)} disabled={isUploading || isCropping}>
+                {isUploading ? "Subiendo..." : submitAfterUpload ? "Guardar original" : "Subir original"}
               </Button>
-              <Button type="button" onClick={applyCropAndUpload} disabled={isUploading}>
-                Aplicar y subir
+              <Button type="button" onClick={applyCropAndUpload} disabled={isUploading || isCropping}>
+                {isUploading ? "Subiendo..." : isCropping ? "Preparando..." : submitAfterUpload ? "Aplicar y guardar" : "Aplicar y subir"}
               </Button>
             </div>
           </div>
@@ -254,12 +289,12 @@ async function cropImageFile(file: File, dataUrl: string, ratio: number, zoom: n
     canvas.toBlob((nextBlob) => {
       if (nextBlob) resolve(nextBlob);
       else reject(new Error("No se pudo crear la imagen recortada."));
-    }, file.type === "image/png" ? "image/png" : "image/webp", 0.92);
+    }, "image/webp", 0.9);
   });
 
-  const extension = file.type === "image/png" ? "png" : "webp";
+  const extension = "webp";
   const cleanName = sanitizeFileName(file.name).replace(/\.[^.]+$/, "");
-  return new File([blob], `${cleanName || "imagen"}-recortada.${extension}`, { type: blob.type });
+  return new File([blob], `${cleanName || "imagen"}-recortada.${extension}`, { type: "image/webp" });
 }
 
 function loadImage(src: string) {

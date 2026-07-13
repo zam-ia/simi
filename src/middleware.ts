@@ -28,6 +28,7 @@ const publicWriteLimits: Array<{ pattern: RegExp; limit: number }> = [
   { pattern: /^\/api\/public\/orders$/, limit: 24 },
   { pattern: /^\/api\/public\/reservations$/, limit: 18 },
   { pattern: /^\/api\/public\/orders\/[^/]+\/proof$/, limit: 30 },
+  { pattern: /^\/api\/admin\/uploads$/, limit: 30 },
   { pattern: /^\/api\/monitoring\/client-error$/, limit: 60 }
 ];
 

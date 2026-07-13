@@ -175,6 +175,7 @@ export function MenuItemManager({ clientId, categories }: MenuItemManagerProps) 
                                 label={`Imagen de ${item.name}`}
                                 defaultValue={item.image_url}
                                 storagePath={`clients/${clientId}/items`}
+                                submitAfterUpload
                                 hint="Ideal: JPG o WebP cuadrado. Tamano recomendado: 900 x 900 px, con el producto o servicio centrado. Maximo 2 MB."
                               />
                               <div className="flex flex-wrap items-center justify-between gap-3">

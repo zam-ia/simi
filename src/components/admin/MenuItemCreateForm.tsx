@@ -81,6 +81,7 @@ export function MenuItemCreateForm({ clientId, categories, onCreated }: MenuItem
               name="image_url"
               label="Imagen del producto"
               storagePath={`clients/${clientId}/items`}
+              submitAfterUpload
               hint="Ideal: JPG o WebP cuadrado, 900 x 900 px y máximo 2 MB. Puedes ajustar el recorte antes de subir."
             />
           </div>
