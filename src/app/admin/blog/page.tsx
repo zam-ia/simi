@@ -15,7 +15,7 @@ export default async function AdminBlogPage({ searchParams }: { searchParams: Pr
   const posts = missingTable ? [] : (data || []) as BlogPost[];
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-4 lg:gap-5">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-sm text-[var(--text-muted)]">Contenido de simiperu-web</p>

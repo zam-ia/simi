@@ -10,9 +10,9 @@ type MenuPreviewProps = {
 };
 
 const devices: Record<Device, { label: string; width: string; height: string }> = {
-  mobile: { label: "Movil", width: "390px", height: "680px" },
-  tablet: { label: "Tablet", width: "640px", height: "760px" },
-  desktop: { label: "Escritorio", width: "100%", height: "760px" }
+  mobile: { label: "Movil", width: "390px", height: "620px" },
+  tablet: { label: "Tablet", width: "640px", height: "680px" },
+  desktop: { label: "Escritorio", width: "100%", height: "680px" }
 };
 
 export function MenuPreview({ url }: MenuPreviewProps) {
@@ -25,7 +25,7 @@ export function MenuPreview({ url }: MenuPreviewProps) {
   }, [refreshKey, url]);
 
   return (
-    <section className="grid gap-4 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+    <section className="grid min-w-0 gap-3 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-medium">Vista previa</h2>
@@ -50,8 +50,8 @@ export function MenuPreview({ url }: MenuPreviewProps) {
         </div>
       </div>
 
-      <div className="overflow-auto rounded-[24px] bg-[var(--surface-muted)] p-4">
-        <div className="mx-auto overflow-hidden rounded-[28px] border border-[var(--line)] bg-[var(--background)] shadow-soft" style={{ width: currentDevice.width, maxWidth: "100%", height: currentDevice.height }}>
+      <div className="overflow-auto rounded-[var(--radius-panel)] bg-[var(--surface-muted)] p-3">
+        <div className="mx-auto overflow-hidden rounded-[20px] border border-[var(--line)] bg-[var(--background)] shadow-soft" style={{ width: currentDevice.width, maxWidth: "100%", height: currentDevice.height }}>
           <iframe key={`${device}-${refreshKey}`} title="Vista previa del menu" src={previewUrl} className="h-full w-full border-0" />
         </div>
       </div>

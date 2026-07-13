@@ -1,5 +1,7 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
+
 type DeleteButtonProps = {
   label?: string;
   message: string;
@@ -16,6 +18,7 @@ export function DeleteButton({ label = "Eliminar", message }: DeleteButtonProps)
         }
       }}
     >
+      <Trash2 className="h-4 w-4" aria-hidden="true" />
       {label}
     </button>
   );

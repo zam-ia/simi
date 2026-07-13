@@ -13,9 +13,9 @@ export function BlogPostManager({ posts }: { posts: BlogPost[] }) {
   const selectedPost = useMemo(() => posts.find((post) => post.id === selectedPostId) || posts[0] || null, [posts, selectedPostId]);
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_440px] xl:items-start">
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px] xl:items-start">
       <div className="grid min-w-0 gap-5">
-        <details open className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+        <details open className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
           <summary className="cursor-pointer list-none">
             <p className="text-sm text-[var(--text-muted)]">Nuevo contenido</p>
             <h2 className="mt-1 text-xl font-medium">Crear artículo</h2>

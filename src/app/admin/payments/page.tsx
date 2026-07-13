@@ -29,7 +29,7 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
   const clientRows = (clients || []) as Client[];
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-4 lg:gap-5">
       <div>
         <h2 className="text-2xl font-medium">Metodos de pago</h2>
         <p className="mt-1 text-sm text-[var(--text-muted)]">Configura Yape, Plin, efectivo u opciones manuales por negocio.</p>
@@ -38,7 +38,7 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
         {growth.missingGrowthTables ? <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">Aplica la migracion 009 en Supabase para habilitar este modulo.</p> : null}
       </div>
 
-      <section className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+      <section className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
         <h3 className="text-lg font-medium">Nuevo metodo</h3>
         <form action={createPaymentMethodAction} className="mt-4 grid gap-4 md:grid-cols-2">
           {role === "business_admin" ? <input type="hidden" name="client_id" value={client!.id} /> : <ClientSelect clients={clientRows} />}

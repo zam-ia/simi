@@ -38,9 +38,9 @@ export default async function AdminPage() {
     const problemOrders = ordersToday.filter((order) => order.payment_status === "proof_submitted" || order.order_status === "new" || order.order_status === "payment_pending");
 
     return (
-      <div className="grid gap-6">
+      <div className="grid gap-4 lg:gap-5">
         <section className="overflow-hidden rounded-[28px] border border-[var(--line)] bg-[var(--surface)] shadow-soft">
-          <div className="grid gap-5 p-5 md:grid-cols-[1fr_auto] md:items-end">
+          <div className="grid gap-4 p-4 md:grid-cols-[1fr_auto] md:items-end">
             <div>
               <p className="text-sm text-[var(--text-muted)]">Panel del negocio</p>
               <h2 className="mt-2 text-3xl font-medium">{client.name}</h2>
@@ -72,7 +72,7 @@ export default async function AdminPage() {
         </section>
 
         <section className="grid gap-3 md:grid-cols-[1.2fr_1fr]">
-          <div className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+          <div className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-sm text-[var(--text-muted)]">Estado operativo</p>
@@ -88,7 +88,7 @@ export default async function AdminPage() {
             </div>
           </div>
 
-          <div className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+          <div className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
             <p className="text-sm text-[var(--text-muted)]">Regla de hora punta</p>
             <h3 className="mt-1 text-xl font-medium">Responder antes de 5 min</h3>
             <div className="mt-4 grid gap-2 text-sm text-[var(--text-muted)]">
@@ -120,7 +120,7 @@ export default async function AdminPage() {
           </div>
         ) : null}
 
-        <section className="grid gap-4 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+        <section className="grid gap-3 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <h3 className="text-lg font-medium">Accesos rapidos</h3>
@@ -137,7 +137,7 @@ export default async function AdminPage() {
           </div>
         </section>
 
-        <section className="grid gap-4 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+        <section className="grid gap-3 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="text-lg font-medium">Ultimos pedidos</h3>
@@ -178,8 +178,8 @@ export default async function AdminPage() {
   };
 
   return (
-    <div className="grid gap-6">
-      <section className="grid gap-4 rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-soft lg:grid-cols-[1fr_auto] lg:items-end">
+    <div className="grid gap-4 lg:gap-5">
+      <section className="grid gap-4 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-soft lg:grid-cols-[1fr_auto] lg:items-end">
         <div>
           <p className="text-sm text-[var(--text-muted)]">Superadmin</p>
           <h2 className="mt-2 text-3xl font-medium">Centro comercial SIMI</h2>

@@ -21,7 +21,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
   const availableClients = ((clients || manualCatalog.clients) as Client[]) || [];
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-4 lg:gap-5">
       <OrdersAutoRefresh clientId={clientId} />
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>

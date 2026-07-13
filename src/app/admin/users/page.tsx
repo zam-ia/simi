@@ -55,8 +55,8 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
   const defaultCreateRole = role === "super_admin" ? "business_owner" : "business_admin";
 
   return (
-    <div className="grid gap-6">
-      <section className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+    <div className="grid gap-4 lg:gap-5">
+      <section className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
         <p className="text-sm text-[var(--text-muted)]">Administracion</p>
         <h2 className="mt-2 text-2xl font-medium">Usuarios, roles y permisos</h2>
         <p className="mt-2 text-sm text-[var(--text-muted)]">
@@ -67,7 +67,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
         {usersError ? <p className="mt-3 text-sm text-red-700 dark:text-red-300">No se pudo cargar usuarios. Aplica la migracion 008 en Supabase.</p> : null}
       </section>
 
-      <form action={createClientUserAction} className="grid gap-5 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+      <form action={createClientUserAction} className="grid gap-4 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
         <div>
           <h3 className="text-lg font-medium">Crear usuario</h3>
           <p className="mt-1 text-sm text-[var(--text-muted)]">La contrasena temporal solo se usa para crear el acceso en Supabase Auth; no se guarda en SIMI.</p>
@@ -121,7 +121,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
             const currentRole = item.role || "business_admin";
 
             return (
-              <article key={item.id} className="grid gap-4 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+              <article key={item.id} className="grid gap-3 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
                 <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                   <div>
                     <p className="text-sm text-[var(--text-muted)]">{clientById.get(item.client_id)?.name || "Negocio"}</p>

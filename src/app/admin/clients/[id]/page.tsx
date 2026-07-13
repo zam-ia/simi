@@ -25,7 +25,7 @@ export default async function EditClientPage({ params, searchParams }: { params:
   const promoItems = categoriesWithItems.flatMap((category) => category.items).map((item) => ({ id: item.id, name: item.name, price: item.price }));
 
   return (
-    <div className="grid gap-6">
+    <div className="grid min-w-0 gap-4 lg:gap-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-2xl font-medium">{client.name}</h2>
@@ -42,8 +42,10 @@ export default async function EditClientPage({ params, searchParams }: { params:
 
       <ClientForm client={client} action={action} error={resolvedSearchParams.error} promoItems={promoItems} />
       <MenuPreview url={`/menu/${client.slug}`} />
-      <CategoryManager clientId={client.id} categories={categories} />
-      <TableManager client={client} tables={tables} />
+      <div className="grid min-w-0 items-start gap-4 xl:grid-cols-2">
+        <CategoryManager clientId={client.id} categories={categories} />
+        <TableManager client={client} tables={tables} />
+      </div>
       <MenuItemManager clientId={client.id} categories={categoriesWithItems} />
     </div>
   );

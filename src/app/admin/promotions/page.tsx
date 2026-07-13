@@ -36,7 +36,7 @@ export default async function AdminPromotionsPage({ searchParams }: { searchPara
   const clientRows = (clients || []) as Client[];
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-4 lg:gap-5">
       <div>
         <h2 className="text-2xl font-medium">Promociones</h2>
         <p className="mt-1 text-sm text-[var(--text-muted)]">Publica ofertas visibles en la carta y prepara cupones para campanas futuras.</p>
@@ -45,7 +45,7 @@ export default async function AdminPromotionsPage({ searchParams }: { searchPara
         {growth.missingGrowthTables ? <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">Aplica la migracion 009 en Supabase para habilitar este modulo.</p> : null}
       </div>
 
-      <section className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+      <section className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
         <h3 className="text-lg font-medium">Nueva promocion</h3>
         <form action={createPromotionAction} className="mt-4 grid gap-4 md:grid-cols-2">
           {role === "business_admin" ? <input type="hidden" name="client_id" value={client!.id} /> : <ClientSelect clients={clientRows} />}

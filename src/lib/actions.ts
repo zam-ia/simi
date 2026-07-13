@@ -463,6 +463,26 @@ export async function deleteMenuItemAction(clientId: string, itemId: string) {
   redirect(`/admin/clients/${clientId}?saved=item`);
 }
 
+export async function deleteMenuItemInlineAction(clientId: string, itemId: string) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "menu");
+  requireClientAccess(context, clientId);
+  const { supabase } = context;
+  const { data, error } = await supabase
+    .from("menu_items")
+    .delete()
+    .eq("id", itemId)
+    .eq("client_id", clientId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) return { ok: false as const, error: "No se pudo eliminar el producto." };
+  if (!data) return { ok: false as const, error: "No se encontro el producto." };
+
+  await revalidateClientSurfaces(supabase, clientId);
+  return { ok: true as const, message: "Producto eliminado sin recargar la pagina." };
+}
+
 export async function createTableAction(clientId: string, formData: FormData) {
   const context = await requireAdmin();
   requireModuleAccess(context, "menu");
@@ -527,6 +547,89 @@ export async function deleteTableAction(clientId: string, tableId: string) {
   if (error) redirect(`/admin/clients/${clientId}${encodedError("No se pudo eliminar la mesa.")}`);
   await revalidateClientSurfaces(supabase, clientId);
   redirect(`/admin/clients/${clientId}?saved=table`);
+}
+
+export async function createTableInlineAction(clientId: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "menu");
+  requireClientAccess(context, clientId);
+  const { supabase } = context;
+  const tableNumber = String(formData.get("table_number") || "").trim();
+  const labelValue = String(formData.get("label") || "").trim();
+  const label = labelValue || `Mesa ${tableNumber}`;
+  const seats = Number(formData.get("seats") || 4);
+
+  if (!tableNumber) return { ok: false as const, error: "El numero de mesa es obligatorio." };
+
+  const { data, error } = await supabase
+    .from("client_tables")
+    .insert({
+      client_id: clientId,
+      table_number: tableNumber,
+      label,
+      seats: Number.isFinite(seats) ? seats : 4,
+      status: "available",
+      is_active: true
+    })
+    .select("*")
+    .single();
+
+  if (error || !data) return { ok: false as const, error: "No se pudo crear la mesa. Revisa si el numero ya existe." };
+
+  await revalidateClientSurfaces(supabase, clientId);
+  return { ok: true as const, table: data, message: "Mesa agregada sin recargar la pagina." };
+}
+
+export async function updateTableInlineAction(clientId: string, tableId: string, formData: FormData) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "menu");
+  requireClientAccess(context, clientId);
+  const { supabase } = context;
+  const tableNumber = String(formData.get("table_number") || "").trim();
+  const label = String(formData.get("label") || "").trim();
+  const seats = Number(formData.get("seats") || 4);
+  const status = String(formData.get("status") || "available");
+
+  if (!tableNumber || !label) return { ok: false as const, error: "La mesa necesita numero y nombre." };
+
+  const { data, error } = await supabase
+    .from("client_tables")
+    .update({
+      table_number: tableNumber,
+      label,
+      seats: Number.isFinite(seats) ? seats : 4,
+      status,
+      is_active: formData.get("is_active") === "on"
+    })
+    .eq("id", tableId)
+    .eq("client_id", clientId)
+    .select("*")
+    .single();
+
+  if (error || !data) return { ok: false as const, error: "No se pudo actualizar la mesa." };
+
+  await revalidateClientSurfaces(supabase, clientId);
+  return { ok: true as const, table: data, message: "Mesa actualizada sin recargar la pagina." };
+}
+
+export async function deleteTableInlineAction(clientId: string, tableId: string) {
+  const context = await requireAdmin();
+  requireModuleAccess(context, "menu");
+  requireClientAccess(context, clientId);
+  const { supabase } = context;
+  const { data, error } = await supabase
+    .from("client_tables")
+    .delete()
+    .eq("id", tableId)
+    .eq("client_id", clientId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) return { ok: false as const, error: "No se pudo eliminar la mesa." };
+  if (!data) return { ok: false as const, error: "No se encontro la mesa." };
+
+  await revalidateClientSurfaces(supabase, clientId);
+  return { ok: true as const, message: "Mesa eliminada sin recargar la pagina." };
 }
 
 export async function updateOrderStatusAction(orderId: string, formData: FormData) {

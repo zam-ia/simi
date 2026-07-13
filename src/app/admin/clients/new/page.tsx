@@ -10,7 +10,7 @@ export default async function NewClientPage({ searchParams }: { searchParams: Pr
   requireSuperAdmin(context);
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-4 lg:gap-5">
       <div>
         <h2 className="text-2xl font-medium">Nuevo cliente</h2>
         <p className="mt-1 text-sm text-[var(--text-muted)]">Crea un negocio y deja listo su enlace público para QR.</p>

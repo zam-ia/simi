@@ -20,7 +20,7 @@ export default async function KitchenPage({ searchParams }: { searchParams: Prom
   const activeOrders = orders.filter((order) => order.order_status !== "delivered" && order.order_status !== "cancelled");
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-4 lg:gap-5">
       <OrdersAutoRefresh clientId={clientId} />
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>

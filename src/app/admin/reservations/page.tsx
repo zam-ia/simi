@@ -58,7 +58,7 @@ export default async function AdminReservationsPage({ searchParams }: { searchPa
   };
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-4 lg:gap-5">
       <header className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h2 className="text-3xl font-medium">Reservas</h2>
@@ -113,7 +113,7 @@ function AgendaView(props: ReservationListProps) {
   }, {});
 
   return (
-    <section className="grid gap-4 rounded-[22px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+    <section className="grid gap-3 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
       <div>
         <h3 className="text-lg font-medium">Agenda</h3>
         <p className="mt-1 text-sm text-[var(--text-muted)]">Reservas agrupadas por hora para operar el local.</p>
@@ -251,7 +251,7 @@ function getReservationAlert(reservation: Reservation) {
 
 function ReservationConfigView({ role, clientId, clients, settings }: { role: string; clientId?: string; clients: Pick<Client, "id" | "name">[]; settings: ReservationSettings | null }) {
   return (
-    <section className="rounded-[22px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+    <section className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
       <div>
         <h3 className="text-lg font-medium">Configuracion de reservas</h3>
         <p className="mt-1 text-sm text-[var(--text-muted)]">Controla confirmacion, capacidad por bloque, horarios y reglas del local.</p>

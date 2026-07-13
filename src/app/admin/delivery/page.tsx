@@ -62,7 +62,7 @@ export default async function AdminDeliveryPage({ searchParams }: { searchParams
   };
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-4 lg:gap-5">
       <header className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h2 className="text-3xl font-medium">Delivery</h2>
@@ -183,7 +183,7 @@ function DispatchCard({ role, clientId, clients, item, couriers, courier, zone, 
 function ZonesView({ role, clientId, clients, zones }: { role: string; clientId?: string; clients: Client[]; zones: ClientDeliveryZone[] }) {
   return (
     <div className="grid gap-4">
-      <section className="rounded-[22px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+      <section className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
         <h3 className="text-lg font-medium">Nueva zona</h3>
         <form action={createDeliveryZoneAction} className="mt-4 grid gap-4 md:grid-cols-2">
           {role === "business_admin" && clientId ? <input type="hidden" name="client_id" value={clientId} /> : <ClientSelect clients={clients} />}
@@ -250,7 +250,7 @@ function ZonesView({ role, clientId, clients, zones }: { role: string; clientId?
 function CouriersView({ role, clientId, clients, couriers, zones }: { role: string; clientId?: string; clients: Client[]; couriers: Courier[]; zones: ClientDeliveryZone[] }) {
   return (
     <div className="grid gap-4">
-      <section className="rounded-[22px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+      <section className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
         <h3 className="text-lg font-medium">Nuevo repartidor</h3>
         <form action={createCourierAction} className="mt-4 grid gap-4 md:grid-cols-2">
           {role === "business_admin" && clientId ? <input type="hidden" name="client_id" value={clientId} /> : <ClientSelect clients={clients} />}
@@ -319,7 +319,7 @@ function HistoryView({ events, assignments, orders, couriers }: { events: Delive
 
 function DeliveryConfigView({ role, clientId, clients, settings }: { role: string; clientId?: string; clients: Client[]; settings: DeliverySettings | null }) {
   return (
-    <section className="rounded-[22px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+    <section className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
       <div>
         <h3 className="text-lg font-medium">Configuracion delivery</h3>
         <p className="mt-1 text-sm text-[var(--text-muted)]">Reglas generales para despacho, recojo y mensajes al cliente.</p>

@@ -39,7 +39,7 @@ export function ClientForm({ client, action, error, promoItems = [] }: ClientFor
   }
 
   return (
-    <form action={client ? undefined : action} onSubmit={client ? submitExistingClient : undefined} className="grid gap-5">
+    <form action={client ? undefined : action} onSubmit={client ? submitExistingClient : undefined} className="grid min-w-0 gap-4">
       {error ? <div className="rounded-[var(--radius-card)] bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/35 dark:text-red-200">{error}</div> : null}
       {feedback ? (
         <div aria-live="polite" className={`rounded-[var(--radius-card)] p-3 text-sm ${feedback.tone === "success" ? "bg-green-50 text-green-700 dark:bg-green-950/35 dark:text-green-200" : "bg-red-50 text-red-700 dark:bg-red-950/35 dark:text-red-200"}`}>
@@ -47,12 +47,12 @@ export function ClientForm({ client, action, error, promoItems = [] }: ClientFor
         </div>
       ) : null}
 
-      <section className="grid gap-4 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+      <section className="grid gap-3 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
         <div>
           <h2 className="text-lg font-medium">Datos del negocio</h2>
           <p className="mt-1 text-sm text-[var(--text-muted)]">Lo básico para identificar la carta y recibir pedidos.</p>
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
           <Input label="Nombre del negocio" name="name" required value={businessName} onChange={(event) => setBusinessName(event.target.value)} placeholder="Mi negocio" />
           <Input label="Slug del enlace" name="slug" required defaultValue={client?.slug} placeholder="mi-negocio" hint="Este enlace se imprime en el QR. Evita cambiarlo después." />
           <label className="grid gap-2 text-sm">
@@ -61,7 +61,7 @@ export function ClientForm({ client, action, error, promoItems = [] }: ClientFor
               name="business_type"
               value={businessType}
               onChange={(event) => setBusinessType(event.target.value as BusinessType)}
-              className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3"
+            className="focus-ring min-h-10 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3"
             >
               {businessTypeOptions.map(([value, label]) => (
                 <option key={value} value={value}>
@@ -82,7 +82,8 @@ export function ClientForm({ client, action, error, promoItems = [] }: ClientFor
         </label>
       </section>
 
-      <section className="grid gap-4 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+      <div className="grid min-w-0 items-start gap-4 2xl:grid-cols-2">
+      <section className="grid min-w-0 gap-3 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
         <div>
           <h2 className="text-lg font-medium">Identidad visual</h2>
           <p className="mt-1 text-sm text-[var(--text-muted)]">Elige una propuesta según el rubro o ajusta libremente los colores. La vista rápida muestra cómo se sentirán en la carta.</p>
@@ -94,7 +95,7 @@ export function ClientForm({ client, action, error, promoItems = [] }: ClientFor
           businessType={businessType}
           businessName={businessName || "Tu negocio"}
         />
-        <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+        <div className="grid min-w-0 gap-3 md:grid-cols-2">
           <ImageUploader
             name="logo_url"
             label="Logo del negocio"
@@ -120,7 +121,7 @@ export function ClientForm({ client, action, error, promoItems = [] }: ClientFor
         />
       </section>
 
-      <section className="grid gap-4 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel">
+      <section className="grid min-w-0 gap-3 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
         <div>
           <h2 className="text-lg font-medium">Banner de promoción</h2>
           <p className="mt-1 text-sm text-[var(--text-muted)]">Opcional. Aparece arriba de las categorías en la carta pública.</p>
@@ -129,13 +130,13 @@ export function ClientForm({ client, action, error, promoItems = [] }: ClientFor
           <input type="checkbox" name="promo_banner_is_active" defaultChecked={Boolean(client?.promo_banner_is_active || client?.promo_banner_image_url || client?.promo_banner_title || client?.promo_banner_description)} />
           <span>Mostrar banner promocional</span>
         </label>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2">
           <Input label="Título del banner" name="promo_banner_title" defaultValue={client?.promo_banner_title || ""} placeholder="Producto destacado de la semana" />
           <Input label="Texto corto" name="promo_banner_description" defaultValue={client?.promo_banner_description || ""} placeholder="Disponible por tiempo limitado" />
         </div>
         <label className="grid gap-2 text-sm">
           <span className="font-medium text-[var(--text)]">Producto para el boton "Lo quiero"</span>
-          <select className="focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" name="promo_banner_item_id" defaultValue={client?.promo_banner_item_id || ""}>
+          <select className="focus-ring min-h-10 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3" name="promo_banner_item_id" defaultValue={client?.promo_banner_item_id || ""}>
             <option value="">Solo llevar a la carta</option>
             {promoItems.map((item) => (
               <option key={item.id} value={item.id}>
@@ -155,6 +156,7 @@ export function ClientForm({ client, action, error, promoItems = [] }: ClientFor
           hint="Ideal para banner superior del menú: JPG o WebP horizontal. Tamaño recomendado: 1200 x 480 px. En móvil se recorta al centro. Máximo 2 MB."
         />
       </section>
+      </div>
 
       <div className="sticky bottom-0 z-20 -mx-4 border-t border-[var(--line)] bg-[var(--background)]/90 px-4 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap justify-end gap-3">

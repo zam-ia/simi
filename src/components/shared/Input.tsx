@@ -8,11 +8,11 @@ type InputProps = InputHTMLAttributes<HTMLInputElement> & {
 
 export function Input({ label, hint, className, ...props }: InputProps) {
   return (
-    <label className="grid gap-2 text-sm">
+    <label className="grid gap-1.5 text-sm">
       <span className="font-medium text-[var(--text)]">{label}</span>
       <input
         className={cn(
-          "focus-ring min-h-11 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3 text-[var(--text)] shadow-[0_1px_0_rgba(0,0,0,0.02)] placeholder:text-[var(--text-muted)]",
+          "focus-ring min-h-10 rounded-[var(--radius-input)] border border-[var(--line)] bg-[var(--surface)] px-3 text-[var(--text)] shadow-[0_1px_0_rgba(0,0,0,0.02)] placeholder:text-[var(--text-muted)]",
           className
         )}
         {...props}

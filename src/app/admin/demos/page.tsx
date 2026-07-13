@@ -22,8 +22,8 @@ export default async function AdminDemosPage({ searchParams }: { searchParams: P
   };
 
   return (
-    <div className="grid gap-6">
-      <header className="grid gap-4 rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-soft lg:grid-cols-[1fr_auto] lg:items-end">
+    <div className="grid gap-4 lg:gap-5">
+      <header className="grid gap-4 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-soft lg:grid-cols-[1fr_auto] lg:items-end">
         <div>
           <p className="text-sm text-[var(--text-muted)]">CRM comercial</p>
           <h2 className="mt-2 text-3xl font-medium">Demos</h2>
@@ -74,7 +74,7 @@ function DemoRequestCard({ request }: { request: DemoRequest }) {
   const statusTone = getStatusTone(request.status);
 
   return (
-    <article className="grid gap-4 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-panel xl:grid-cols-[1fr_360px]">
+    <article className="grid gap-4 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel xl:grid-cols-[1fr_360px]">
       <div className="min-w-0">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
