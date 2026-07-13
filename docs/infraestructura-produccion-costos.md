@@ -182,14 +182,37 @@ Ya existe en SIMI:
 - reintentos y bloqueo de trabajos;
 - RLS y aislamiento por negocio;
 - request ID, headers de seguridad y health check;
+- rate limit distribuido con Upstash y respaldo local cuando Redis no responde;
 - captura de errores frontend con breadcrumbs basicos;
 - tabla de eventos de monitoreo.
 
 Falta antes de una campana grande:
 
-1. Sustituir el rate limit en memoria por Upstash Redis distribuido.
-2. Conectar Sentry y Better Stack con secretos separados por ambiente.
-3. Automatizar exportacion mensual a R2 y restauracion de prueba.
-4. Crear dashboard y alertas de outbox.
-5. Ejecutar la prueba de carga y dimensionar Supabase Small o Medium con evidencia.
-6. Contenerizar `simi-api` para que pueda moverse de Vercel a Cloud Run sin cambiar el frontend.
+1. Conectar Sentry y Better Stack con secretos separados por ambiente.
+2. Automatizar exportacion mensual a R2 y restauracion de prueba.
+3. Crear dashboard y alertas de outbox.
+4. Ejecutar la prueba de carga y dimensionar Supabase Small o Medium con evidencia.
+5. Contenerizar `simi-api` para que pueda moverse de Vercel a Cloud Run sin cambiar el frontend.
+
+## Activar Upstash en Vercel
+
+1. Crear una base Redis regional en Upstash, preferiblemente cerca de Lima o de la region usada por Vercel.
+2. Abrir la base y copiar `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN` desde la seccion REST API.
+3. En Vercel, abrir el proyecto `simi`, entrar a Settings > Environment Variables y registrar ambas variables.
+4. Activarlas en Production y Preview. Usar una base separada para Development si se desea aislar pruebas locales.
+5. Volver a desplegar `main` y `staging` para que cada ambiente reciba los secretos.
+6. Verificar una escritura publica: la respuesta debe incluir `x-simi-ratelimit-source: upstash`.
+
+Si Upstash no responde en 750 ms o falla, SIMI usa automaticamente un limite local conservador. Redis no almacena pedidos ni decide si el pedido existe.
+
+## Conectar un dominio con Cloudflare
+
+1. Comprar o agregar el dominio a Cloudflare y completar el cambio de nameservers solicitado por Cloudflare.
+2. En Vercel, abrir el proyecto correspondiente y agregar primero el dominio o subdominio en Settings > Domains.
+3. Copiar exactamente el registro DNS que Vercel muestre; no inventar el destino CNAME.
+4. Crear ese registro en Cloudflare DNS. Mantenerlo en `DNS only` hasta que Vercel lo marque como valido.
+5. Cuando SSL y la validacion esten correctos, activar el proxy naranja si no interfiere con la verificacion de Vercel.
+6. Usar `app.dominio` para el panel/carta, `www.dominio` para la web comercial y `staging.app.dominio` para pruebas.
+7. Actualizar `NEXT_PUBLIC_APP_URL` en Vercel con la URL final del panel y volver a desplegar.
+
+No compartir tokens de Upstash por chat. Deben pegarse directamente en Vercel como secretos. Para terminar Cloudflare se necesita confirmar el dominio exacto y a que proyecto de Vercel apuntara cada subdominio.

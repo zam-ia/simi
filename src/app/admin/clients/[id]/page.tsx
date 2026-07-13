@@ -41,7 +41,7 @@ export default async function EditClientPage({ params, searchParams }: { params:
       </div>
 
       <ClientForm client={client} action={action} error={resolvedSearchParams.error} promoItems={promoItems} />
-      <MenuPreview url={publicUrl} />
+      <MenuPreview url={`/menu/${client.slug}`} />
       <CategoryManager clientId={client.id} categories={categories} />
       <TableManager client={client} tables={tables} />
       <MenuItemManager clientId={client.id} categories={categoriesWithItems} />

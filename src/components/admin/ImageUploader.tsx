@@ -28,7 +28,7 @@ export function ImageUploader({ name, label, defaultValue = "", storagePath, hin
   const [zoom, setZoom] = useState(1);
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
-  const previewClass = preview === "wide" ? "h-28 w-full sm:h-24 sm:w-40" : "h-16 w-16";
+  const previewClass = preview === "wide" ? "h-14 w-24" : "h-14 w-14";
   const cropRatio = preview === "wide" ? 16 / 9 : 1;
 
   function activateRelatedCheckbox(nextUrl: string) {
@@ -119,16 +119,16 @@ export function ImageUploader({ name, label, defaultValue = "", storagePath, hin
 
   return (
     <div className="grid min-w-0 gap-2 text-sm">
-      <div>
+      <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
         <span className="font-medium text-[var(--text)]">{label}</span>
-        <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">
+        <p className="text-xs leading-4 text-[var(--text-muted)] sm:text-right">
           {hint || "Formatos: JPG, PNG o WebP. Peso maximo: 2 MB."}
         </p>
       </div>
 
       <input type="hidden" name={name} value={url} />
 
-      <div className="grid min-w-0 gap-3 overflow-hidden rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--surface-muted)] p-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
+      <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--surface-muted)] px-3 py-2.5">
         {url ? (
           <img alt={label} src={url} className={`${previewClass} shrink-0 rounded-[var(--radius-input)] object-cover`} />
         ) : (
@@ -137,9 +137,15 @@ export function ImageUploader({ name, label, defaultValue = "", storagePath, hin
           </div>
         )}
 
-        <div className="grid min-w-0 gap-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <label className="focus-ring grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-[var(--text)] transition hover:shadow-panel" title={url ? "Cambiar imagen" : "Cargar imagen"} aria-label={url ? "Cambiar imagen" : "Cargar imagen"}>
+        <div className="grid min-w-0 gap-0.5">
+          <span className="truncate text-xs font-medium text-[var(--text)]">{isUploading ? "Subiendo..." : url ? "Imagen lista" : "Sin imagen"}</span>
+          <span className={`line-clamp-2 text-[11px] leading-4 ${isSuccess ? "text-green-700 dark:text-green-300" : "text-[var(--text-muted)]"}`}>
+            {message || (url ? "Puedes cambiarla o quitarla." : "Selecciona una imagen y ajusta el recorte.")}
+          </span>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-1.5">
+            <label className="focus-ring grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-[var(--text)] transition hover:shadow-panel" title={url ? "Cambiar imagen" : "Cargar imagen"} aria-label={url ? "Cambiar imagen" : "Cargar imagen"}>
               <UploadIcon className="h-4 w-4" />
               <span className="sr-only">{url ? "Cambiar imagen" : "Cargar imagen"}</span>
               <input
@@ -151,20 +157,12 @@ export function ImageUploader({ name, label, defaultValue = "", storagePath, hin
               />
             </label>
             {url ? (
-              <button type="button" className="focus-ring grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-[var(--text-muted)] transition hover:text-red-600 hover:shadow-panel" onClick={() => updateUrl("")} title="Quitar imagen" aria-label="Quitar imagen">
+              <button type="button" className="focus-ring grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-[var(--text-muted)] transition hover:text-red-600 hover:shadow-panel" onClick={() => updateUrl("")} title="Quitar imagen" aria-label="Quitar imagen">
                 <CloseIcon className="h-4 w-4" />
               </button>
             ) : null}
-            <span className="min-w-0 truncate text-xs text-[var(--text-muted)]">{url ? "Imagen lista" : "Cargar imagen"}</span>
-          </div>
         </div>
       </div>
-
-      {message ? (
-        <span className={`rounded-[var(--radius-input)] px-3 py-2 text-xs ${isSuccess ? "bg-green-50 text-green-700 dark:bg-green-950/35 dark:text-green-200" : "bg-[var(--surface-muted)] text-[var(--text-muted)]"}`}>
-          {isUploading ? "Subiendo..." : message}
-        </span>
-      ) : null}
 
       {pendingImage ? (
         <div className="fixed inset-0 z-[80] grid place-items-center bg-black/48 px-4 py-6 backdrop-blur-sm">
