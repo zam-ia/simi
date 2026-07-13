@@ -19,7 +19,7 @@ export default async function EditClientPage({ params, searchParams }: { params:
   requireModuleAccess(context, "menu");
   requireClientAccess(context, resolvedParams.id);
 
-  const [{ client, categories, categoriesWithItems }, tables] = await Promise.all([getAdminClientMenu(resolvedParams.id), getAdminClientTables(resolvedParams.id)]);
+  const [{ client, categories, categoriesWithItems, serviceModes }, tables] = await Promise.all([getAdminClientMenu(resolvedParams.id), getAdminClientTables(resolvedParams.id)]);
   const action = updateClientAction.bind(null, client.id);
   const publicUrl = getPublicMenuUrl(client.slug);
   const promoItems = categoriesWithItems.flatMap((category) => category.items).map((item) => ({ id: item.id, name: item.name, price: item.price }));
@@ -40,7 +40,7 @@ export default async function EditClientPage({ params, searchParams }: { params:
         </div>
       </div>
 
-      <ClientForm client={client} action={action} error={resolvedSearchParams.error} promoItems={promoItems} />
+      <ClientForm client={client} action={action} error={resolvedSearchParams.error} promoItems={promoItems} initialServiceModes={serviceModes} />
       <MenuPreview url={`/menu/${client.slug}`} />
       <div className="grid min-w-0 items-start gap-4 xl:grid-cols-2">
         <CategoryManager clientId={client.id} categories={categories} />

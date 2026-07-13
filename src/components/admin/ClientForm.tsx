@@ -6,8 +6,10 @@ import { Button, LinkButton } from "@/components/shared/Button";
 import { Input } from "@/components/shared/Input";
 import { businessTypeOptions } from "@/constants/commercial";
 import { updateClientInlineAction } from "@/lib/actions";
+import { getClientServiceModes } from "@/lib/service-modes";
 import { formatPrice } from "@/lib/utils";
-import type { BusinessType, Client, MenuItem } from "@/types/menu";
+import type { BusinessType, Client, ClientServiceModes, MenuItem } from "@/types/menu";
+import { Bike, CalendarDays, ShoppingBag, UtensilsCrossed } from "lucide-react";
 import { useState, useTransition, type FormEvent } from "react";
 
 type ClientFormProps = {
@@ -15,15 +17,25 @@ type ClientFormProps = {
   action: (formData: FormData) => void;
   error?: string;
   promoItems?: Pick<MenuItem, "id" | "name" | "price">[];
+  initialServiceModes?: ClientServiceModes;
 };
 
-export function ClientForm({ client, action, error, promoItems = [] }: ClientFormProps) {
+export function ClientForm({ client, action, error, promoItems = [], initialServiceModes }: ClientFormProps) {
   const storageBase = client ? `clients/${client.id}` : "clients/pending";
   const hasSecondaryColor = Boolean(client?.secondary_color);
   const [businessType, setBusinessType] = useState<BusinessType>(client?.business_type || "restaurant");
   const [businessName, setBusinessName] = useState(client?.name || "");
+  const [serviceModes, setServiceModes] = useState(() => initialServiceModes || getClientServiceModes(client));
   const [feedback, setFeedback] = useState<{ tone: "success" | "error"; message: string } | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  function updateServiceMode(mode: keyof typeof serviceModes, enabled: boolean) {
+    setServiceModes((current) => {
+      if (mode === "dineIn" && !enabled) return { ...current, dineIn: false, reservations: false };
+      if (mode === "reservations" && enabled) return { ...current, dineIn: true, reservations: true };
+      return { ...current, [mode]: enabled };
+    });
+  }
 
   function submitExistingClient(event: FormEvent<HTMLFormElement>) {
     if (!client) return;
@@ -80,6 +92,51 @@ export function ClientForm({ client, action, error, promoItems = [] }: ClientFor
           <input type="checkbox" name="is_active" defaultChecked={client?.is_active ?? true} />
           <span>Negocio activo y visible públicamente</span>
         </label>
+      </section>
+
+      <section className="grid gap-3 rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+          <div>
+            <h2 className="text-lg font-medium">Canales de atención</h2>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">Activa solo las opciones que realmente ofrece el negocio. La carta y el checkout se ajustarán automáticamente.</p>
+          </div>
+          <span className="text-xs font-medium text-[var(--text-muted)]">Al menos un canal de pedido</span>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            { key: "delivery" as const, name: "service_delivery", label: "Delivery", detail: "Entrega a domicilio", icon: Bike },
+            { key: "pickup" as const, name: "service_pickup", label: "Recojo", detail: "El cliente recoge su pedido", icon: ShoppingBag },
+            { key: "dineIn" as const, name: "service_dine_in", label: "Atención en mesa", detail: "Pedidos desde el local o QR", icon: UtensilsCrossed },
+            { key: "reservations" as const, name: "service_reservations", label: "Reservas de mesa", detail: "Agenda fecha, hora y personas", icon: CalendarDays }
+          ].map((option) => {
+            const Icon = option.icon;
+            const checked = serviceModes[option.key];
+            const disabled = option.key === "reservations" && !serviceModes.dineIn;
+            return (
+              <label
+                key={option.key}
+                className={`focus-within:ring-2 focus-within:ring-[var(--accent)]/30 flex min-h-[82px] cursor-pointer items-center gap-3 rounded-[18px] border p-3 transition ${checked ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--line)] bg-[var(--surface-muted)]"} ${disabled ? "cursor-not-allowed opacity-55" : ""}`}
+              >
+                <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-[14px] ${checked ? "bg-[var(--accent)] text-white" : "bg-[var(--surface)] text-[var(--text-muted)]"}`}>
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-medium text-[var(--text)]">{option.label}</span>
+                  <span className="mt-0.5 block text-xs leading-4 text-[var(--text-muted)]">{option.detail}</span>
+                </span>
+                <input
+                  className="h-4 w-4 shrink-0 accent-[var(--accent)]"
+                  type="checkbox"
+                  name={option.name}
+                  checked={checked}
+                  disabled={disabled}
+                  onChange={(event) => updateServiceMode(option.key, event.target.checked)}
+                />
+              </label>
+            );
+          })}
+        </div>
+        {!serviceModes.dineIn ? <p className="text-xs text-[var(--text-muted)]">Las reservas de mesa se desactivan cuando el negocio no atiende en local.</p> : null}
       </section>
 
       <div className="grid min-w-0 items-start gap-4 2xl:grid-cols-2">

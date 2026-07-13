@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { recordOperationalActivity } from "@/lib/services/activity-service";
+import { getClientServiceModes } from "@/lib/service-modes";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type ReservationPayload = {
@@ -45,10 +46,11 @@ export async function POST(request: Request) {
     if (customerPhone.replace(/\D/g, "").length < 9) return NextResponse.json({ error: "Ingresa un telefono valido." }, { status: 400 });
     if (!isValidDate(reservationDate) || !isValidTime(reservationTime)) return NextResponse.json({ error: "Selecciona fecha y hora de reserva." }, { status: 400 });
 
-    const { data: client } = await supabase.from("clients").select("id,is_active").eq("id", payload.clientId).eq("is_active", true).single();
+    const { data: client } = await supabase.from("clients").select("id,is_active,order_flow_config").eq("id", payload.clientId).eq("is_active", true).single();
     if (!client) return NextResponse.json({ error: "Este negocio no esta disponible." }, { status: 404 });
     const { data: settings } = await supabase.from("reservation_settings").select("*").eq("client_id", payload.clientId).maybeSingle();
-    if (settings && settings.reservations_enabled === false) {
+    const serviceModes = getClientServiceModes(client, { reservationsEnabled: settings?.reservations_enabled });
+    if (!serviceModes.reservations) {
       return NextResponse.json({ error: "Este negocio no esta recibiendo reservas por ahora." }, { status: 400 });
     }
     const maxPeoplePerReservation = Number(settings?.max_people_per_reservation || 30);

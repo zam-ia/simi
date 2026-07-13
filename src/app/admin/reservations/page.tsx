@@ -3,6 +3,7 @@ import { Input } from "@/components/shared/Input";
 import { assignReservationTableAction, updateReservationSettingsAction, updateReservationStatusAction } from "@/lib/actions";
 import { requireAdmin, requireModuleAccess } from "@/lib/auth";
 import { getAdminReservationsCenter } from "@/lib/menu-data";
+import { getClientServiceModes } from "@/lib/service-modes";
 import { buildWhatsappUrl } from "@/lib/utils";
 import type { Client, ClientTable, Reservation, ReservationEvent, ReservationSettings, ReservationStatus } from "@/types/menu";
 import type { ReactNode } from "react";
@@ -38,11 +39,12 @@ export default async function AdminReservationsPage({ searchParams }: { searchPa
   const { supabase, role, client } = context;
   const clientId = role === "business_admin" ? client!.id : undefined;
   const [{ data: clients }, center] = await Promise.all([
-    role === "business_admin" ? supabase.from("clients").select("id,name").eq("id", client!.id) : supabase.from("clients").select("id,name").order("name", { ascending: true }),
+    role === "business_admin" ? supabase.from("clients").select("id,name,order_flow_config").eq("id", client!.id) : supabase.from("clients").select("id,name,order_flow_config").order("name", { ascending: true }),
     getAdminReservationsCenter(clientId)
   ]);
 
-  const clientRows = (clients || []) as Pick<Client, "id" | "name">[];
+  const clientRows = (clients || []) as Pick<Client, "id" | "name" | "order_flow_config">[];
+  const serviceModes = getClientServiceModes(clientRows.find((row) => row.id === client?.id), { reservationsEnabled: center.settings?.reservations_enabled });
   const clientNames = new Map(clientRows.map((row) => [row.id, row.name]));
   const tableById = new Map(center.tables.map((table) => [table.id, table]));
   const tab = resolvedSearchParams.tab || "agenda";
@@ -96,7 +98,7 @@ export default async function AdminReservationsPage({ searchParams }: { searchPa
       ) : tab === "history" ? (
         <ReservationHistory events={center.events} reservations={center.reservations} />
       ) : tab === "config" ? (
-        <ReservationConfigView role={role} clientId={client?.id} clients={clientRows} settings={center.settings} />
+        <ReservationConfigView role={role} clientId={client?.id} clients={clientRows} settings={center.settings} serviceModes={serviceModes} />
       ) : (
         <AgendaView reservations={todayReservations.length ? todayReservations : center.reservations} tables={center.tables} tableById={tableById} events={center.events} clientNames={clientNames} clients={clientRows} role={role} clientId={client?.id} />
       )}
@@ -249,7 +251,7 @@ function getReservationAlert(reservation: Reservation) {
   return { label: "En agenda", level: "normal" as const, className: "bg-blue-100 text-blue-700" };
 }
 
-function ReservationConfigView({ role, clientId, clients, settings }: { role: string; clientId?: string; clients: Pick<Client, "id" | "name">[]; settings: ReservationSettings | null }) {
+function ReservationConfigView({ role, clientId, clients, settings, serviceModes }: { role: string; clientId?: string; clients: Pick<Client, "id" | "name">[]; settings: ReservationSettings | null; serviceModes: ReturnType<typeof getClientServiceModes> }) {
   return (
     <section className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
       <div>
@@ -273,7 +275,8 @@ function ReservationConfigView({ role, clientId, clients, settings }: { role: st
         <Input name="max_people_per_reservation" label="Personas maximas por reserva" type="number" min="1" defaultValue={settings?.max_people_per_reservation || 12} />
         <Input name="deposit_amount" label="Monto de adelanto" type="number" step="0.1" min="0" defaultValue={settings?.deposit_amount || ""} />
         <div className="grid gap-3 rounded-[18px] bg-[var(--surface-muted)] p-4 md:col-span-2">
-          <label className="flex items-center gap-2 text-sm"><input name="reservations_enabled" type="checkbox" defaultChecked={settings?.reservations_enabled ?? true} /> Reservas activas</label>
+          <label className={`flex items-center gap-2 text-sm ${serviceModes.dineIn ? "" : "opacity-55"}`}><input name="reservations_enabled" type="checkbox" defaultChecked={serviceModes.reservations} disabled={!serviceModes.dineIn} /> Reservas de mesa activas</label>
+          {!serviceModes.dineIn ? <p className="text-xs text-[var(--text-muted)]">Activa primero Atención en mesa desde la configuración del negocio.</p> : null}
           <label className="flex items-center gap-2 text-sm"><input name="require_deposit" type="checkbox" defaultChecked={settings?.require_deposit ?? false} /> Requerir adelanto</label>
         </div>
         <label className="grid gap-2 text-sm md:col-span-2">

@@ -7,6 +7,7 @@ import { hasModuleAccess, requireAdmin, requireClientAccess, requireModuleAccess
 import { deliveryStatusOptions } from "@/constants/order-status";
 import { businessRoles, configurableModules, normalizeBusinessRole, resolveModulePermissions, type ModulePermissions } from "@/lib/permissions";
 import { recordOperationalActivity } from "@/lib/services/activity-service";
+import { getClientServiceModes, isOrderTypeEnabled, mergeClientServiceModes } from "@/lib/service-modes";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { generateSlug, normalizeWhatsapp } from "@/lib/utils";
 import { validateCategoryInput, validateClientInput, validateMenuItemInput } from "@/lib/validations";
@@ -118,8 +119,15 @@ export async function updateClientAction(clientId: string, formData: FormData) {
   const { data: existing } = await supabase.from("clients").select("id").eq("slug", validation.data.slug).neq("id", clientId).maybeSingle();
   if (existing) redirect(`/admin/clients/${clientId}${encodedError("Este slug ya está en uso.")}`);
 
-  const { data: currentClient } = await supabase.from("clients").select("slug").eq("id", clientId).maybeSingle();
-  const { error } = await supabase.from("clients").update(validation.data).eq("id", clientId);
+  const { data: currentClient } = await supabase.from("clients").select("slug,order_flow_config").eq("id", clientId).maybeSingle();
+  const updateData = {
+    ...validation.data,
+    order_flow_config: {
+      ...(currentClient?.order_flow_config && typeof currentClient.order_flow_config === "object" ? currentClient.order_flow_config : {}),
+      ...validation.data.order_flow_config
+    }
+  };
+  const { error } = await supabase.from("clients").update(updateData).eq("id", clientId);
   if (error && isMissingCommercialSettingsError(error)) redirect(`/admin/clients/${clientId}${encodedError(missingCommercialSettingsMessage())}`);
   if (error && isMissingVisualSettingsError(error)) redirect(`/admin/clients/${clientId}${encodedError(missingVisualSettingsMessage())}`);
 
@@ -147,8 +155,15 @@ export async function updateClientInlineAction(clientId: string, formData: FormD
   const { data: existing } = await supabase.from("clients").select("id").eq("slug", validation.data.slug).neq("id", clientId).maybeSingle();
   if (existing) return { ok: false as const, error: "Este slug ya esta en uso." };
 
-  const { data: currentClient } = await supabase.from("clients").select("slug").eq("id", clientId).maybeSingle();
-  const { error } = await supabase.from("clients").update(validation.data).eq("id", clientId);
+  const { data: currentClient } = await supabase.from("clients").select("slug,order_flow_config").eq("id", clientId).maybeSingle();
+  const updateData = {
+    ...validation.data,
+    order_flow_config: {
+      ...(currentClient?.order_flow_config && typeof currentClient.order_flow_config === "object" ? currentClient.order_flow_config : {}),
+      ...validation.data.order_flow_config
+    }
+  };
+  const { error } = await supabase.from("clients").update(updateData).eq("id", clientId);
 
   if (error && isMissingCommercialSettingsError(error)) return { ok: false as const, error: missingCommercialSettingsMessage() };
   if (error && isMissingVisualSettingsError(error)) return { ok: false as const, error: missingVisualSettingsMessage() };
@@ -786,6 +801,11 @@ export async function createManualOrderAction(formData: FormData) {
 
   if (!validOrderTypes.includes(orderType)) redirect(`${redirectBase}${encodedError("Tipo de pedido invalido.")}`);
   if (!validPaymentStatuses.includes(paymentStatus)) redirect(`${redirectBase}${encodedError("Estado de pago invalido.")}`);
+
+  const { data: serviceClient } = await supabase.from("clients").select("order_flow_config").eq("id", clientId).maybeSingle();
+  if (!isOrderTypeEnabled(getClientServiceModes(serviceClient), orderType)) {
+    redirect(`${redirectBase}${encodedError("Este canal de atencion esta desactivado para el negocio.")}`);
+  }
 
   let parsedItems: Array<{ menuItemId: string; quantity: number; note?: string }> = [];
   try {
@@ -1818,14 +1838,28 @@ export async function updateDeliverySettingsAction(formData: FormData) {
   requireClientAccess(context, clientId);
 
   const supportWhatsapp = String(formData.get("support_whatsapp") || "").trim();
+  const deliveryEnabled = formData.get("delivery_enabled") === "on";
+  const pickupEnabled = formData.get("pickup_enabled") === "on";
   if (supportWhatsapp && normalizeWhatsapp(supportWhatsapp).length < 11) redirect(`/admin/delivery${encodedError("El WhatsApp de soporte debe incluir un numero valido de Peru.")}`);
+
+  const { data: client, error: clientLookupError } = await context.supabase
+    .from("clients")
+    .select("order_flow_config")
+    .eq("id", clientId)
+    .maybeSingle();
+  if (clientLookupError) redirect(`/admin/delivery${encodedError("No se pudo validar los canales de atencion del negocio.")}`);
+
+  const currentModes = getClientServiceModes(client);
+  if (!deliveryEnabled && !pickupEnabled && !currentModes.dineIn) {
+    redirect(`/admin/delivery${encodedError("Activa al menos Delivery, Recojo o Atencion en mesa.")}`);
+  }
 
   const { error } = await context.supabase
     .from("delivery_settings")
     .upsert({
       client_id: clientId,
-      delivery_enabled: formData.get("delivery_enabled") === "on",
-      pickup_enabled: formData.get("pickup_enabled") === "on",
+      delivery_enabled: deliveryEnabled,
+      pickup_enabled: pickupEnabled,
       scheduled_orders_enabled: formData.get("scheduled_orders_enabled") === "on",
       base_preparation_minutes: Number(formData.get("base_preparation_minutes") || 20),
       base_delivery_minutes: Number(formData.get("base_delivery_minutes") || 30),
@@ -1836,7 +1870,13 @@ export async function updateDeliverySettingsAction(formData: FormData) {
     }, { onConflict: "client_id" });
 
   if (error) redirect(`/admin/delivery${encodedError("No se pudo guardar la configuracion. Aplica la migracion 010 en Supabase.")}`);
+  const { error: clientError } = await context.supabase
+    .from("clients")
+    .update({ order_flow_config: mergeClientServiceModes(client?.order_flow_config, { delivery: deliveryEnabled, pickup: pickupEnabled }) })
+    .eq("id", clientId);
+  if (clientError) redirect(`/admin/delivery${encodedError("Se guardaron las reglas, pero no se pudo actualizar la carta publica.")}`);
   revalidatePath("/admin/delivery");
+  await revalidateClientSurfaces(context.supabase, clientId);
   redirect("/admin/delivery?tab=config&saved=settings");
 }
 
@@ -1845,12 +1885,13 @@ export async function updateReservationSettingsAction(formData: FormData) {
   requireModuleAccess(context, "reservations");
   const clientId = getClientIdForUserAction(context, formData);
   requireClientAccess(context, clientId);
+  const reservationsEnabled = formData.get("reservations_enabled") === "on";
 
   const { error } = await context.supabase
     .from("reservation_settings")
     .upsert({
       client_id: clientId,
-      reservations_enabled: formData.get("reservations_enabled") === "on",
+      reservations_enabled: reservationsEnabled,
       confirmation_mode: String(formData.get("confirmation_mode") || "MANUAL"),
       default_duration_minutes: Number(formData.get("default_duration_minutes") || 90),
       slot_interval_minutes: Number(formData.get("slot_interval_minutes") || 30),
@@ -1866,7 +1907,15 @@ export async function updateReservationSettingsAction(formData: FormData) {
     }, { onConflict: "client_id" });
 
   if (error) redirect(`/admin/reservations${encodedError("No se pudo guardar la configuracion. Aplica la migracion 010 en Supabase.")}`);
+  const { data: client } = await context.supabase.from("clients").select("order_flow_config").eq("id", clientId).maybeSingle();
+  const currentModes = getClientServiceModes(client);
+  const { error: clientError } = await context.supabase
+    .from("clients")
+    .update({ order_flow_config: mergeClientServiceModes(client?.order_flow_config, { reservations: reservationsEnabled && currentModes.dineIn }) })
+    .eq("id", clientId);
+  if (clientError) redirect(`/admin/reservations${encodedError("Se guardaron las reglas, pero no se pudo actualizar la carta publica.")}`);
   revalidatePath("/admin/reservations");
+  await revalidateClientSurfaces(context.supabase, clientId);
   redirect("/admin/reservations?tab=config&saved=settings");
 }
 

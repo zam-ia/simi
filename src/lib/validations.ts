@@ -1,5 +1,6 @@
 import { generateSlug, isValidHexColor, normalizeWhatsapp } from "@/lib/utils";
 import { businessTypeLabels } from "@/constants/commercial";
+import { mergeClientServiceModes } from "@/lib/service-modes";
 import type { BusinessType } from "@/types/menu";
 
 export type ValidationResult<T> = {
@@ -25,6 +26,7 @@ export type ClientInput = {
   promo_banner_image_url: string | null;
   promo_banner_item_id: string | null;
   promo_banner_is_active: boolean;
+  order_flow_config: Record<string, unknown>;
   is_active: boolean;
 };
 
@@ -37,6 +39,12 @@ export function validateClientInput(formData: FormData): ValidationResult<Client
   const primaryColor = String(formData.get("primary_color") || "#0071E3").trim();
   const useSecondaryColor = formData.get("use_secondary_color") === "on";
   const secondaryColor = useSecondaryColor ? String(formData.get("secondary_color") || "").trim() : "";
+  const serviceModes = {
+    delivery: formData.get("service_delivery") === "on",
+    pickup: formData.get("service_pickup") === "on",
+    dineIn: formData.get("service_dine_in") === "on",
+    reservations: formData.get("service_reservations") === "on"
+  };
 
   if (!name) return { error: "El nombre del negocio es obligatorio." };
   if (!slug) return { error: "El slug es obligatorio." };
@@ -46,6 +54,7 @@ export function validateClientInput(formData: FormData): ValidationResult<Client
   if (notificationWhatsappNumber && normalizeWhatsapp(notificationWhatsappNumber).length < 11) return { error: "El WhatsApp de notificaciones debe incluir un número válido de Perú." };
   if (!isValidHexColor(primaryColor)) return { error: "El color principal debe tener formato hexadecimal, por ejemplo #D71920." };
   if (secondaryColor && !isValidHexColor(secondaryColor)) return { error: "El segundo color debe tener formato hexadecimal, por ejemplo #F4C430." };
+  if (!serviceModes.delivery && !serviceModes.pickup && !serviceModes.dineIn) return { error: "Activa al menos un canal para recibir pedidos." };
 
   return {
     data: {
@@ -66,6 +75,7 @@ export function validateClientInput(formData: FormData): ValidationResult<Client
       promo_banner_image_url: String(formData.get("promo_banner_image_url") || "").trim() || null,
       promo_banner_item_id: String(formData.get("promo_banner_item_id") || "").trim() || null,
       promo_banner_is_active: formData.get("promo_banner_is_active") === "on",
+      order_flow_config: mergeClientServiceModes({}, serviceModes),
       is_active: formData.get("is_active") === "on"
     }
   };

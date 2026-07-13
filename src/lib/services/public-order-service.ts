@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { recordOperationalActivity } from "@/lib/services/activity-service";
+import { getClientServiceModes, isOrderTypeEnabled } from "@/lib/service-modes";
 import { buildWhatsappUrl, getAppUrl, normalizeWhatsapp } from "@/lib/utils";
 
 export type PublicOrderPayload = {
@@ -52,12 +53,25 @@ export async function createPublicOrder(
 
   const { data: client, error: clientError } = await supabase
     .from("clients")
-    .select("id,name,whatsapp_number,notification_whatsapp_number,is_active")
+    .select("id,name,whatsapp_number,notification_whatsapp_number,is_active,order_flow_config")
     .eq("id", payload.clientId)
     .eq("is_active", true)
     .single();
 
   if (clientError || !client) throw new PublicOrderError("Este menú no está disponible.", 404);
+
+  const { data: deliverySettings } = await supabase
+    .from("delivery_settings")
+    .select("delivery_enabled,pickup_enabled")
+    .eq("client_id", payload.clientId)
+    .maybeSingle();
+  const serviceModes = getClientServiceModes(client, {
+    deliveryEnabled: deliverySettings?.delivery_enabled,
+    pickupEnabled: deliverySettings?.pickup_enabled
+  });
+  if (!isOrderTypeEnabled(serviceModes, payload.orderType)) {
+    throw new PublicOrderError("Este canal de atención no está disponible para el negocio.", 400);
+  }
 
   validateCustomer(payload);
 

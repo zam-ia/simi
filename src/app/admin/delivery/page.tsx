@@ -3,6 +3,7 @@ import { Input } from "@/components/shared/Input";
 import { assignCourierToOrderAction, createCourierAction, createDeliveryZoneAction, deleteDeliveryZoneAction, updateCourierAction, updateDeliveryAssignmentStatusAction, updateDeliverySettingsAction, updateDeliveryZoneAction } from "@/lib/actions";
 import { requireAdmin, requireModuleAccess } from "@/lib/auth";
 import { getAdminDeliveryCenter } from "@/lib/menu-data";
+import { getClientServiceModes } from "@/lib/service-modes";
 import { buildWhatsappUrl, formatPrice } from "@/lib/utils";
 import type { Client, ClientDeliveryZone, Courier, DeliveryAssignment, DeliverySettings, DeliveryStatus, DeliveryStatusEvent, OrderWithDetails } from "@/types/menu";
 import type { ReactNode } from "react";
@@ -42,6 +43,10 @@ export default async function AdminDeliveryPage({ searchParams }: { searchParams
   ]);
 
   const clientRows = (clients || []) as Client[];
+  const serviceModes = getClientServiceModes(clientRows.find((row) => row.id === client?.id), {
+    deliveryEnabled: delivery.settings?.delivery_enabled,
+    pickupEnabled: delivery.settings?.pickup_enabled
+  });
   const tab = resolvedSearchParams.tab || "dispatch";
   const assignmentByOrder = new Map(delivery.assignments.map((assignment) => [assignment.order_id, assignment]));
   const courierById = new Map(delivery.couriers.map((courier) => [courier.id, courier]));
@@ -97,7 +102,7 @@ export default async function AdminDeliveryPage({ searchParams }: { searchParams
       ) : tab === "history" ? (
         <HistoryView events={delivery.events} assignments={delivery.assignments} orders={delivery.orders} couriers={delivery.couriers} />
       ) : tab === "config" ? (
-        <DeliveryConfigView role={role} clientId={client?.id} clients={clientRows} settings={delivery.settings} />
+        <DeliveryConfigView role={role} clientId={client?.id} clients={clientRows} settings={delivery.settings} serviceModes={serviceModes} />
       ) : (
         <DispatchView role={role} clientId={client?.id} clients={clientRows} items={dispatchItems} couriers={delivery.couriers} courierById={courierById} zoneById={zoneById} clientNames={clientNames} />
       )}
@@ -317,7 +322,7 @@ function HistoryView({ events, assignments, orders, couriers }: { events: Delive
   );
 }
 
-function DeliveryConfigView({ role, clientId, clients, settings }: { role: string; clientId?: string; clients: Client[]; settings: DeliverySettings | null }) {
+function DeliveryConfigView({ role, clientId, clients, settings, serviceModes }: { role: string; clientId?: string; clients: Client[]; settings: DeliverySettings | null; serviceModes: ReturnType<typeof getClientServiceModes> }) {
   return (
     <section className="rounded-[var(--radius-panel)] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel">
       <div>
@@ -330,8 +335,8 @@ function DeliveryConfigView({ role, clientId, clients, settings }: { role: strin
         <Input name="base_delivery_minutes" label="Tiempo base de delivery" type="number" min="0" defaultValue={settings?.base_delivery_minutes || 30} />
         <Input name="support_whatsapp" label="WhatsApp soporte delivery" defaultValue={settings?.support_whatsapp || ""} placeholder="+51 999 999 999" />
         <div className="grid gap-3 rounded-[18px] bg-[var(--surface-muted)] p-4 md:col-span-2">
-          <label className="flex items-center gap-2 text-sm"><input name="delivery_enabled" type="checkbox" defaultChecked={settings?.delivery_enabled ?? true} /> Delivery activo</label>
-          <label className="flex items-center gap-2 text-sm"><input name="pickup_enabled" type="checkbox" defaultChecked={settings?.pickup_enabled ?? true} /> Recojo en local activo</label>
+          <label className="flex items-center gap-2 text-sm"><input name="delivery_enabled" type="checkbox" defaultChecked={serviceModes.delivery} /> Delivery activo</label>
+          <label className="flex items-center gap-2 text-sm"><input name="pickup_enabled" type="checkbox" defaultChecked={serviceModes.pickup} /> Recojo en local activo</label>
           <label className="flex items-center gap-2 text-sm"><input name="scheduled_orders_enabled" type="checkbox" defaultChecked={settings?.scheduled_orders_enabled ?? false} /> Permitir pedidos programados</label>
           <label className="flex items-center gap-2 text-sm"><input name="require_courier_before_departure" type="checkbox" defaultChecked={settings?.require_courier_before_departure ?? true} /> Requerir repartidor antes de salir</label>
           <label className="flex items-center gap-2 text-sm"><input name="allow_delivered_without_courier" type="checkbox" defaultChecked={settings?.allow_delivered_without_courier ?? false} /> Permitir marcar entregado sin repartidor</label>

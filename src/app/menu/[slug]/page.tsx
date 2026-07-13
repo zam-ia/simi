@@ -81,6 +81,7 @@ export default async function PublicMenuPage({ params, searchParams }: MenuPageP
       deliveryZones={menu.deliveryZones || []}
       promotions={menu.promotions || []}
       paymentMethods={menu.paymentMethods || []}
+      serviceModes={menu.serviceModes}
       initialTableNumber={resolvedSearchParams?.mesa}
     />
   );

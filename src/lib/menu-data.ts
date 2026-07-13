@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { unstable_noStore as noStore } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getClientServiceModes } from "@/lib/service-modes";
 import type {
   CategoryWithItems,
   Client,
@@ -49,10 +50,12 @@ export async function getAdminClientMenu(clientId: string) {
   noStore();
   const supabase = await createSupabaseServerClient();
 
-  const [{ data: client }, { data: categories }, { data: items }] = await Promise.all([
+  const [{ data: client }, { data: categories }, { data: items }, deliverySettingsResult, reservationSettingsResult] = await Promise.all([
     supabase.from("clients").select("*").eq("id", clientId).single(),
     supabase.from("menu_categories").select("*").eq("client_id", clientId).eq("is_active", true).order("display_order", { ascending: true }),
-    supabase.from("menu_items").select("*").eq("client_id", clientId).order("display_order", { ascending: true })
+    supabase.from("menu_items").select("*").eq("client_id", clientId).order("display_order", { ascending: true }),
+    supabase.from("delivery_settings").select("delivery_enabled,pickup_enabled").eq("client_id", clientId).maybeSingle(),
+    supabase.from("reservation_settings").select("reservations_enabled").eq("client_id", clientId).maybeSingle()
   ]);
 
   if (!client) notFound();
@@ -63,9 +66,16 @@ export async function getAdminClientMenu(clientId: string) {
     ...category,
     items: menuItems.filter((item) => item.category_id === category.id)
   }));
+  const clientRow = client as Client;
+  const serviceModes = getClientServiceModes(clientRow, {
+    deliveryEnabled: deliverySettingsResult.data?.delivery_enabled,
+    pickupEnabled: deliverySettingsResult.data?.pickup_enabled,
+    reservationsEnabled: reservationSettingsResult.data?.reservations_enabled
+  });
 
   return {
-    client: client as Client,
+    client: clientRow,
+    serviceModes,
     categories: menuCategories,
     categoriesWithItems
   };
@@ -117,13 +127,15 @@ export async function getPublicMenuBySlug(slug: string) {
   const { data: client } = await supabase.from("clients").select("*").eq("slug", slug).eq("is_active", true).single();
   if (!client) return null;
 
-  const [{ data: categories }, { data: items }, { data: tables }, zonesResult, promotionsResult, paymentsResult] = await Promise.all([
+  const [{ data: categories }, { data: items }, { data: tables }, zonesResult, promotionsResult, paymentsResult, deliverySettingsResult, reservationSettingsResult] = await Promise.all([
     supabase.from("menu_categories").select("*").eq("client_id", client.id).eq("is_active", true).order("display_order", { ascending: true }),
     supabase.from("menu_items").select("*").eq("client_id", client.id).order("display_order", { ascending: true }),
     supabase.from("client_tables").select("*").eq("client_id", client.id).eq("is_active", true).order("table_number", { ascending: true }),
     supabase.from("client_delivery_zones").select("*").eq("client_id", client.id).eq("is_active", true).order("display_order", { ascending: true }),
     supabase.from("promotions").select("*").eq("client_id", client.id).eq("is_active", true).order("display_order", { ascending: true }),
-    supabase.from("client_payment_methods").select("*").eq("client_id", client.id).eq("is_active", true).order("display_order", { ascending: true })
+    supabase.from("client_payment_methods").select("*").eq("client_id", client.id).eq("is_active", true).order("display_order", { ascending: true }),
+    supabase.from("delivery_settings").select("delivery_enabled,pickup_enabled").eq("client_id", client.id).maybeSingle(),
+    supabase.from("reservation_settings").select("reservations_enabled").eq("client_id", client.id).maybeSingle()
   ]);
 
   const menuCategories = (categories || []) as MenuCategory[];
@@ -132,12 +144,18 @@ export async function getPublicMenuBySlug(slug: string) {
     ...category,
     items: menuItems.filter((item) => item.category_id === category.id)
   }));
+  const serviceModes = getClientServiceModes(client as Client, {
+    deliveryEnabled: deliverySettingsResult.data?.delivery_enabled,
+    pickupEnabled: deliverySettingsResult.data?.pickup_enabled,
+    reservationsEnabled: reservationSettingsResult.data?.reservations_enabled
+  });
 
   return {
     client: client as Client,
     categories: categoriesWithItems,
-    tables: (tables || []) as ClientTable[],
-    deliveryZones: zonesResult.error && isMissingTableError(zonesResult.error) ? [] : ((zonesResult.data || []) as ClientDeliveryZone[]).map((zone) => ({ ...zone, delivery_fee: Number(zone.delivery_fee), minimum_order: Number(zone.minimum_order) })),
+    serviceModes,
+    tables: serviceModes.dineIn ? (tables || []) as ClientTable[] : [],
+    deliveryZones: !serviceModes.delivery || (zonesResult.error && isMissingTableError(zonesResult.error)) ? [] : ((zonesResult.data || []) as ClientDeliveryZone[]).map((zone) => ({ ...zone, delivery_fee: Number(zone.delivery_fee), minimum_order: Number(zone.minimum_order) })),
     promotions: promotionsResult.error && isMissingTableError(promotionsResult.error) ? [] : ((promotionsResult.data || []) as Promotion[]).map((promotion) => ({ ...promotion, discount_value: Number(promotion.discount_value) })),
     paymentMethods: paymentsResult.error && isMissingTableError(paymentsResult.error) ? [] : (paymentsResult.data || []) as PaymentMethod[]
   };

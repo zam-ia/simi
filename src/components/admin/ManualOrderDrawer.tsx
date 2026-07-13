@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createManualOrderAction } from "@/lib/actions";
+import { getClientServiceModes, isOrderTypeEnabled } from "@/lib/service-modes";
 import { cn, formatPrice } from "@/lib/utils";
 import type { Client, ClientDeliveryZone, ClientTable, MenuCategory, MenuItem, OrderType, PaymentStatus } from "@/types/menu";
 
@@ -59,6 +60,10 @@ export function ManualOrderDrawer({ clients, categories, items, tables, delivery
   const visibleTables = useMemo(() => tables.filter((table) => table.client_id === selectedClientId), [tables, selectedClientId]);
   const visibleZones = useMemo(() => deliveryZones.filter((zone) => zone.client_id === selectedClientId), [deliveryZones, selectedClientId]);
   const currentClient = clients.find((client) => client.id === selectedClientId);
+  const availableOrderTypes = useMemo(() => {
+    const serviceModes = getClientServiceModes(currentClient);
+    return orderTypes.filter((type) => isOrderTypeEnabled(serviceModes, type.value));
+  }, [currentClient]);
   const currentOrderType = orderTypes.find((type) => type.value === orderType);
   const selectedZone = visibleZones.find((zone) => zone.id === deliveryZoneId);
   const cartItems = Object.values(cart).filter((entry) => entry.item.client_id === selectedClientId);
@@ -66,6 +71,12 @@ export function ManualOrderDrawer({ clients, categories, items, tables, delivery
   const deliveryFee = orderType === "delivery" ? Number(selectedZone?.delivery_fee || 0) : 0;
   const total = subtotal + deliveryFee;
   const itemsJson = JSON.stringify(cartItems.map((entry) => ({ menuItemId: entry.item.id, quantity: entry.quantity, note: entry.note })));
+
+  useEffect(() => {
+    if (!availableOrderTypes.some((type) => type.value === orderType) && availableOrderTypes[0]) {
+      setOrderType(availableOrderTypes[0].value);
+    }
+  }, [availableOrderTypes, orderType]);
 
   function resetForClient(clientId: string) {
     setSelectedClientId(clientId);
@@ -157,7 +168,7 @@ export function ManualOrderDrawer({ clients, categories, items, tables, delivery
                     <div className="grid gap-2">
                       <span className="text-sm text-[var(--text-muted)]">Tipo de venta</span>
                       <div className="grid gap-2 sm:grid-cols-3">
-                        {orderTypes.map((type) => (
+                        {availableOrderTypes.map((type) => (
                           <button key={type.value} type="button" onClick={() => setOrderType(type.value)} className={cn("rounded-[18px] border px-3 py-3 text-left text-sm transition hover:-translate-y-0.5", orderType === type.value ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text)] shadow-panel" : "border-[var(--line)] bg-[var(--background)]")}>
                             <span className="block font-medium">{type.label}</span>
                             <span className="mt-1 block text-xs text-[var(--text-muted)]">{type.helper}</span>

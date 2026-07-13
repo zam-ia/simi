@@ -8,8 +8,9 @@ import { MenuHeader } from "@/components/public-menu/MenuHeader";
 import { MenuItemCard } from "@/components/public-menu/MenuItemCard";
 import { PromoBanner } from "@/components/public-menu/PromoBanner";
 import { Button } from "@/components/shared/Button";
+import { getAvailableOrderTypes } from "@/lib/service-modes";
 import { buildWhatsappUrl, formatPrice } from "@/lib/utils";
-import type { CategoryWithItems, Client, ClientDeliveryZone, ClientTable, MenuItem, OrderType, PaymentMethod, Promotion } from "@/types/menu";
+import type { CategoryWithItems, Client, ClientDeliveryZone, ClientServiceModes, ClientTable, MenuItem, OrderType, PaymentMethod, Promotion } from "@/types/menu";
 
 type CartItem = {
   menuItemId: string;
@@ -32,6 +33,7 @@ type PublicMenuExperienceProps = {
   deliveryZones: ClientDeliveryZone[];
   promotions: Promotion[];
   paymentMethods: PaymentMethod[];
+  serviceModes: ClientServiceModes;
   initialTableNumber?: string;
 };
 
@@ -48,12 +50,14 @@ const orderTypeLabels: Record<OrderType, string> = {
   delivery: "Delivery"
 };
 
-export function PublicMenuExperience({ client, categories, tables, deliveryZones, promotions, paymentMethods, initialTableNumber }: PublicMenuExperienceProps) {
-  const initialTable = tables.find((table) => table.table_number === initialTableNumber || table.label.toLowerCase() === `mesa ${initialTableNumber}`.toLowerCase());
+export function PublicMenuExperience({ client, categories, tables, deliveryZones, promotions, paymentMethods, serviceModes, initialTableNumber }: PublicMenuExperienceProps) {
+  const availableOrderTypes = getAvailableOrderTypes(serviceModes);
+  const initialTable = serviceModes.dineIn ? tables.find((table) => table.table_number === initialTableNumber || table.label.toLowerCase() === `mesa ${initialTableNumber}`.toLowerCase()) : undefined;
+  const initialOrderType = initialTable ? "dine_in" : availableOrderTypes.includes("pickup") ? "pickup" : availableOrderTypes[0] || "pickup";
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [step, setStep] = useState<"menu" | "checkout" | "payment">("menu");
-  const [orderType, setOrderType] = useState<OrderType>(initialTable ? "dine_in" : "pickup");
+  const [orderType, setOrderType] = useState<OrderType>(initialOrderType);
   const [selectedTableId, setSelectedTableId] = useState(initialTable?.id || "");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -168,6 +172,10 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
   }
 
   function openCheckout() {
+    if (availableOrderTypes.length === 0) {
+      setMessage("Este negocio recibe consultas directamente por WhatsApp.");
+      return;
+    }
     setStep("checkout");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -295,15 +303,23 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
 
   return (
     <main className={`min-h-screen max-w-full overflow-x-clip bg-[var(--background)] ${step === "menu" ? "pb-44" : "pb-8"}`}>
-      {step === "menu" ? <MenuHeader client={client} /> : null}
+      {step === "menu" ? <MenuHeader client={client} serviceModes={serviceModes} /> : null}
       <div id="menu-content" className={`mx-auto grid max-w-[1320px] gap-6 px-4 py-5 sm:px-5 lg:grid-cols-[minmax(0,1fr)_390px] lg:items-start lg:px-8 ${step !== "menu" ? "max-w-[760px] lg:block" : ""}`}>
         <div className="grid min-w-0 max-w-full grid-cols-1 gap-6">
           {step === "menu" ? <section className="grid min-w-0 max-w-full grid-cols-1 gap-3 rounded-[30px] border border-white/70 bg-[var(--surface)]/96 p-3 shadow-soft backdrop-blur-xl">
-            <div className="grid min-w-0 grid-cols-[repeat(3,minmax(0,1fr))] gap-2">
-              <ServiceModeButton active={orderType === "delivery"} label="Delivery" detail={`${fastestDelivery} - desde ${formatPrice(lowestDeliveryFee)}`} onClick={() => setOrderType("delivery")} />
-              <ServiceModeButton active={orderType === "pickup"} label="Recojo" detail="Pide y pasa por tienda" onClick={() => setOrderType("pickup")} />
-              <ServiceModeButton active={orderType === "dine_in"} label="Mesa" detail="Escanea QR y ordena" onClick={() => setOrderType("dine_in")} />
-            </div>
+            {availableOrderTypes.length > 0 ? (
+              <div className="grid min-w-0 gap-2" style={{ gridTemplateColumns: `repeat(${availableOrderTypes.length}, minmax(0, 1fr))` }}>
+                {availableOrderTypes.map((type) => (
+                  <ServiceModeButton
+                    key={type}
+                    active={orderType === type}
+                    label={orderTypeLabels[type]}
+                    detail={type === "delivery" ? `${fastestDelivery} - desde ${formatPrice(lowestDeliveryFee)}` : type === "pickup" ? "Pide y pasa por el negocio" : "Escanea el QR y ordena"}
+                    onClick={() => setOrderType(type)}
+                  />
+                ))}
+              </div>
+            ) : null}
             <div className="relative min-w-0">
               <label className="focus-within:shadow-panel flex min-h-[52px] min-w-0 items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 py-1 text-sm transition">
                 <SearchIcon className="h-5 w-5 text-[var(--text-muted)]" />
@@ -350,7 +366,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
             </div>
           </section> : null}
 
-          {step === "menu" ? <QuickTrustInfo client={client} deliveryZones={deliveryZones} paymentMethods={paymentMethods} fastestDelivery={fastestDelivery} /> : null}
+          {step === "menu" ? <QuickTrustInfo client={client} deliveryZones={deliveryZones} paymentMethods={paymentMethods} fastestDelivery={fastestDelivery} serviceModes={serviceModes} /> : null}
 
           {step === "menu" && featuredCategories.length > 0 ? (
             <section id="category-navigation" className="grid min-w-0 max-w-full grid-cols-1 gap-3 scroll-mt-24">
@@ -487,13 +503,13 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
               ) : null}
             </div>
 
-            <div className="grid grid-cols-3 gap-2 rounded-full bg-[var(--surface-muted)] p-1">
-              {(Object.keys(orderTypeLabels) as OrderType[]).map((type) => (
+            {availableOrderTypes.length > 1 ? <div className="grid gap-2 rounded-full bg-[var(--surface-muted)] p-1" style={{ gridTemplateColumns: `repeat(${availableOrderTypes.length}, minmax(0, 1fr))` }}>
+              {availableOrderTypes.map((type) => (
                 <button key={type} type="button" onClick={() => setOrderType(type)} className={`rounded-full px-3 py-2 text-sm font-medium ${orderType === type ? "bg-[var(--surface)] shadow-panel" : "text-[var(--text-muted)]"}`}>
                   {orderTypeLabels[type]}
                 </button>
               ))}
-            </div>
+            </div> : null}
 
             {orderType === "dine_in" ? (
               <label className="grid gap-2 text-sm">
@@ -634,13 +650,13 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
             <p className="text-sm text-[var(--text-muted)]">Tu pedido</p>
             <h2 className="mt-1 text-xl font-medium">{itemCount ? `${itemCount} producto${itemCount === 1 ? "" : "s"}` : "Listo para ordenar"}</h2>
           </div>
-          <div className="grid grid-cols-3 gap-2 rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-1">
-            {(Object.keys(orderTypeLabels) as OrderType[]).map((type) => (
+          {availableOrderTypes.length > 1 ? <div className="grid gap-2 rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-1" style={{ gridTemplateColumns: `repeat(${availableOrderTypes.length}, minmax(0, 1fr))` }}>
+            {availableOrderTypes.map((type) => (
               <button key={type} type="button" onClick={() => setOrderType(type)} className={`rounded-full px-2 py-2 text-xs font-medium ${orderType === type ? "bg-[var(--surface)] shadow-panel" : "text-[var(--text-muted)]"}`}>
                 {orderTypeLabels[type]}
               </button>
             ))}
-          </div>
+          </div> : null}
 
           {cart.length > 0 ? (
             <div className="grid gap-2 rounded-[var(--radius-card)] bg-[var(--surface-muted)] p-3">
@@ -671,9 +687,9 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
           <a className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#25D366] px-4 text-sm font-medium text-white" href={buildWhatsappUrl(client.whatsapp_number, "Hola, quiero hacer un pedido")} target="_blank" rel="noreferrer">
             Consultar por WhatsApp
           </a>
-          <a href={`/reservar/${client.slug}`} className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--surface-muted)] px-4 text-sm font-medium text-[var(--text)]">
+          {serviceModes.reservations ? <a href={`/reservar/${client.slug}`} className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--surface-muted)] px-4 text-sm font-medium text-[var(--text)]">
             Reservar mesa
-          </a>
+          </a> : null}
         </aside>
       </div>
 
@@ -720,7 +736,7 @@ export function PublicMenuExperience({ client, categories, tables, deliveryZones
   );
 }
 
-function QuickTrustInfo({ client, deliveryZones, paymentMethods, fastestDelivery }: { client: Client; deliveryZones: ClientDeliveryZone[]; paymentMethods: PaymentMethod[]; fastestDelivery: string }) {
+function QuickTrustInfo({ client, deliveryZones, paymentMethods, fastestDelivery, serviceModes }: { client: Client; deliveryZones: ClientDeliveryZone[]; paymentMethods: PaymentMethod[]; fastestDelivery: string; serviceModes: ClientServiceModes }) {
   const activePaymentLabels = paymentMethods
     .filter((method) => method.is_active)
     .map((method) => method.label)
@@ -730,8 +746,10 @@ function QuickTrustInfo({ client, deliveryZones, paymentMethods, fastestDelivery
 
   return (
     <section id="quick-info" className="grid scroll-mt-24 gap-3 rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-panel md:grid-cols-4">
-      <InfoPill label="Entrega" value={fastestDelivery} />
-      <InfoPill label="Delivery" value={deliveryText} />
+      {serviceModes.delivery ? <InfoPill label="Delivery" value={`${fastestDelivery} · ${deliveryText}`} /> : null}
+      {serviceModes.pickup ? <InfoPill label="Recojo" value="Pide y pasa por el negocio" /> : null}
+      {serviceModes.dineIn ? <InfoPill label="Atención en mesa" value="Ordena desde el local" /> : null}
+      {serviceModes.reservations ? <InfoPill label="Reservas" value="Agenda una mesa en línea" /> : null}
       <InfoPill label="Pagos" value={paymentText} />
       <InfoPill label="Confirmacion" value="Por WhatsApp" />
     </section>

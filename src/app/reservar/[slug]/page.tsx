@@ -16,6 +16,7 @@ export async function generateMetadata({ params }: ReservationPageProps): Promis
   const cleanSlug = stripDemoPrefix(resolvedParams.slug);
   const menu = cleanSlug !== resolvedParams.slug ? (await getPublicMenuBySlug(cleanSlug)) || (await getPublicMenuBySlug(resolvedParams.slug)) : await getPublicMenuBySlug(resolvedParams.slug);
   if (!menu) return { title: "Reserva no disponible" };
+  if (!menu.serviceModes.reservations) return { title: `Reservas no disponibles en ${menu.client.name}` };
   const title = `Reservar en ${menu.client.name}`;
   const description = `Solicita una reserva en ${menu.client.name}`;
   const previewImage = menu.client.hero_banner_image_url || menu.client.promo_banner_image_url || menu.client.logo_url || defaultSocialPreview;
@@ -49,5 +50,6 @@ export default async function ReservationPage({ params }: ReservationPageProps) 
 
   const menu = await getPublicMenuBySlug(resolvedParams.slug);
   if (!menu) notFound();
+  if (!menu.serviceModes.reservations) redirect(`/menu/${menu.client.slug}`);
   return <ReservationExperience client={menu.client} tables={menu.tables || []} />;
 }

@@ -1,4 +1,10 @@
 export type BusinessType = "fast_food" | "restaurant" | "polleria" | "coffee_shop" | "bakery" | "pastry_shop" | "ice_cream_shop" | "catering" | "other_gastronomic";
+export type ClientServiceModes = {
+  delivery: boolean;
+  pickup: boolean;
+  dineIn: boolean;
+  reservations: boolean;
+};
 export type ClientCommercialStatus = "PROSPECTO" | "DEMO_AGENDADA" | "EN_CONFIGURACION" | "ACTIVO" | "PAUSADO" | "SUSPENDIDO" | "CANCELADO";
 export type DemoRequestStatus = "NUEVA" | "CONTACTADO" | "DEMO_AGENDADA" | "DEMO_REALIZADA" | "SEGUIMIENTO" | "CONVERTIDO" | "NO_INTERESADO" | "DESCARTADO";
 export type DemoMeetingChannel = "Zoom" | "Meet" | "Presencial" | "WhatsApp";

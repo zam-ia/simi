@@ -1,16 +1,19 @@
-import type { Client } from "@/types/menu";
+import type { Client, ClientServiceModes } from "@/types/menu";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 
 type MenuHeaderProps = {
   client: Client;
+  serviceModes: ClientServiceModes;
 };
 
-export function MenuHeader({ client }: MenuHeaderProps) {
+export function MenuHeader({ client, serviceModes }: MenuHeaderProps) {
   const secondaryColor = client.secondary_color || "#1F1F1F";
   const heroImage = client.hero_banner_image_url || client.promo_banner_image_url || null;
   const background = heroImage
     ? `linear-gradient(180deg, rgba(0,0,0,0.22), rgba(0,0,0,0.42)), url("${heroImage}")`
     : `radial-gradient(circle at 82% 18%, color-mix(in srgb, ${client.primary_color} 35%, transparent), transparent 28%), linear-gradient(145deg, ${client.primary_color} 0%, color-mix(in srgb, ${secondaryColor} 82%, #111827) 100%)`;
+  const acceptsOrders = serviceModes.delivery || serviceModes.pickup || serviceModes.dineIn;
+  const serviceLabel = acceptsOrders && serviceModes.reservations ? "Pedidos y reservas" : serviceModes.reservations ? "Reservas" : acceptsOrders ? "Pedidos" : "Carta informativa";
 
   return (
     <header className="relative pb-16 text-white sm:pb-20 lg:pb-24">
@@ -36,7 +39,7 @@ export function MenuHeader({ client }: MenuHeaderProps) {
             {client.address ? <p className="mt-1 line-clamp-1 text-sm leading-5 text-[var(--text-muted)]">{client.address}</p> : null}
             <div className="mt-3 flex flex-wrap gap-2 text-xs font-medium">
               <span className="rounded-full bg-[var(--accent-soft)] px-3 py-1.5 text-[var(--accent-strong)]">Carta digital</span>
-              <span className="rounded-full bg-[var(--surface-muted)] px-3 py-1.5">Reservas y pedidos</span>
+              <span className="rounded-full bg-[var(--surface-muted)] px-3 py-1.5">{serviceLabel}</span>
             </div>
           </div>
         </div>
